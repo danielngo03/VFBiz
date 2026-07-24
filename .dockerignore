@@ -1,0 +1,5 @@
+**
+!apps/
+!apps/identity-theme/
+!apps/identity-theme/dist/
+!apps/identity-theme/dist/*.jar

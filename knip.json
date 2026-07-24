@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    "apps/customer-portal": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        "vitest*.config.ts",
+        "tests/**/*.{ts,tsx}",
+        "scripts/**/*.mjs"
+      ],
+      "project": ["src/**/*.{ts,tsx,css}", "tests/**/*.{ts,tsx}"]
+    },
+    "apps/workforce-portal": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        "vitest*.config.ts",
+        "tests/**/*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx,css}", "tests/**/*.{ts,tsx}"]
+    }
+  }
+}

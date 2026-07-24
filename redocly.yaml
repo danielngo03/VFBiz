@@ -1,0 +1,9 @@
+extends:
+  - recommended
+
+# Redirect-only OIDC operations correctly return 3xx, and this contract uses a
+# shared RFC Problem Details `default` response for error classes. Requiring a
+# fabricated 2xx/4xx response would make the contract less accurate.
+rules:
+  operation-2xx-response: off
+  operation-4xx-response: off
