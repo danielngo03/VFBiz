@@ -1,0 +1,238 @@
+model IdentitySubject {
+  id                           String                        @id @default(uuid()) @db.Uuid
+  issuer                       String                        @db.VarChar(255)
+  subject                      String                        @db.VarChar(255)
+  realm                        String                        @db.VarChar(40)
+  status                       String                        @default("active") @db.VarChar(40)
+  createdAt                    DateTime                      @default(now()) @db.Timestamptz(6)
+  updatedAt                    DateTime                      @updatedAt @db.Timestamptz(6)
+  customerProfile              CustomerProfile?
+  sessions                     SessionProjection[]
+  workforceAssignments         WorkforceRoleAssignment[]
+  workforceEntitlementRevision WorkforceEntitlementRevision?
+
+  @@unique([issuer, subject])
+  @@index([realm, status])
+  @@map("identity_subject")
+}
+
+enum WorkforceCapabilityRiskTier {
+  STANDARD   @map("standard")
+  SENSITIVE  @map("sensitive")
+  PRIVILEGED @map("privileged")
+
+  @@map("workforce_capability_risk_tier")
+}
+
+enum WorkforceRoleStatus {
+  ACTIVE   @map("active")
+  DISABLED @map("disabled")
+
+  @@map("workforce_role_status")
+}
+
+enum WorkforceAssignmentStatus {
+  ACTIVE  @map("active")
+  REVOKED @map("revoked")
+
+  @@map("workforce_assignment_status")
+}
+
+enum WorkforceScopeType {
+  GLOBAL     @map("global")
+  MARKET     @map("market")
+  SHOWROOM   @map("showroom")
+  DEPARTMENT @map("department")
+
+  @@map("workforce_scope_type")
+}
+
+enum AuthorizationChangeRequestStatus {
+  PENDING  @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+
+  @@map("authorization_change_request_status")
+}
+
+model WorkforceCapabilityDefinition {
+  key              String                      @id @db.VarChar(120)
+  resource         String                      @db.VarChar(100)
+  action           String                      @db.VarChar(40)
+  riskTier         WorkforceCapabilityRiskTier
+  displayName      String                      @db.VarChar(160)
+  deprecated       Boolean                     @default(false)
+  catalogVersion   Int
+  createdAt        DateTime                    @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime                    @updatedAt @db.Timestamptz(6)
+  roleCapabilities WorkforceRoleCapability[]
+
+  @@index([resource, action])
+  @@index([riskTier, deprecated])
+  @@map("workforce_capability_definition")
+}
+
+model WorkforceRole {
+  id               String                    @id @default(uuid()) @db.Uuid
+  key              String                    @unique @db.VarChar(80)
+  displayName      String                    @db.VarChar(160)
+  description      String?                   @db.VarChar(500)
+  status           WorkforceRoleStatus       @default(ACTIVE)
+  system           Boolean                   @default(false)
+  version          Int                       @default(1)
+  createdByRef     String                    @db.VarChar(160)
+  updatedByRef     String                    @db.VarChar(160)
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime                  @updatedAt @db.Timestamptz(6)
+  roleCapabilities WorkforceRoleCapability[]
+  assignments      WorkforceRoleAssignment[]
+
+  @@index([status, displayName])
+  @@map("workforce_role")
+}
+
+model WorkforceRoleCapability {
+  roleId        String                        @db.Uuid
+  capabilityKey String                        @db.VarChar(120)
+  role          WorkforceRole                 @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  capability    WorkforceCapabilityDefinition @relation(fields: [capabilityKey], references: [key], onDelete: Restrict)
+  grantedAt     DateTime                      @default(now()) @db.Timestamptz(6)
+  grantedByRef  String                        @db.VarChar(160)
+
+  @@id([roleId, capabilityKey])
+  @@index([capabilityKey])
+  @@map("workforce_role_capability")
+}
+
+model WorkforceOrganizationUnitProjection {
+  id          String                         @id @default(uuid()) @db.Uuid
+  externalRef String                         @unique @db.VarChar(160)
+  type        WorkforceScopeType
+  displayName String                         @db.VarChar(160)
+  status      String                         @default("active") @db.VarChar(40)
+  source      String                         @db.VarChar(80)
+  revision    String                         @db.VarChar(160)
+  observedAt  DateTime                       @db.Timestamptz(6)
+  createdAt   DateTime                       @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime                       @updatedAt @db.Timestamptz(6)
+  scopes      WorkforceRoleAssignmentScope[]
+
+  @@index([type, status])
+  @@map("workforce_organization_unit_projection")
+}
+
+model WorkforceRoleAssignment {
+  id                String                         @id @default(uuid()) @db.Uuid
+  identitySubjectId String                         @db.Uuid
+  roleId            String                         @db.Uuid
+  status            WorkforceAssignmentStatus      @default(ACTIVE)
+  effectiveAt       DateTime                       @db.Timestamptz(6)
+  expiresAt         DateTime?                      @db.Timestamptz(6)
+  reason            String                         @db.VarChar(500)
+  version           Int                            @default(1)
+  createdByRef      String                         @db.VarChar(160)
+  approvedByRef     String?                        @db.VarChar(160)
+  revokedAt         DateTime?                      @db.Timestamptz(6)
+  revokedByRef      String?                        @db.VarChar(160)
+  createdAt         DateTime                       @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime                       @updatedAt @db.Timestamptz(6)
+  identitySubject   IdentitySubject                @relation(fields: [identitySubjectId], references: [id], onDelete: Restrict)
+  role              WorkforceRole                  @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  scopes            WorkforceRoleAssignmentScope[]
+
+  @@index([identitySubjectId, status, effectiveAt, expiresAt])
+  @@index([roleId, status])
+  @@map("workforce_role_assignment")
+}
+
+model WorkforceRoleAssignmentScope {
+  assignmentId       String                               @db.Uuid
+  scopeType          WorkforceScopeType
+  scopeRef           String                               @db.VarChar(160)
+  organizationUnitId String?                              @db.Uuid
+  assignment         WorkforceRoleAssignment              @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  organizationUnit   WorkforceOrganizationUnitProjection? @relation(fields: [organizationUnitId], references: [id], onDelete: Restrict)
+
+  @@id([assignmentId, scopeType, scopeRef])
+  @@index([scopeType, scopeRef])
+  @@index([organizationUnitId])
+  @@map("workforce_role_assignment_scope")
+}
+
+model AuthorizationChangeRequest {
+  id            String                           @id @default(uuid()) @db.Uuid
+  requestType   String                           @db.VarChar(80)
+  status        AuthorizationChangeRequestStatus @default(PENDING)
+  riskTier      WorkforceCapabilityRiskTier
+  requesterRef  String                           @db.VarChar(160)
+  targetType    String                           @db.VarChar(80)
+  targetRef     String                           @db.VarChar(160)
+  reason        String                           @db.VarChar(500)
+  payload       Json
+  correlationId String                           @db.Uuid
+  expiresAt     DateTime                         @db.Timestamptz(6)
+  decidedAt     DateTime?                        @db.Timestamptz(6)
+  decision      AuthorizationChangeApproval?
+  createdAt     DateTime                         @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime                         @updatedAt @db.Timestamptz(6)
+
+  @@index([status, expiresAt, createdAt])
+  @@index([targetType, targetRef])
+  @@map("authorization_change_request")
+}
+
+model AuthorizationChangeApproval {
+  id              String                     @id @default(uuid()) @db.Uuid
+  changeRequestId String                     @unique @db.Uuid
+  decision        String                     @db.VarChar(40)
+  approverRef     String                     @db.VarChar(160)
+  evidenceRef     String                     @db.VarChar(512)
+  reason          String?                    @db.VarChar(500)
+  decidedAt       DateTime                   @default(now()) @db.Timestamptz(6)
+  changeRequest   AuthorizationChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Restrict)
+
+  @@index([approverRef, decidedAt])
+  @@map("authorization_change_approval")
+}
+
+model WorkforceEntitlementRevision {
+  identitySubjectId String          @id @db.Uuid
+  revision          BigInt          @default(1)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(6)
+  identitySubject   IdentitySubject @relation(fields: [identitySubjectId], references: [id], onDelete: Cascade)
+
+  @@map("workforce_entitlement_revision")
+}
+
+model SessionProjection {
+  id                             String          @id @default(uuid()) @db.Uuid
+  identitySubjectId              String          @db.Uuid
+  identitySubject                IdentitySubject @relation(fields: [identitySubjectId], references: [id], onDelete: Cascade)
+  sessionRefHash                 String          @unique @db.Char(64)
+  providerSessionRefHash         String?         @unique @db.Char(64)
+  providerRoute                  String?         @db.VarChar(80)
+  providerSessionSecretReference String?         @db.VarChar(512)
+  observationRevision            BigInt          @default(0)
+  observationObservedAt          DateTime?       @db.Timestamptz(6)
+  deviceLabel                    String?         @db.VarChar(120)
+  userAgentSummary               String?         @db.VarChar(255)
+  ipPrefix                       String?         @db.VarChar(80)
+  emailVerified                  Boolean?
+  mfaSatisfied                   Boolean         @default(false)
+  authenticatedAt                DateTime        @db.Timestamptz(6)
+  lastSeenAt                     DateTime        @db.Timestamptz(6)
+  expiresAt                      DateTime        @db.Timestamptz(6)
+  revokedAt                      DateTime?       @db.Timestamptz(6)
+  revocationIntentAt             DateTime?       @db.Timestamptz(6)
+  revocationState                String          @default("none") @db.VarChar(40)
+  revocationAttempt              Int             @default(0)
+  revocationLastAttemptAt        DateTime?       @db.Timestamptz(6)
+  revocationNextRetryAt          DateTime?       @db.Timestamptz(6)
+  revocationLastErrorCode        String?         @db.VarChar(80)
+  revocationVersion              Int             @default(0)
+  createdAt                      DateTime        @default(now()) @db.Timestamptz(6)
+
+  @@index([identitySubjectId, revokedAt, expiresAt])
+  @@index([revocationState, revocationNextRetryAt])
+  @@map("session_projection")
+}

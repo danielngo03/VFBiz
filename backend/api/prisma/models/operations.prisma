@@ -1,0 +1,45 @@
+model ReleaseOperation {
+  id             String                 @id @default(uuid()) @db.Uuid
+  releaseType    String                 @db.VarChar(80)
+  manifestRef    String                 @db.VarChar(255)
+  requestedByRef String                 @db.VarChar(160)
+  approvedByRef  String?                @db.VarChar(160)
+  status         String                 @db.VarChar(40)
+  createdAt      DateTime               @default(now()) @db.Timestamptz(6)
+  completedAt    DateTime?              @db.Timestamptz(6)
+  decisions      ReleaseDecisionEvent[]
+
+  @@index([releaseType, status, createdAt])
+  @@map("release_operation")
+}
+
+model ReleaseDecisionEvent {
+  id                 String           @id @default(uuid()) @db.Uuid
+  releaseOperationId String           @db.Uuid
+  releaseOperation   ReleaseOperation @relation(fields: [releaseOperationId], references: [id], onDelete: Restrict)
+  reviewerRef        String           @db.VarChar(160)
+  decision           String           @db.VarChar(24)
+  reasonCode         String?          @db.VarChar(120)
+  evidenceRef        String           @db.VarChar(255)
+  correlationId      String           @db.Uuid
+  occurredAt         DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@unique([releaseOperationId, reviewerRef])
+  @@index([releaseOperationId, occurredAt])
+  @@map("release_decision_event")
+}
+
+model ReconciliationJob {
+  id            String         @id @default(uuid()) @db.Uuid
+  capability    String         @db.VarChar(80)
+  provider      String         @db.VarChar(80)
+  cursor        String?        @db.VarChar(255)
+  status        DeliveryStatus @default(pending)
+  attempts      Int            @default(0)
+  availableAt   DateTime       @default(now()) @db.Timestamptz(6)
+  completedAt   DateTime?      @db.Timestamptz(6)
+  lastErrorCode String?        @db.VarChar(120)
+
+  @@index([status, availableAt])
+  @@map("reconciliation_job")
+}

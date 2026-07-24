@@ -1,0 +1,112 @@
+model VehicleEnergyProfile {
+  id                     String               @id @default(uuid()) @db.Uuid
+  vehicleVariantId       String               @db.Uuid
+  vehicleVariant         VehicleVariant       @relation(fields: [vehicleVariantId], references: [id], onDelete: Restrict)
+  usableBatteryKwh       Decimal              @db.Decimal(8, 3)
+  baseConsumptionWhPerKm Decimal              @db.Decimal(8, 3)
+  auxiliaryPowerKw       Decimal              @db.Decimal(6, 3)
+  reserveSocPercent      Decimal              @db.Decimal(5, 2)
+  connectorStandards     String[]
+  chargingCurve          Json
+  chargingCurveSchema    String               @default("v1") @db.VarChar(40)
+  algorithmRevision      String               @db.VarChar(80)
+  sourceRevisionId       String               @db.Uuid
+  sourceRevision         SourceRevision       @relation("VehicleEnergySource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  validFrom              DateTime             @db.Timestamptz(6)
+  validTo                DateTime?            @db.Timestamptz(6)
+  tripPlans              TripPlanProjection[]
+
+  @@index([vehicleVariantId, validFrom])
+  @@map("vehicle_energy_profile")
+}
+
+model ChargingStation {
+  id               String                               @id @default(uuid()) @db.Uuid
+  externalRef      String                               @unique @db.VarChar(160)
+  name             String                               @db.VarChar(160)
+  latitude         Decimal                              @db.Decimal(9, 6)
+  longitude        Decimal                              @db.Decimal(9, 6)
+  location         Unsupported("geography(Point,4326)")
+  status           String                               @db.VarChar(40)
+  openingHours     Json?
+  countryCode      String                               @default("VN") @db.Char(2)
+  subdivisionCode  String?                              @db.VarChar(16)
+  locality         String?                              @db.VarChar(120)
+  timezone         String                               @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  sourceRevisionId String                               @db.Uuid
+  sourceRevision   SourceRevision                       @relation("ChargingStationSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  refreshedAt      DateTime                             @db.Timestamptz(6)
+  connectors       ChargingConnector[]
+
+  @@index([location], type: Gist, map: "charging_station_location_gist_idx")
+  @@index([status, refreshedAt])
+  @@map("charging_station")
+}
+
+model ChargingConnector {
+  id                String           @id @default(uuid()) @db.Uuid
+  chargingStationId String           @db.Uuid
+  chargingStation   ChargingStation  @relation(fields: [chargingStationId], references: [id], onDelete: Cascade)
+  externalRef       String           @db.VarChar(160)
+  standard          String           @db.VarChar(40)
+  maximumPowerKw    Decimal          @db.Decimal(8, 3)
+  unitCount         Int              @default(1)
+  status            String           @db.VarChar(40)
+  lastObservedAt    DateTime         @db.Timestamptz(6)
+  tariffs           ChargingTariff[]
+
+  @@unique([chargingStationId, externalRef])
+  @@index([chargingStationId, standard, status, lastObservedAt])
+  @@map("charging_connector")
+}
+
+model ChargingTariff {
+  id                    String            @id @default(uuid()) @db.Uuid
+  chargingConnectorId   String            @db.Uuid
+  chargingConnector     ChargingConnector @relation(fields: [chargingConnectorId], references: [id], onDelete: Cascade)
+  currency              String            @db.Char(3)
+  pricePerKwhMinor      BigInt
+  sessionFeeMinor       BigInt            @default(0)
+  idleFeePerMinuteMinor BigInt            @default(0)
+  taxRatePercent        Decimal?          @db.Decimal(6, 3)
+  tariffSchema          String            @default("energy-v1") @db.VarChar(40)
+  sourceRevisionId      String            @db.Uuid
+  sourceRevision        SourceRevision    @relation("ChargingTariffSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  validFrom             DateTime          @db.Timestamptz(6)
+  validTo               DateTime?         @db.Timestamptz(6)
+
+  @@index([chargingConnectorId, validFrom])
+  @@map("charging_tariff")
+}
+
+model TripPlanProjection {
+  id                     String               @id @default(uuid()) @db.Uuid
+  customerProfileId      String?              @db.Uuid
+  customerProfile        CustomerProfile?     @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+  vehicleEnergyProfileId String               @db.Uuid
+  vehicleEnergyProfile   VehicleEnergyProfile @relation(fields: [vehicleEnergyProfileId], references: [id], onDelete: Restrict)
+  requestFingerprint     String               @db.Char(64)
+  request                Json
+  status                 String               @default("pending") @db.VarChar(40)
+  result                 Json?
+  warnings               Json                 @default("[]")
+  algorithmRevision      String               @db.VarChar(80)
+  routeProvider          String               @db.VarChar(80)
+  routeRequestHash       String               @db.Char(64)
+  cachePolicy            String               @db.VarChar(40)
+  requestSchema          String               @default("trip-request-v1") @db.VarChar(80)
+  resultSchema           String               @default("trip-result-v1") @db.VarChar(80)
+  privacyClassification  String               @default("customer-confidential") @db.VarChar(40)
+  providerPayloadStored  Boolean              @default(false)
+  failureCode            String?              @db.VarChar(120)
+  sourceRevisions        Json
+  calculatedAt           DateTime?            @db.Timestamptz(6)
+  retentionUntil         DateTime             @db.Timestamptz(6)
+  expiresAt              DateTime             @db.Timestamptz(6)
+  createdAt              DateTime             @default(now()) @db.Timestamptz(6)
+
+  @@index([requestFingerprint, algorithmRevision, expiresAt])
+  @@index([customerProfileId, createdAt])
+  @@index([status, expiresAt])
+  @@map("trip_plan_projection")
+}

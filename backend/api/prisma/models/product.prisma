@@ -1,0 +1,365 @@
+enum VehicleCatalogReleaseState {
+  DRAFT      @map("draft")
+  APPROVED   @map("approved")
+  ACTIVE     @map("active")
+  SUPERSEDED @map("superseded")
+  REJECTED   @map("rejected")
+
+  @@map("vehicle_catalog_release_state")
+}
+
+enum VehicleCommercialStatus {
+  ANNOUNCED    @map("announced")
+  ACTIVE       @map("active")
+  DISCONTINUED @map("discontinued")
+
+  @@map("vehicle_commercial_status")
+}
+
+enum VehicleFactSubjectType {
+  RELEASE @map("release")
+  MODEL   @map("model")
+  VARIANT @map("variant")
+
+  @@map("vehicle_fact_subject_type")
+}
+
+enum VehicleFactGroup {
+  IDENTITY_COMMERCIAL    @map("identity_commercial")
+  TECHNICAL_HOMOLOGATION @map("technical_homologation")
+  BATTERY_RANGE_CHARGING @map("battery_range_charging")
+  OPTIONS_COMPATIBILITY  @map("options_compatibility")
+
+  @@map("vehicle_fact_group")
+}
+
+enum CommercialReleaseState {
+  DRAFT      @map("draft")
+  APPROVED   @map("approved")
+  ACTIVE     @map("active")
+  SUPERSEDED @map("superseded")
+  REJECTED   @map("rejected")
+
+  @@map("commercial_release_state")
+}
+
+enum PriceType {
+  MSRP    @map("msrp")
+  LIST    @map("list")
+  OPTION  @map("option")
+  SERVICE @map("service")
+
+  @@map("price_type")
+}
+
+enum TaxTreatment {
+  TAX_INCLUSIVE  @map("tax_inclusive")
+  TAX_EXCLUSIVE  @map("tax_exclusive")
+  NOT_APPLICABLE @map("not_applicable")
+
+  @@map("tax_treatment")
+}
+
+enum CommercialChannel {
+  PUBLIC   @map("public")
+  RETAIL   @map("retail")
+  FLEET    @map("fleet")
+  EMPLOYEE @map("employee")
+
+  @@map("commercial_channel")
+}
+
+enum PromotionBenefitType {
+  FIXED_AMOUNT @map("fixed_amount")
+  PERCENTAGE   @map("percentage")
+  IN_KIND      @map("in_kind")
+  COMPOSITE    @map("composite")
+
+  @@map("promotion_benefit_type")
+}
+
+enum PromotionStackingPolicy {
+  EXCLUSIVE  @map("exclusive")
+  STACKABLE  @map("stackable")
+  RULE_BASED @map("rule_based")
+
+  @@map("promotion_stacking_policy")
+}
+
+enum InventoryAvailabilityBand {
+  AVAILABLE   @map("available")
+  LOW         @map("low")
+  UNAVAILABLE @map("unavailable")
+  UNKNOWN     @map("unknown")
+
+  @@map("inventory_availability_band")
+}
+
+enum CommercialAnomalySeverity {
+  WARNING  @map("warning")
+  BLOCKING @map("blocking")
+
+  @@map("commercial_anomaly_severity")
+}
+
+enum CommercialAnomalyDisposition {
+  OPEN     @map("open")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+  RESOLVED @map("resolved")
+
+  @@map("commercial_anomaly_disposition")
+}
+
+model VehicleCatalogRelease {
+  id                  String                         @id @default(uuid()) @db.Uuid
+  market              String                         @db.VarChar(8)
+  releaseVersion      String                         @db.VarChar(80)
+  state               VehicleCatalogReleaseState     @default(DRAFT)
+  submittedByRef      String                         @db.VarChar(160)
+  approvedByRef       String?                        @db.VarChar(160)
+  approvalEvidenceRef String?                        @db.VarChar(512)
+  approvedAt          DateTime?                      @db.Timestamptz(6)
+  activatedByRef      String?                        @db.VarChar(160)
+  sourceRevisionId    String                         @db.Uuid
+  sourceRevision      SourceRevision                 @relation("VehicleCatalogReleaseSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  effectiveAt         DateTime                       @db.Timestamptz(6)
+  activatedAt         DateTime?                      @db.Timestamptz(6)
+  supersededAt        DateTime?                      @db.Timestamptz(6)
+  revision            Int                            @default(0)
+  createdAt           DateTime                       @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime                       @updatedAt @db.Timestamptz(6)
+  modelRevisions      VehicleModelRevision[]
+  variantRevisions    VehicleVariantRevision[]
+  factProvenance      VehicleFactProvenanceBinding[]
+
+  @@unique([market, releaseVersion])
+  @@index([market, state, effectiveAt])
+  @@map("vehicle_catalog_release")
+}
+
+model VehicleFactProvenanceBinding {
+  id               String                 @id @default(uuid()) @db.Uuid
+  catalogReleaseId String                 @db.Uuid
+  catalogRelease   VehicleCatalogRelease  @relation(fields: [catalogReleaseId], references: [id], onDelete: Cascade)
+  subjectType      VehicleFactSubjectType
+  subjectRef       String                 @db.Uuid
+  factGroup        VehicleFactGroup
+  sourceRevisionId String                 @db.Uuid
+  sourceRevision   SourceRevision         @relation("VehicleFactProvenanceSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  createdAt        DateTime               @default(now()) @db.Timestamptz(6)
+
+  @@unique([catalogReleaseId, subjectType, subjectRef, factGroup], map: "vehicle_fact_provenance_subject_group_key")
+  @@index([sourceRevisionId])
+  @@map("vehicle_fact_provenance_binding")
+}
+
+model VehicleModel {
+  id             String                 @id @default(uuid()) @db.Uuid
+  brandCode      String                 @db.VarChar(40)
+  modelCode      String                 @db.VarChar(80)
+  slug           String                 @unique @db.VarChar(120)
+  createdAt      DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime               @updatedAt @db.Timestamptz(6)
+  variants       VehicleVariant[]
+  modelRevisions VehicleModelRevision[]
+  promotions     Promotion[]
+
+  @@unique([brandCode, modelCode])
+  @@map("vehicle_model")
+}
+
+model VehicleModelRevision {
+  id               String                  @id @default(uuid()) @db.Uuid
+  vehicleModelId   String                  @db.Uuid
+  vehicleModel     VehicleModel            @relation(fields: [vehicleModelId], references: [id], onDelete: Restrict)
+  catalogReleaseId String                  @db.Uuid
+  catalogRelease   VehicleCatalogRelease   @relation(fields: [catalogReleaseId], references: [id], onDelete: Restrict)
+  canonicalName    String                  @db.VarChar(120)
+  category         String                  @db.VarChar(80)
+  commercialStatus VehicleCommercialStatus
+  modelYear        Int?
+  createdAt        DateTime                @default(now()) @db.Timestamptz(6)
+
+  @@unique([vehicleModelId, catalogReleaseId])
+  @@index([catalogReleaseId, commercialStatus])
+  @@map("vehicle_model_revision")
+}
+
+model VehicleVariant {
+  id               String                   @id @default(uuid()) @db.Uuid
+  vehicleModelId   String                   @db.Uuid
+  vehicleModel     VehicleModel             @relation(fields: [vehicleModelId], references: [id], onDelete: Restrict)
+  variantCode      String                   @db.VarChar(100)
+  createdAt        DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime                 @updatedAt @db.Timestamptz(6)
+  variantRevisions VehicleVariantRevision[]
+  energyProfiles   VehicleEnergyProfile[]
+  priceOffers      PriceOffer[]
+  promotions       Promotion[]
+  inventory        InventoryObservation[]
+  garageEntries    CustomerGarageEntry[]    @relation("GarageVehicleVariant")
+
+  @@unique([vehicleModelId, variantCode])
+  @@map("vehicle_variant")
+}
+
+model VehicleVariantRevision {
+  id                         String                  @id @default(uuid()) @db.Uuid
+  vehicleVariantId           String                  @db.Uuid
+  vehicleVariant             VehicleVariant          @relation(fields: [vehicleVariantId], references: [id], onDelete: Restrict)
+  catalogReleaseId           String                  @db.Uuid
+  catalogRelease             VehicleCatalogRelease   @relation(fields: [catalogReleaseId], references: [id], onDelete: Restrict)
+  canonicalName              String                  @db.VarChar(120)
+  commercialStatus           VehicleCommercialStatus
+  seats                      Int?
+  drivetrain                 String?                 @db.VarChar(40)
+  grossBatteryCapacityKwh    Decimal?                @db.Decimal(8, 3)
+  usableBatteryCapacityKwh   Decimal?                @db.Decimal(8, 3)
+  declaredRangeKm            Decimal?                @db.Decimal(9, 2)
+  rangeTestStandard          String?                 @db.VarChar(40)
+  maximumAcChargePowerKw     Decimal?                @db.Decimal(8, 2)
+  maximumDcChargePowerKw     Decimal?                @db.Decimal(8, 2)
+  connectorStandards         String[]
+  specificationSchemaVersion String                  @db.VarChar(40)
+  extensionData              Json
+  createdAt                  DateTime                @default(now()) @db.Timestamptz(6)
+
+  @@unique([vehicleVariantId, catalogReleaseId])
+  @@index([catalogReleaseId, commercialStatus])
+  @@map("vehicle_variant_revision")
+}
+
+model CommercialDataRelease {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  market              String                 @db.VarChar(8)
+  releaseVersion      String                 @db.VarChar(80)
+  state               CommercialReleaseState @default(DRAFT)
+  submittedByRef      String                 @db.VarChar(160)
+  approvedByRef       String?                @db.VarChar(160)
+  approvalEvidenceRef String?                @db.VarChar(512)
+  approvedAt          DateTime?              @db.Timestamptz(6)
+  activatedByRef      String?                @db.VarChar(160)
+  sourceRevisionId    String                 @db.Uuid
+  sourceRevision      SourceRevision         @relation("CommercialDataReleaseSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  effectiveAt         DateTime               @db.Timestamptz(6)
+  activatedAt         DateTime?              @db.Timestamptz(6)
+  supersededAt        DateTime?              @db.Timestamptz(6)
+  revision            Int                    @default(0)
+  createdAt           DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime               @updatedAt @db.Timestamptz(6)
+  priceOffers         PriceOffer[]
+  promotions          Promotion[]
+
+  @@unique([market, releaseVersion])
+  @@index([market, state, effectiveAt])
+  @@map("commercial_data_release")
+}
+
+model PriceOffer {
+  id                       String                  @id @default(uuid()) @db.Uuid
+  commercialReleaseId      String                  @db.Uuid
+  commercialRelease        CommercialDataRelease   @relation(fields: [commercialReleaseId], references: [id], onDelete: Restrict)
+  vehicleVariantId         String                  @db.Uuid
+  vehicleVariant           VehicleVariant          @relation(fields: [vehicleVariantId], references: [id], onDelete: Restrict)
+  offerCode                String                  @db.VarChar(120)
+  priceType                PriceType
+  market                   String                  @db.VarChar(8)
+  currency                 String                  @db.Char(3)
+  amountMinor              BigInt
+  taxTreatment             TaxTreatment
+  channel                  CommercialChannel
+  eligibilitySchemaVersion String                  @db.VarChar(40)
+  eligibilityRules         Json
+  sourceRevisionId         String                  @db.Uuid
+  sourceRevision           SourceRevision          @relation("PriceOfferSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  validFrom                DateTime                @db.Timestamptz(6)
+  validTo                  DateTime?               @db.Timestamptz(6)
+  createdAt                DateTime                @default(now()) @db.Timestamptz(6)
+  anomalies                CommercialFactAnomaly[]
+
+  @@unique([commercialReleaseId, offerCode])
+  @@index([vehicleVariantId, market, channel, priceType, validFrom])
+  @@index([sourceRevisionId])
+  @@map("price_offer")
+}
+
+model Promotion {
+  id                       String                  @id @default(uuid()) @db.Uuid
+  commercialReleaseId      String                  @db.Uuid
+  commercialRelease        CommercialDataRelease   @relation(fields: [commercialReleaseId], references: [id], onDelete: Restrict)
+  promotionCode            String                  @db.VarChar(120)
+  promotionVersion         String                  @db.VarChar(80)
+  title                    String                  @db.VarChar(240)
+  market                   String                  @db.VarChar(8)
+  channel                  CommercialChannel
+  vehicleModelId           String?                 @db.Uuid
+  vehicleModel             VehicleModel?           @relation(fields: [vehicleModelId], references: [id], onDelete: Restrict)
+  vehicleVariantId         String?                 @db.Uuid
+  vehicleVariant           VehicleVariant?         @relation(fields: [vehicleVariantId], references: [id], onDelete: Restrict)
+  benefitType              PromotionBenefitType
+  benefitAmountMinor       BigInt?
+  benefitPercentage        Decimal?                @db.Decimal(7, 4)
+  currency                 String?                 @db.Char(3)
+  benefitSchemaVersion     String                  @db.VarChar(40)
+  benefitDefinition        Json
+  eligibilitySchemaVersion String                  @db.VarChar(40)
+  eligibilityRules         Json
+  stackingPolicy           PromotionStackingPolicy
+  sourceRevisionId         String                  @db.Uuid
+  sourceRevision           SourceRevision          @relation("PromotionSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  validFrom                DateTime                @db.Timestamptz(6)
+  validTo                  DateTime?               @db.Timestamptz(6)
+  createdAt                DateTime                @default(now()) @db.Timestamptz(6)
+  anomalies                CommercialFactAnomaly[]
+
+  @@unique([commercialReleaseId, promotionCode, promotionVersion])
+  @@index([market, channel, validFrom])
+  @@index([vehicleModelId, vehicleVariantId])
+  @@index([sourceRevisionId])
+  @@map("promotion")
+}
+
+model InventoryObservation {
+  id               String                    @id @default(uuid()) @db.Uuid
+  vehicleVariantId String                    @db.Uuid
+  vehicleVariant   VehicleVariant            @relation(fields: [vehicleVariantId], references: [id], onDelete: Restrict)
+  locationRef      String                    @db.VarChar(160)
+  market           String                    @db.VarChar(8)
+  availabilityBand InventoryAvailabilityBand
+  availableUnits   Int?
+  sourceRevisionId String                    @db.Uuid
+  sourceRevision   SourceRevision            @relation("InventoryObservationSource", fields: [sourceRevisionId], references: [id], onDelete: Restrict)
+  observedAt       DateTime                  @db.Timestamptz(6)
+  expiresAt        DateTime                  @db.Timestamptz(6)
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(6)
+  anomalies        CommercialFactAnomaly[]
+
+  @@unique([vehicleVariantId, locationRef, sourceRevisionId, observedAt])
+  @@index([vehicleVariantId, market, expiresAt])
+  @@index([locationRef, expiresAt])
+  @@map("inventory_observation")
+}
+
+model CommercialFactAnomaly {
+  id                     String                       @id @default(uuid()) @db.Uuid
+  priceOfferId           String?                      @db.Uuid
+  priceOffer             PriceOffer?                  @relation(fields: [priceOfferId], references: [id], onDelete: Cascade)
+  promotionId            String?                      @db.Uuid
+  promotion              Promotion?                   @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  inventoryObservationId String?                      @db.Uuid
+  inventoryObservation   InventoryObservation?        @relation(fields: [inventoryObservationId], references: [id], onDelete: Cascade)
+  ruleCode               String                       @db.VarChar(120)
+  ruleVersion            String                       @db.VarChar(40)
+  severity               CommercialAnomalySeverity
+  disposition            CommercialAnomalyDisposition @default(OPEN)
+  evidence               Json
+  detectedAt             DateTime                     @default(now()) @db.Timestamptz(6)
+  resolvedAt             DateTime?                    @db.Timestamptz(6)
+  resolvedByRef          String?                      @db.VarChar(160)
+
+  @@index([priceOfferId, disposition])
+  @@index([promotionId, disposition])
+  @@index([inventoryObservationId, disposition])
+  @@map("commercial_fact_anomaly")
+}

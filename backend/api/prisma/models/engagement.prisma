@@ -1,0 +1,105 @@
+model ConversationSession {
+  id                   String                @id @default(uuid()) @db.Uuid
+  customerProfileId    String?               @db.Uuid
+  customerProfile      CustomerProfile?      @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  assistantProfile     String                @db.VarChar(40)
+  locale               String                @default("vi") @db.VarChar(8)
+  status               String                @db.VarChar(40)
+  policyRevision       String                @db.VarChar(160)
+  accessCapabilityHash String?               @unique @db.Char(64)
+  expiresAt            DateTime              @db.Timestamptz(6)
+  retentionUntil       DateTime              @db.Timestamptz(6)
+  createdAt            DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(6)
+  messages             ConversationMessage[]
+  supportHandoffs      SupportHandoff[]
+
+  @@index([customerProfileId, updatedAt])
+  @@map("conversation_session")
+}
+
+model ConversationMessage {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  conversationSessionId String                 @db.Uuid
+  conversationSession   ConversationSession    @relation(fields: [conversationSessionId], references: [id], onDelete: Cascade)
+  role                  String                 @db.VarChar(24)
+  sequence              Int
+  contentObjectRef      String?                @db.VarChar(255)
+  redactedContent       String?
+  legacyCitations       Json?                  @map("citations")
+  outcome               String?                @db.VarChar(40)
+  aiReleaseRevision     String?                @db.VarChar(160)
+  policyDecisionRef     String?                @db.VarChar(255)
+  idempotencyKeyHash    String?                @db.Char(64)
+  citations             ConversationCitation[]
+  toolProposals         ToolProposalRecord[]
+  createdAt             DateTime               @default(now()) @db.Timestamptz(6)
+
+  @@unique([conversationSessionId, sequence])
+  @@index([conversationSessionId, createdAt])
+  @@map("conversation_message")
+}
+
+model ConversationCitation {
+  id                    String              @id @default(uuid()) @db.Uuid
+  conversationMessageId String              @db.Uuid
+  conversationMessage   ConversationMessage @relation(fields: [conversationMessageId], references: [id], onDelete: Cascade)
+  sourceId              String              @db.VarChar(160)
+  title                 String              @db.VarChar(255)
+  uri                   String              @db.VarChar(1024)
+  sourceRevision        String              @db.VarChar(160)
+  evidenceHash          String              @db.Char(64)
+  retrievedAt           DateTime            @db.Timestamptz(6)
+
+  @@index([conversationMessageId])
+  @@index([sourceId, sourceRevision])
+  @@map("conversation_citation")
+}
+
+model ToolProposalRecord {
+  id                    String              @id @default(uuid()) @db.Uuid
+  conversationMessageId String              @db.Uuid
+  conversationMessage   ConversationMessage @relation(fields: [conversationMessageId], references: [id], onDelete: Cascade)
+  toolName              String              @db.VarChar(120)
+  schemaVersion         String              @db.VarChar(80)
+  argumentsObjectRef    String?             @db.VarChar(255)
+  argumentsHash         String              @db.Char(64)
+  requiredScope         String              @db.VarChar(160)
+  status                String              @default("proposed") @db.VarChar(40)
+  policyDecisionRef     String?             @db.VarChar(255)
+  expiresAt             DateTime            @db.Timestamptz(6)
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+
+  @@index([conversationMessageId, status])
+  @@index([toolName, createdAt])
+  @@map("tool_proposal_record")
+}
+
+model SupportHandoff {
+  id                    String              @id @default(uuid()) @db.Uuid
+  conversationSessionId String              @db.Uuid
+  conversationSession   ConversationSession @relation(fields: [conversationSessionId], references: [id], onDelete: Restrict)
+  reasonCode            String              @db.VarChar(120)
+  status                String              @default("requested") @db.VarChar(40)
+  externalRef           String?             @db.VarChar(160)
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@index([conversationSessionId])
+  @@map("support_handoff")
+}
+
+model Notification {
+  id                String         @id @default(uuid()) @db.Uuid
+  customerProfileId String         @db.Uuid
+  channel           String         @db.VarChar(24)
+  templateKey       String         @db.VarChar(120)
+  status            DeliveryStatus @default(pending)
+  payload           Json
+  availableAt       DateTime       @default(now()) @db.Timestamptz(6)
+  deliveredAt       DateTime?      @db.Timestamptz(6)
+
+  @@index([status, availableAt])
+  @@map("notification")
+}

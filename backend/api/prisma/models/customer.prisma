@@ -1,0 +1,246 @@
+enum CustomerProfileStatus {
+  ACTIVE    @map("active")
+  SUSPENDED @map("suspended")
+  DELETED   @map("deleted")
+
+  @@map("customer_profile_status")
+}
+
+enum ConsentState {
+  GRANTED   @map("granted")
+  WITHDRAWN @map("withdrawn")
+
+  @@map("consent_state")
+}
+
+enum ConsentPolicyState {
+  DRAFT   @map("draft")
+  ACTIVE  @map("active")
+  RETIRED @map("retired")
+
+  @@map("consent_policy_state")
+}
+
+enum CustomerRequestSource {
+  CUSTOMER_PORTAL  @map("customer_portal")
+  MOBILE           @map("mobile")
+  OPERATIONS_ADMIN @map("operations_admin")
+  SYSTEM_IMPORT    @map("system_import")
+
+  @@map("customer_request_source")
+}
+
+enum CustomerDataRequestType {
+  EXPORT @map("export")
+  DELETE @map("delete")
+
+  @@map("customer_data_request_type")
+}
+
+enum CustomerDataRequestStatus {
+  REQUESTED           @map("requested")
+  PROCESSING          @map("processing")
+  PARTIALLY_COMPLETED @map("partially_completed")
+  COMPLETED           @map("completed")
+  REJECTED            @map("rejected")
+
+  @@map("customer_data_request_status")
+}
+
+enum CustomerDataRequestTargetState {
+  PENDING           @map("pending")
+  PROCESSING        @map("processing")
+  COMPLETED         @map("completed")
+  RETRY_REQUIRED    @map("retry_required")
+  LEGALLY_RETAINED  @map("legally_retained")
+  PERMANENT_FAILURE @map("permanent_failure")
+
+  @@map("customer_data_request_target_state")
+}
+
+enum CustomerGarageEntryStatus {
+  ACTIVE   @map("active")
+  ARCHIVED @map("archived")
+
+  @@map("customer_garage_entry_status")
+}
+
+enum CustomerGarageEntrySource {
+  SELF_REPORTED @map("self-reported")
+  IMPORTED      @map("imported")
+
+  @@map("customer_garage_entry_source")
+}
+
+model CustomerProfile {
+  id                   String                @id @default(uuid()) @db.Uuid
+  identitySubjectId    String                @unique @db.Uuid
+  identitySubject      IdentitySubject       @relation(fields: [identitySubjectId], references: [id], onDelete: Restrict)
+  displayName          String?               @db.VarChar(120)
+  locale               String                @default("vi") @db.VarChar(8)
+  timezone             String                @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  market               String                @default("VN") @db.VarChar(8)
+  communicationEmail   Boolean               @default(false)
+  communicationSms     Boolean               @default(false)
+  communicationPush    Boolean               @default(false)
+  status               CustomerProfileStatus @default(ACTIVE)
+  version              Int                   @default(1)
+  createdAt            DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(6)
+  consents             ConsentEvent[]
+  dataRequests         CustomerDataRequest[]
+  garageEntries        CustomerGarageEntry[]
+  tripPlans            TripPlanProjection[]
+  conversationSessions ConversationSession[]
+
+  @@index([status, updatedAt])
+  @@map("customer_profile")
+}
+
+model ConsentEvent {
+  id                 String                @id @default(uuid()) @db.Uuid
+  customerProfileId  String                @db.Uuid
+  customerProfile    CustomerProfile       @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  purpose            String                @db.VarChar(100)
+  policyVersion      String                @db.VarChar(80)
+  state              ConsentState
+  source             CustomerRequestSource
+  evidenceRef        String?               @db.VarChar(255)
+  correlationId      String                @db.Uuid
+  idempotencyKeyHash String                @db.Char(64)
+  requestHash        String                @db.Char(64)
+  eventSequence      BigInt                @unique @default(autoincrement()) @map("event_sequence")
+  occurredAt         DateTime              @default(now()) @db.Timestamptz(6)
+
+  @@unique([customerProfileId, correlationId])
+  @@unique([customerProfileId, purpose, idempotencyKeyHash], map: "consent_event_idempotency_key")
+  @@index([customerProfileId, purpose, occurredAt])
+  @@map("consent_event")
+}
+
+model ConsentPolicy {
+  id                  String             @id @default(uuid()) @db.Uuid
+  purpose             String             @db.VarChar(100)
+  policyVersion       String             @db.VarChar(80)
+  state               ConsentPolicyState @default(DRAFT)
+  contentChecksum     String             @db.Char(64)
+  approvedByRef       String?            @db.VarChar(160)
+  approvalEvidenceRef String?            @db.VarChar(512)
+  approvedAt          DateTime?          @db.Timestamptz(6)
+  effectiveAt         DateTime           @db.Timestamptz(6)
+  expiresAt           DateTime?          @db.Timestamptz(6)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(6)
+
+  @@unique([purpose, policyVersion])
+  @@index([purpose, state, effectiveAt])
+  @@map("consent_policy")
+}
+
+model CustomerDataRequest {
+  id                  String                      @id @default(uuid()) @db.Uuid
+  customerProfileId   String                      @db.Uuid
+  customerProfile     CustomerProfile             @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  requestType         CustomerDataRequestType
+  status              CustomerDataRequestStatus   @default(REQUESTED)
+  source              CustomerRequestSource
+  idempotencyKeyHash  String                      @db.Char(64)
+  requestHash         String                      @db.Char(64)
+  artifactObjectRef   String?                     @db.VarChar(255)
+  rejectionCode       String?                     @db.VarChar(120)
+  correlationId       String                      @db.Uuid
+  policyRevision      String                      @default("dsar-policy-v1") @db.VarChar(80)
+  targetSetRevision   String                      @default("dsar-targets-v2") @db.VarChar(80)
+  version             Int                         @default(1)
+  requestedAt         DateTime                    @default(now()) @db.Timestamptz(6)
+  processingAt        DateTime?                   @db.Timestamptz(6)
+  completedAt         DateTime?                   @db.Timestamptz(6)
+  finalizedAt         DateTime?                   @db.Timestamptz(6)
+  nextReconcileAt     DateTime?                   @db.Timestamptz(6)
+  executionDeadlineAt DateTime?                   @db.Timestamptz(6)
+  retentionUntil      DateTime?                   @db.Timestamptz(6)
+  targets             CustomerDataRequestTarget[]
+  events              CustomerDataRequestEvent[]
+
+  @@unique([customerProfileId, requestType, idempotencyKeyHash], map: "customer_data_request_idempotency_key")
+  @@index([customerProfileId, requestedAt])
+  @@index([correlationId])
+  @@index([status, requestedAt])
+  @@map("customer_data_request")
+}
+
+model CustomerDataRequestTarget {
+  id                    String                         @id @default(uuid()) @db.Uuid
+  requestId             String                         @db.Uuid
+  request               CustomerDataRequest            @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  targetKey             String                         @db.VarChar(80)
+  targetVersion         String                         @db.VarChar(40)
+  phase                 Int
+  state                 CustomerDataRequestTargetState @default(PENDING)
+  attemptCount          Int                            @default(0)
+  maxAttempts           Int                            @default(5)
+  availableAt           DateTime                       @default(now()) @db.Timestamptz(6)
+  claimOwner            String?                        @db.VarChar(120)
+  leaseExpiresAt        DateTime?                      @db.Timestamptz(6)
+  fencingToken          BigInt                         @default(0)
+  lastErrorCode         String?                        @db.VarChar(120)
+  lastAttemptAt         DateTime?                      @db.Timestamptz(6)
+  evidenceCode          String?                        @db.VarChar(120)
+  evidenceHash          String?                        @db.Char(64)
+  artifactObjectRef     String?                        @db.VarChar(255)
+  completedAt           DateTime?                      @db.Timestamptz(6)
+  legalHoldAuthorityRef String?                        @db.VarChar(160)
+  legalHoldPurpose      String?                        @db.VarChar(240)
+  legalHoldEvidenceRef  String?                        @db.VarChar(255)
+  legalHoldEffectiveAt  DateTime?                      @db.Timestamptz(6)
+  legalHoldExpiresAt    DateTime?                      @db.Timestamptz(6)
+  version               Int                            @default(1)
+  createdAt             DateTime                       @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                       @updatedAt @db.Timestamptz(6)
+  events                CustomerDataRequestEvent[]
+
+  @@unique([requestId, targetKey])
+  @@index([state, availableAt, leaseExpiresAt], map: "customer_data_request_target_due_idx")
+  @@index([requestId, phase, state], map: "customer_data_request_target_request_phase_state_idx")
+  @@map("customer_data_request_target")
+}
+
+model CustomerDataRequestEvent {
+  id            String                     @id @default(uuid()) @db.Uuid
+  requestId     String                     @db.Uuid
+  request       CustomerDataRequest        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  targetId      String?                    @db.Uuid
+  target        CustomerDataRequestTarget? @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  eventType     String                     @db.VarChar(100)
+  outcomeCode   String                     @db.VarChar(120)
+  evidenceHash  String?                    @db.Char(64)
+  correlationId String                     @db.Uuid
+  eventSequence BigInt                     @unique @default(autoincrement()) @map("event_sequence")
+  occurredAt    DateTime                   @default(now()) @db.Timestamptz(6)
+
+  @@index([requestId, eventSequence], map: "customer_data_request_event_request_sequence_idx")
+  @@index([targetId, eventSequence], map: "customer_data_request_event_target_sequence_idx")
+  @@map("customer_data_request_event")
+}
+
+model CustomerGarageEntry {
+  id                       String                    @id @default(uuid()) @db.Uuid
+  customerProfileId        String                    @db.Uuid
+  customerProfile          CustomerProfile           @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+  claimedVehicleVariantId  String                    @map("vehicleVariantId") @db.Uuid
+  claimedVehicleVariant    VehicleVariant            @relation("GarageVehicleVariant", fields: [claimedVehicleVariantId], references: [id], onDelete: Restrict)
+  nickname                 String?                   @db.VarChar(80)
+  isPrimary                Boolean                   @default(false)
+  status                   CustomerGarageEntryStatus @default(ACTIVE)
+  source                   CustomerGarageEntrySource @default(SELF_REPORTED)
+  createIdempotencyKeyHash String                    @db.Char(64)
+  createRequestHash        String                    @db.Char(64)
+  version                  Int                       @default(1)
+  createdAt                DateTime                  @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime                  @updatedAt @db.Timestamptz(6)
+
+  @@unique([customerProfileId, createIdempotencyKeyHash], map: "customer_garage_entry_create_idempotency_key")
+  @@index([customerProfileId, status, updatedAt], map: "customer_garage_entry_customer_status_updated_idx")
+  @@index([claimedVehicleVariantId])
+  @@map("customer_vehicle_reference")
+}

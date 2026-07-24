@@ -1,0 +1,29 @@
+model Lead {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerRef   String?  @db.Uuid
+  type          String   @db.VarChar(40)
+  status        String   @db.VarChar(40)
+  market        String   @db.VarChar(16)
+  payload       Json
+  correlationId String   @db.Uuid
+  externalRef   String?  @db.VarChar(160)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@map("lead")
+}
+
+model QuoteProjection {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerRef      String?  @db.Uuid
+  vehicleVariantId String   @db.Uuid
+  status           String   @db.VarChar(40)
+  totals           Json
+  sourceRevisions  Json
+  expiresAt        DateTime @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([customerRef, createdAt])
+  @@map("quote_projection")
+}

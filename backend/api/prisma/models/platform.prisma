@@ -1,0 +1,115 @@
+enum DeliveryStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum SourceApprovalState {
+  PENDING  @map("pending")
+  APPROVED @map("approved")
+  REJECTED @map("rejected")
+  RETIRED  @map("retired")
+
+  @@map("source_approval_state")
+}
+
+enum DataClassification {
+  PUBLIC       @map("public")
+  INTERNAL     @map("internal")
+  CONFIDENTIAL @map("confidential")
+  RESTRICTED   @map("restricted")
+
+  @@map("data_classification")
+}
+
+model SourceRevision {
+  id                     String                         @id @default(uuid()) @db.Uuid
+  source                 String                         @db.VarChar(80)
+  revision               String                         @db.VarChar(160)
+  checksum               String                         @db.Char(64)
+  ownerRef               String                         @default("unassigned") @db.VarChar(160)
+  provenanceUri          String                         @default("urn:vfbiz:unverified") @db.VarChar(1024)
+  licenseId              String                         @default("UNVERIFIED") @db.VarChar(120)
+  classification         DataClassification             @default(INTERNAL)
+  permittedPurposes      String[]                       @default([])
+  approvalState          SourceApprovalState            @default(PENDING)
+  submittedByRef         String                         @default("unassigned") @db.VarChar(160)
+  approvedByRef          String?                        @db.VarChar(160)
+  approvalEvidenceRef    String?                        @db.VarChar(512)
+  approvedAt             DateTime?                      @db.Timestamptz(6)
+  freshnessTtlSeconds    Int                            @default(0)
+  observedAt             DateTime                       @default(now()) @db.Timestamptz(6)
+  ingestedAt             DateTime                       @default(now()) @db.Timestamptz(6)
+  effectiveAt            DateTime                       @db.Timestamptz(6)
+  expiresAt              DateTime?                      @db.Timestamptz(6)
+  retiredAt              DateTime?                      @db.Timestamptz(6)
+  createdAt              DateTime                       @default(now()) @db.Timestamptz(6)
+  vehicleCatalogReleases VehicleCatalogRelease[]        @relation("VehicleCatalogReleaseSource")
+  vehicleFactProvenance  VehicleFactProvenanceBinding[] @relation("VehicleFactProvenanceSource")
+  commercialReleases     CommercialDataRelease[]        @relation("CommercialDataReleaseSource")
+  priceOffers            PriceOffer[]                   @relation("PriceOfferSource")
+  promotions             Promotion[]                    @relation("PromotionSource")
+  inventoryObservations  InventoryObservation[]         @relation("InventoryObservationSource")
+  vehicleEnergyProfiles  VehicleEnergyProfile[]         @relation("VehicleEnergySource")
+  chargingStations       ChargingStation[]              @relation("ChargingStationSource")
+  chargingTariffs        ChargingTariff[]               @relation("ChargingTariffSource")
+
+  @@unique([source, revision])
+  @@index([source, approvalState, effectiveAt])
+  @@index([classification, expiresAt])
+  @@map("source_revision")
+}
+
+model IdempotencyRecord {
+  id             String         @id @default(uuid()) @db.Uuid
+  namespace      String         @db.VarChar(80)
+  keyHash        String         @db.Char(64)
+  requestHash    String         @db.Char(64)
+  status         DeliveryStatus @default(pending)
+  responseStatus Int?
+  responseBody   Json?
+  expiresAt      DateTime       @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+
+  @@unique([namespace, keyHash])
+  @@index([expiresAt])
+  @@map("idempotency_record")
+}
+
+model OutboxEvent {
+  id            String         @id @default(uuid()) @db.Uuid
+  aggregateType String         @db.VarChar(100)
+  aggregateId   String         @db.VarChar(100)
+  eventType     String         @db.VarChar(160)
+  eventVersion  Int
+  payload       Json
+  correlationId String         @db.Uuid
+  status        DeliveryStatus @default(pending)
+  availableAt   DateTime       @default(now()) @db.Timestamptz(6)
+  publishedAt   DateTime?      @db.Timestamptz(6)
+  attempts      Int            @default(0)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_event")
+}
+
+model AuditEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  actorType     String   @db.VarChar(40)
+  actorRef      String?  @db.VarChar(160)
+  action        String   @db.VarChar(160)
+  resourceType  String   @db.VarChar(100)
+  resourceId    String?  @db.VarChar(160)
+  outcome       String   @db.VarChar(40)
+  metadata      Json
+  correlationId String   @db.Uuid
+  occurredAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([resourceType, resourceId, occurredAt])
+  @@index([correlationId])
+  @@map("audit_event")
+}

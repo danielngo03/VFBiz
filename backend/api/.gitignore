@@ -1,0 +1,4 @@
+.env
+coverage/
+dist/
+src/generated/
