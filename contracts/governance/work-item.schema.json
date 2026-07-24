@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/work-item/v2",
+  "title": "VFBiz Git-native WorkItemV2 frontmatter",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "mode",
+    "priority",
+    "owner_team",
+    "accountable_role",
+    "primary_workspace",
+    "affected_workspaces",
+    "allowed_paths",
+    "depends_on",
+    "controlled_signals",
+    "exclusive_resources",
+    "required_checks",
+    "revision",
+    "review_date"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^VFBIZ-[0-9]{4}$" },
+    "title": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": [
+        "proposed",
+        "ready",
+        "active",
+        "review",
+        "blocked",
+        "done",
+        "cancelled"
+      ]
+    },
+    "mode": { "enum": ["bounded", "controlled", "discovery", "parallel"] },
+    "priority": { "enum": ["P0", "P1", "P2", "P3"] },
+    "owner_team": { "type": "string", "minLength": 1 },
+    "accountable_role": { "type": "string", "minLength": 1 },
+    "primary_workspace": { "type": "string", "minLength": 1 },
+    "affected_workspaces": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "allowed_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^VFBIZ-[0-9]{4}$" },
+      "uniqueItems": true
+    },
+    "controlled_signals": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "exclusive_resources": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "required_checks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "plan": { "type": "string" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "review_date": { "type": "string", "format": "date" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

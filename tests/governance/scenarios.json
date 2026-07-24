@@ -1,0 +1,1694 @@
+{
+  "version": 4,
+  "providers": ["codex", "claude", "gemini", "generic"],
+  "scenarios": [
+    {
+      "id": "drupal-style-fast",
+      "input": {
+        "request": "Điều chỉnh màu cho chatbot widget Drupal",
+        "paths": [
+          "drupal/web/modules/custom/vfbiz_ai_client/components/ai-client-entry/ai-client-entry.css"
+        ],
+        "presentationOnly": true
+      },
+      "expected": {
+        "mode": "fast",
+        "workspaces": ["drupal"],
+        "claimRequired": false,
+        "maxDocs": 0,
+        "skills": [],
+        "ownerTeam": "cms-experience",
+        "department": "web-experience"
+      }
+    },
+    {
+      "id": "api-bounded-capability",
+      "input": {
+        "request": "Bổ sung quy tắc purge trip plan nội bộ không đổi contract",
+        "paths": [
+          "backend/api/src/modules/mobility/application/services/purge-expired-trip-plans.service.ts"
+        ],
+        "behaviorChange": true
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["api"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "mobility-platform",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "api-auth-controlled",
+      "input": {
+        "request": "Thay đổi authorization cho customer session",
+        "paths": ["backend/api/src/platform/security/authentication.guard.ts"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["security-owner"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "drupal-chat-widget-client",
+      "input": {
+        "request": "Cập nhật chatbot widget chỉ ở lớp trình bày Drupal",
+        "paths": [
+          "drupal/web/modules/custom/vfbiz_ai_client/components/ai-client-entry/ai-client-entry.twig"
+        ]
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["drupal"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "cms-experience",
+        "department": "web-experience",
+        "excludedSignals": ["ai-dataset", "ai-retrieval", "ai-tool"]
+      }
+    },
+    {
+      "id": "ai-dataset-controlled",
+      "input": {
+        "request": "Onboard dataset RAG có embedding và provenance",
+        "paths": ["backend/ai/app/modules/knowledge/application/ports.py"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["onboard-dataset", "review-change"],
+        "resources": ["ai-dataset-registry"],
+        "authorities": ["data-owner", "legal-owner"],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "mobile-document-fast",
+      "input": {
+        "request": "Sửa một lỗi chính tả trong hướng dẫn mobile",
+        "paths": ["mobile/README.md"],
+        "presentationOnly": true
+      },
+      "expected": {
+        "mode": "fast",
+        "workspaces": ["mobile"],
+        "claimRequired": false,
+        "maxDocs": 0,
+        "skills": [],
+        "ownerTeam": "mobile-experience",
+        "department": "client-experience"
+      }
+    },
+    {
+      "id": "cross-system-contract",
+      "input": {
+        "request": "Mở rộng public API contract và sinh lại TypeScript SDK",
+        "paths": [
+          "contracts/openapi/public-v1.yaml",
+          "backend/api/src/platform/openapi/openapi.ts",
+          "packages/api-client/src/generated.ts"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api", "root"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "resources": ["public-contract"],
+        "authorities": ["architect"],
+        "ownerTeam": "architecture-integration",
+        "department": "architecture-risk"
+      }
+    },
+    {
+      "id": "provider-handoff-resume",
+      "input": {
+        "request": "Tiếp tục API từ checkpoint sau khi đổi provider",
+        "paths": ["backend/api/README.md"],
+        "stage": "resume"
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["api"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["handoff-context"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "unknown-provider-discovery",
+      "input": {
+        "request": "Khảo sát provider bản đồ chưa có SLA",
+        "paths": ["backend/api/src/modules/mobility/mobility.module.ts"],
+        "signals": ["unknown-provider"]
+      },
+      "expected": {
+        "mode": "discovery",
+        "workspaces": ["api"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["triage-change", "plan-change"],
+        "authorities": ["product-owner"],
+        "ownerTeam": "mobility-platform",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "delegated-bounded-claim",
+      "input": {
+        "request": "Worker triển khai capability engagement bounded",
+        "paths": [
+          "backend/api/src/modules/engagement/application/services/create-conversation-session.service.ts"
+        ],
+        "delegated": true
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "customer-engagement",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "database-migration-controlled",
+      "input": {
+        "request": "Thay đổi database schema bằng zero-downtime migration",
+        "paths": ["backend/api/prisma/models/customer.prisma"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "resources": ["database-migration"],
+        "authorities": ["architect", "release-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "customer-portal-data-controlled",
+      "input": {
+        "request": "Hiển thị customer profile và garage của subject hiện tại",
+        "paths": [
+          "apps/customer-portal/src/platform/api/customer-account/profile-gateway.ts"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["customer-portal"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["privacy-owner"],
+        "ownerTeam": "customer-web-experience",
+        "department": "client-experience"
+      }
+    },
+    {
+      "id": "api-customer-profile-controlled",
+      "input": {
+        "request": "Triển khai GET và PATCH hồ sơ khách hàng hiện tại tại /me",
+        "paths": [
+          "backend/api/src/modules/customer/presentation/http/customer-profile.controller.ts"
+        ]
+      },
+      "futurePaths": [
+        "backend/api/src/modules/customer/presentation/http/customer-profile.controller.ts"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["privacy-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "documents": [
+          "api-identity-and-account",
+          "customer-account-and-vehicle"
+        ],
+        "excludedDocuments": [
+          "customer-chatbot-v6-architecture",
+          "ai-dataset-engineering"
+        ]
+      }
+    },
+    {
+      "id": "api-customer-garage-controlled",
+      "input": {
+        "request": "Thêm Customer Garage entry tự khai báo cho subject hiện tại",
+        "paths": [
+          "backend/api/src/modules/customer/presentation/customer-garage.controller.ts"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["privacy-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "documents": [
+          "api-vehicle-catalog-and-garage",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": [
+          "customer-chatbot-v6-architecture",
+          "ai-conversation-graph"
+        ]
+      }
+    },
+    {
+      "id": "api-customer-garage-work-item-context",
+      "input": {
+        "request": "Hoàn thiện Customer Garage, migration và public contract",
+        "work": "VFBIZ-0016",
+        "paths": [
+          "backend/api/src/modules/customer",
+          "backend/api/prisma/models/customer.prisma",
+          "backend/api/prisma/migrations",
+          "contracts/openapi/public-v1.yaml",
+          "packages/api-client/src/generated.ts"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api", "root"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "documents": [
+          "api-vehicle-catalog-and-garage",
+          "api-data-model",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": [
+          "api-conversation-runtime",
+          "api-trip-engine",
+          "customer-chatbot-v6-architecture"
+        ]
+      }
+    },
+    {
+      "id": "api-vehicle-catalog-bounded",
+      "input": {
+        "request": "Thêm query đọc Vehicle Catalog đã publish theo market",
+        "paths": [
+          "backend/api/src/modules/product/application/queries/list-vehicle-models.query.ts"
+        ]
+      },
+      "futurePaths": [
+        "backend/api/src/modules/product/application/queries/list-vehicle-models.query.ts"
+      ],
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["api"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "documents": ["api-vehicle-catalog-and-garage"],
+        "excludedDocuments": [
+          "customer-chatbot-v6-architecture",
+          "ai-inference-serving"
+        ]
+      }
+    },
+    {
+      "id": "api-vehicle-ownership-controlled",
+      "input": {
+        "request": "Thêm ownership verification bằng VIN và DMS adapter",
+        "paths": [
+          "backend/api/src/modules/ownership/application/commands/request-ownership-verification.ts"
+        ]
+      },
+      "futurePaths": [
+        "backend/api/src/modules/ownership/application/commands/request-ownership-verification.ts"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["data-owner", "privacy-owner", "security-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "documents": [
+          "api-vehicle-catalog-and-garage",
+          "identity-customer-vehicle-foundation"
+        ]
+      }
+    },
+    {
+      "id": "workforce-authorization-controlled",
+      "input": {
+        "request": "Thay đổi dynamic authorization trong Workforce Portal",
+        "paths": [
+          "apps/workforce-portal/src/features/authorization/permission-matrix.tsx"
+        ]
+      },
+      "futurePaths": [
+        "apps/workforce-portal/src/features/authorization/permission-matrix.tsx"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["workforce-portal"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["security-owner"],
+        "ownerTeam": "workforce-experience",
+        "department": "workforce-applications",
+        "signals": ["authorization", "workforce-authorization"],
+        "coordinationTeams": ["api-foundation"]
+      }
+    },
+    {
+      "id": "workforce-capability-api-controlled",
+      "input": {
+        "request": "Bổ sung workforce entitlement và role assignment động",
+        "paths": [
+          "backend/api/src/modules/access/application/authorization-decision.service.ts"
+        ]
+      },
+      "futurePaths": [
+        "backend/api/src/modules/access/application/authorization-decision.service.ts"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["security-owner"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform",
+        "signals": ["authorization", "workforce-authorization"],
+        "coordinationTeams": ["workforce-experience"]
+      }
+    },
+    {
+      "id": "ai-tool-controlled",
+      "input": {
+        "request": "Đăng ký AI tool mới với schema và scope",
+        "paths": ["backend/ai/app/modules/tooling/__init__.py"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["register-ai-tool", "review-change"],
+        "authorities": ["data-owner", "security-owner"],
+        "ownerTeam": "ai-assistant-orchestration",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "ai-evaluation-review",
+      "input": {
+        "request": "Review AI evaluation và release gate",
+        "paths": [
+          "backend/ai/app/modules/evaluation/application/release_gate.py"
+        ],
+        "stage": "review"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "authorities": ["data-owner"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "api-composition-owner",
+      "input": {
+        "request": "Điều chỉnh composition root của NestJS",
+        "paths": ["backend/api/src/app.module.ts"]
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["api"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "api-shared-migration-owner",
+      "input": {
+        "request": "Review database migration dùng chung",
+        "paths": [
+          "backend/api/prisma/migrations/20260722193000_staging_domain_integrity/migration.sql"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "resources": ["database-migration"],
+        "authorities": ["architect", "release-owner"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "mobility-schema-owner",
+      "input": {
+        "request": "Thay đổi schema energy profile",
+        "paths": ["backend/api/prisma/models/mobility.prisma"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "resources": ["database-migration"],
+        "authorities": ["architect"],
+        "ownerTeam": "mobility-platform",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "ai-platform-owner",
+      "input": {
+        "request": "Cập nhật provider-neutral model adapter",
+        "paths": ["backend/ai/app/infrastructure/model_providers/__init__.py"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "ownerTeam": "ai-model-platform",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "trip-release-review",
+      "input": {
+        "request": "Validate Trip Planner staging release",
+        "paths": [
+          "backend/api/src/modules/mobility/application/services/persist-trip-plan.service.ts"
+        ],
+        "stage": "review"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-trip-release", "review-change"],
+        "authorities": ["release-owner"],
+        "ownerTeam": "mobility-platform",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "ai-release-explicit-signal",
+      "input": {
+        "request": "Xác minh release candidate theo manifest đã pin",
+        "paths": [
+          "backend/ai/app/modules/evaluation/application/release_gate.py"
+        ],
+        "stage": "review",
+        "signals": ["ai-release"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "resources": [],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "ai-governance-doc-no-registry-lease",
+      "input": {
+        "request": "Làm rõ câu chữ của tài liệu knowledge lifecycle",
+        "paths": ["backend/ai/docs/knowledge-data-governance.md"]
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["ai"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "resources": [],
+        "ownerTeam": "data-governance",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "parallel-api-ai",
+      "input": {
+        "request": "Phối hợp hai lane độc lập để chuẩn hóa boundary",
+        "paths": ["backend/api/README.md", "backend/ai/README.md"],
+        "mode": "parallel"
+      },
+      "expected": {
+        "mode": "parallel",
+        "workspaces": ["ai", "api"],
+        "claimRequired": true,
+        "maxDocs": 8,
+        "skills": ["plan-change", "deliver-change"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform"
+      }
+    },
+    {
+      "id": "drupal-config-exclusive",
+      "input": {
+        "request": "Cập nhật Drupal config sync",
+        "paths": ["drupal/config/sync/user.settings.yml"],
+        "delegated": true
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["drupal"],
+        "claimRequired": true,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "resources": ["drupal-config"],
+        "ownerTeam": "cms-experience",
+        "department": "web-experience"
+      }
+    },
+    {
+      "id": "async-support-handoff-controlled",
+      "input": {
+        "request": "Bổ sung async support handoff khi khách mất WebSocket",
+        "paths": ["backend/api/src/modules/engagement/engagement.module.ts"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["support-handoff"],
+        "authorities": ["privacy-owner", "security-owner"],
+        "ownerTeam": "customer-engagement",
+        "department": "digital-platform",
+        "instructions": ["backend/api/src/modules/engagement/AGENTS.md"],
+        "documents": [
+          "api-conversation-runtime",
+          "customer-chatbot-v6-architecture"
+        ],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "stopped": true
+      }
+    },
+    {
+      "id": "multimodal-vision-cross-workspace",
+      "input": {
+        "request": "Thêm Vision upload có RBAC và chống OCR prompt injection",
+        "paths": [
+          "backend/api/src/modules/engagement/engagement.module.ts",
+          "backend/ai/app/modules/assistant/__init__.py"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai", "api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["ai-vision", "multimodal-injection"],
+        "authorities": ["privacy-owner", "security-owner"],
+        "ownerTeam": "customer-engagement",
+        "department": "digital-platform",
+        "coordinationTeams": ["ai-assistant-orchestration", "ai-assurance"],
+        "instructions": [
+          "backend/api/src/modules/engagement/AGENTS.md",
+          "backend/ai/app/modules/assistant/AGENTS.md"
+        ],
+        "documents": ["customer-chatbot-v6-architecture", "ai-safety-abuse"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "dataset-source-without-rights-stops",
+      "input": {
+        "request": "Tải public dataset candidate chưa có quyền sử dụng",
+        "paths": ["backend/ai/dataset-specs/public-source-candidates.json"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["onboard-dataset", "review-change"],
+        "signals": ["dataset-source", "license-unverified"],
+        "resources": ["ai-source-registry"],
+        "authorities": ["data-owner", "legal-owner"],
+        "ownerTeam": "data-governance",
+        "department": "ai-data",
+        "roles": ["orchestrator", "dataset-source-researcher", "risk-reviewer"],
+        "reviewers": ["risk-reviewer"],
+        "stopped": true
+      }
+    },
+    {
+      "id": "synthetic-dataset-shard",
+      "input": {
+        "request": "Sinh synthetic dataset candidate theo generation job đã duyệt",
+        "paths": [
+          "backend/ai/.agents/skills/generate-synthetic-dataset/SKILL.md"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["generate-synthetic-dataset", "review-change"],
+        "signals": ["synthetic-dataset"],
+        "resources": [],
+        "authorities": ["data-owner"],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "roles": ["orchestrator", "synthetic-dataset-builder", "risk-reviewer"],
+        "reviewers": ["dataset-quality-reviewer", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "dataset-release-independent-review",
+      "input": {
+        "request": "Review dataset release manifest trước khi phát hành dataset",
+        "paths": ["contracts/ai/dataset-manifest.schema.json"],
+        "stage": "review"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["root"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "signals": ["dataset-release"],
+        "resources": ["ai-dataset-registry"],
+        "authorities": [
+          "data-owner",
+          "legal-owner",
+          "privacy-owner",
+          "release-owner"
+        ],
+        "ownerTeam": "data-governance",
+        "department": "ai-data",
+        "roles": ["orchestrator", "dataset-quality-reviewer", "risk-reviewer"],
+        "reviewers": ["dataset-quality-reviewer", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "local-inference-no-dataset-context",
+      "input": {
+        "request": "Benchmark vLLM local inference và KV cache",
+        "paths": ["backend/ai/app/modules/inference/__init__.py"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["local-inference"],
+        "authorities": ["release-owner", "security-owner"],
+        "ownerTeam": "ai-model-platform",
+        "department": "ai-data",
+        "coordinationTeams": ["reliability-engineering"],
+        "instructions": ["backend/ai/app/modules/inference/AGENTS.md"],
+        "documents": ["ai-inference-serving"],
+        "excludedDocuments": [
+          "ai-dataset-engineering",
+          "ai-knowledge-data-governance"
+        ]
+      }
+    },
+    {
+      "id": "knowledge-revision-barrier",
+      "input": {
+        "request": "Triển khai atomic activation cho knowledge revision từ Drupal webhook",
+        "paths": ["backend/ai/app/modules/knowledge/application/ports.py"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["knowledge-revision"],
+        "resources": ["ai-knowledge-release-registry"],
+        "authorities": ["data-owner", "release-owner"],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-assurance"],
+        "instructions": ["backend/ai/app/modules/knowledge/AGENTS.md"],
+        "documents": [
+          "ai-knowledge-release",
+          "customer-chatbot-v6-architecture"
+        ]
+      }
+    },
+    {
+      "id": "chatbot-graph-excludes-trip",
+      "input": {
+        "request": "Cập nhật LangGraph Supervisor cho Customer Chatbot",
+        "paths": [
+          "backend/ai/app/modules/assistant/application/answer_service.py"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["ai-assistant", "customer-conversation"],
+        "authorities": ["data-owner", "privacy-owner", "security-owner"],
+        "ownerTeam": "ai-assistant-orchestration",
+        "department": "ai-data",
+        "coordinationTeams": ["customer-engagement"],
+        "instructions": ["backend/ai/app/modules/assistant/AGENTS.md"],
+        "documents": ["ai-conversation-graph", "customer-chatbot-product"],
+        "excludedDocuments": ["staging-mvp", "staging-mvp-boundaries"]
+      }
+    },
+    {
+      "id": "conversation-runtime-work-item",
+      "input": {
+        "request": "Triển khai application core cho Conversation Runtime",
+        "work": "VFBIZ-0017",
+        "paths": ["backend/api/src/modules/engagement/application"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "customer-conversation",
+          "pii",
+          "session-concurrency",
+          "support-handoff"
+        ],
+        "resources": [],
+        "authorities": ["engineering-lead", "privacy-owner", "security-owner"],
+        "ownerTeam": "customer-engagement",
+        "department": "digital-platform",
+        "instructions": ["backend/api/src/modules/engagement/AGENTS.md"],
+        "documents": ["api-conversation-runtime", "customer-chatbot-product"],
+        "excludedDocuments": [
+          "ai-conversation-graph",
+          "ai-dataset-engineering",
+          "api-trip-engine"
+        ],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "langgraph-work-item",
+      "input": {
+        "request": "Triển khai typed LangGraph Conversation Graph",
+        "work": "VFBIZ-0021",
+        "paths": ["backend/ai/app/modules/assistant"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-assistant",
+          "customer-conversation",
+          "pii",
+          "session-concurrency"
+        ],
+        "resources": [],
+        "authorities": [
+          "data-owner",
+          "engineering-lead",
+          "privacy-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "ai-assistant-orchestration",
+        "department": "ai-data",
+        "coordinationTeams": ["customer-engagement"],
+        "instructions": ["backend/ai/app/modules/assistant/AGENTS.md"],
+        "documents": [
+          "ai-conversation-graph",
+          "customer-chatbot-v6-architecture"
+        ],
+        "excludedDocuments": [
+          "ai-dataset-engineering",
+          "ai-knowledge-ingestion",
+          "api-trip-engine"
+        ],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "knowledge-release-work-item",
+      "input": {
+        "request": "Triển khai control plane cho Knowledge Release",
+        "work": "VFBIZ-0022",
+        "paths": ["backend/ai/app/modules/knowledge"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-retrieval",
+          "data-governance",
+          "knowledge-revision",
+          "migration",
+          "pii",
+          "schema"
+        ],
+        "resources": ["ai-knowledge-release-registry", "database-migration"],
+        "authorities": [
+          "architect",
+          "data-owner",
+          "legal-owner",
+          "privacy-owner",
+          "release-owner"
+        ],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-assurance", "data-governance"],
+        "instructions": ["backend/ai/app/modules/knowledge/AGENTS.md"],
+        "documents": ["ai-knowledge-data-governance", "ai-knowledge-release"],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "knowledge-ingestion-work-item",
+      "input": {
+        "request": "Ingest approved knowledge source vào candidate namespace",
+        "work": "VFBIZ-0023",
+        "paths": ["backend/ai/app/modules/knowledge"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "onboard-dataset"],
+        "signals": [
+          "ai-retrieval",
+          "data-governance",
+          "knowledge-ingestion",
+          "license",
+          "pii"
+        ],
+        "resources": [],
+        "authorities": ["data-owner", "legal-owner", "privacy-owner"],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "coordinationTeams": ["data-governance"],
+        "instructions": ["backend/ai/app/modules/knowledge/AGENTS.md"],
+        "documents": [
+          "ai-knowledge-data-governance",
+          "ai-knowledge-ingestion",
+          "ai-knowledge-release"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "api-ai-conversation-transport-work-item",
+      "input": {
+        "request": "Tích hợp private transport từ Conversation Runtime tới FastAPI",
+        "work": "VFBIZ-0024",
+        "paths": ["backend/api/src/modules/engagement/infrastructure"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-assistant",
+          "authorization",
+          "customer-conversation",
+          "pii",
+          "session-concurrency"
+        ],
+        "resources": [],
+        "authorities": [
+          "data-owner",
+          "engineering-lead",
+          "privacy-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "customer-engagement",
+        "department": "digital-platform",
+        "coordinationTeams": ["ai-assistant-orchestration"],
+        "instructions": ["backend/api/src/modules/engagement/AGENTS.md"],
+        "documents": [
+          "api-ai-gateway-tools",
+          "api-architecture",
+          "api-conversation-runtime",
+          "customer-chatbot-product",
+          "customer-chatbot-v6-architecture"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "active-knowledge-release-work-item",
+      "input": {
+        "request": "Kích hoạt retriever trên Knowledge Release đã được phê duyệt",
+        "work": "VFBIZ-0025",
+        "paths": ["backend/ai/app/modules/knowledge"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-release",
+          "ai-retrieval",
+          "data-governance",
+          "knowledge-revision",
+          "license",
+          "pii"
+        ],
+        "resources": ["ai-knowledge-release-registry"],
+        "authorities": [
+          "data-owner",
+          "legal-owner",
+          "privacy-owner",
+          "release-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-assurance", "data-governance"],
+        "instructions": ["backend/ai/app/modules/knowledge/AGENTS.md"],
+        "documents": [
+          "adr-0002-customer-chatbot-v6",
+          "ai-evaluation-release",
+          "ai-knowledge-data-governance",
+          "ai-knowledge-ingestion",
+          "ai-knowledge-release",
+          "customer-chatbot-v6-architecture"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "chatbot-staging-integration-work-item",
+      "input": {
+        "request": "Chứng minh Customer Chatbot staging đi xuyên API, AI và active knowledge",
+        "work": "VFBIZ-0026",
+        "paths": ["tests/e2e"]
+      },
+      "futurePaths": ["tests/e2e"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["root"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-assistant",
+          "ai-release",
+          "ai-retrieval",
+          "architecture",
+          "customer-conversation",
+          "pii"
+        ],
+        "resources": [],
+        "authorities": [
+          "architect",
+          "data-owner",
+          "privacy-owner",
+          "release-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "architecture-integration",
+        "department": "architecture-risk",
+        "coordinationTeams": [
+          "ai-assistant-orchestration",
+          "ai-assurance",
+          "ai-knowledge-engineering",
+          "customer-engagement"
+        ],
+        "instructions": ["AGENTS.md"],
+        "documents": [
+          "adr-0002-customer-chatbot-v6",
+          "customer-chatbot-product",
+          "customer-chatbot-v6-architecture",
+          "system-context"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "oidc-scope-policy-work-item",
+      "input": {
+        "request": "Thêm OIDC scope guard cho API Platform",
+        "work": "VFBIZ-0027",
+        "paths": ["backend/api/src/platform/security"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["authentication", "authorization", "customer-data"],
+        "resources": [],
+        "authorities": ["privacy-owner", "security-owner"],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform",
+        "coordinationTeams": [],
+        "instructions": ["backend/api/AGENTS.md"],
+        "documents": ["api-architecture", "customer-account-and-vehicle"],
+        "excludedDocuments": [
+          "ai-conversation-graph",
+          "ai-dataset-engineering",
+          "api-trip-engine"
+        ],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "consent-atomicity-work-item",
+      "input": {
+        "request": "Bảo đảm consent batch atomic bằng PostgreSQL integration test",
+        "work": "VFBIZ-0031",
+        "paths": ["backend/api/src/modules/customer"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["consent", "customer-data", "pii"],
+        "resources": ["database-migration"],
+        "authorities": ["privacy-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "coordinationTeams": [],
+        "instructions": [
+          "backend/api/AGENTS.md",
+          "backend/api/src/modules/customer/AGENTS.md"
+        ],
+        "documents": [
+          "api-identity-and-account",
+          "customer-account-and-vehicle",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "vehicle-catalog-release-work-item",
+      "input": {
+        "request": "Triển khai Vehicle Catalog governed release và atomic activation",
+        "work": "VFBIZ-0033",
+        "paths": ["backend/api/src/modules/product"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "signals": ["data-governance", "migration", "vehicle-catalog"],
+        "resources": ["database-migration"],
+        "authorities": ["architect", "data-owner", "release-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "coordinationTeams": ["data-governance"],
+        "instructions": [
+          "backend/api/AGENTS.md",
+          "backend/api/src/modules/product/AGENTS.md"
+        ],
+        "documents": [
+          "api-data-model",
+          "api-vehicle-catalog-and-garage",
+          "customer-account-and-vehicle",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "commercial-facts-work-item",
+      "input": {
+        "request": "Tạo projection giá, promotion và inventory cho chatbot tool",
+        "work": "VFBIZ-0034",
+        "paths": ["backend/api/src/modules/product"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "signals": ["data-governance", "migration", "vehicle-catalog"],
+        "resources": ["database-migration"],
+        "authorities": ["architect", "data-owner", "release-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "coordinationTeams": ["data-governance"],
+        "instructions": [
+          "backend/api/AGENTS.md",
+          "backend/api/src/modules/product/AGENTS.md"
+        ],
+        "documents": [
+          "api-data-model",
+          "api-vehicle-catalog-and-garage",
+          "customer-account-and-vehicle",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "verified-vehicle-discovery-work-item",
+      "input": {
+        "request": "Discovery Vehicle Asset và customer association từ DMS/CRM",
+        "work": "VFBIZ-0036",
+        "paths": ["docs/work/plans"]
+      },
+      "expected": {
+        "mode": "discovery",
+        "workspaces": ["root"],
+        "claimRequired": false,
+        "maxDocs": 6,
+        "skills": ["triage-change", "plan-change"],
+        "signals": ["pii", "vehicle-ownership"],
+        "resources": [],
+        "authorities": [
+          "data-owner",
+          "privacy-owner",
+          "product-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "product-management",
+        "department": "product-delivery",
+        "coordinationTeams": ["customer-product"],
+        "instructions": ["AGENTS.md"],
+        "documents": ["identity-customer-vehicle-foundation"],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": ["explorer"],
+        "reviewers": []
+      }
+    },
+    {
+      "id": "access-session-lifecycle-work-item",
+      "input": {
+        "request": "Triển khai session projection, revoke và reconciliation cho Account",
+        "work": "VFBIZ-0029",
+        "paths": ["backend/api/src/modules/access"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "signals": ["authentication", "authorization", "migration", "pii"],
+        "resources": ["database-migration"],
+        "authorities": [
+          "architect",
+          "privacy-owner",
+          "release-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform",
+        "instructions": ["backend/api/AGENTS.md"],
+        "documents": ["api-architecture", "api-data-model"],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "legacy-ownership-quarantine-work-item",
+      "input": {
+        "request": "Quarantine ownership schema cũ để không thể cấp verified ownership",
+        "work": "VFBIZ-0035",
+        "paths": ["backend/api/src/modules/ownership"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["pii", "vehicle-ownership"],
+        "resources": [],
+        "authorities": ["data-owner", "privacy-owner", "security-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "instructions": ["backend/api/AGENTS.md"],
+        "documents": ["api-vehicle-catalog-and-garage"],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "vehicle-contract-parity-work-item",
+      "input": {
+        "request": "Đồng bộ Vehicle Catalog runtime, OpenAPI và generated SDK",
+        "work": "VFBIZ-0037",
+        "paths": ["contracts/openapi"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["root"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["architecture", "public-contract", "vehicle-catalog"],
+        "resources": ["public-contract"],
+        "authorities": ["architect", "data-owner"],
+        "ownerTeam": "architecture-integration",
+        "department": "architecture-risk",
+        "coordinationTeams": ["customer-product"],
+        "instructions": ["AGENTS.md"],
+        "documents": [
+          "customer-account-and-vehicle",
+          "identity-customer-vehicle-foundation",
+          "system-context"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "vehicle-facts-tool-view-work-item",
+      "input": {
+        "request": "Tạo allowlisted Vehicle Facts view an toàn cho chatbot tool",
+        "work": "VFBIZ-0038",
+        "paths": ["backend/api/src/modules/product"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-tool",
+          "authorization",
+          "data-governance",
+          "vehicle-catalog"
+        ],
+        "resources": [],
+        "authorities": ["data-owner", "security-owner"],
+        "ownerTeam": "customer-product",
+        "department": "digital-platform",
+        "coordinationTeams": ["data-governance"],
+        "instructions": [
+          "backend/api/AGENTS.md",
+          "backend/api/src/modules/product/AGENTS.md"
+        ],
+        "documents": ["api-ai-gateway-tools", "api-vehicle-catalog-and-garage"],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "source-revision-provenance-work-item",
+      "input": {
+        "request": "Harden Source Revision và fact provenance cho Vehicle Catalog",
+        "work": "VFBIZ-0039",
+        "paths": ["backend/api/src/platform"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["api"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["evolve-backend-capability", "review-change"],
+        "signals": [
+          "data-governance",
+          "license",
+          "migration",
+          "vehicle-catalog"
+        ],
+        "resources": ["database-migration"],
+        "authorities": [
+          "architect",
+          "data-owner",
+          "legal-owner",
+          "release-owner"
+        ],
+        "ownerTeam": "api-foundation",
+        "department": "digital-platform",
+        "coordinationTeams": ["customer-product", "data-governance"],
+        "instructions": ["backend/api/AGENTS.md"],
+        "documents": [
+          "api-data-model",
+          "api-vehicle-catalog-and-garage",
+          "identity-customer-vehicle-foundation"
+        ],
+        "excludedDocuments": ["ai-dataset-engineering", "api-trip-engine"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"]
+      }
+    },
+    {
+      "id": "production-no-rollback-stop",
+      "input": {
+        "request": "Thực hiện production operation khi chưa có rollback",
+        "paths": ["infra/local/compose.yaml"],
+        "signals": ["no-rollback"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["infra"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "authorities": ["release-owner", "security-owner"],
+        "ownerTeam": "reliability-engineering",
+        "department": "platform-sre"
+      }
+    },
+    {
+      "id": "customer-login-visual-fast",
+      "input": {
+        "request": "Change the login button color and copy",
+        "paths": ["apps/customer-portal/src/app/(public)/page.tsx"],
+        "presentationOnly": true
+      },
+      "expected": {
+        "mode": "fast",
+        "workspaces": ["customer-portal"],
+        "claimRequired": false,
+        "maxDocs": 0,
+        "skills": [],
+        "signals": ["design-system"],
+        "excludedSignals": ["authentication", "customer-bff"],
+        "ownerTeam": "customer-web-experience",
+        "department": "client-experience",
+        "executionState": "ready",
+        "writerAuthorized": true
+      }
+    },
+    {
+      "id": "customer-journey-exact-heading",
+      "input": {
+        "request": "Improve the customer journey navigation",
+        "paths": ["apps/customer-portal/src/app/(account)/account/page.tsx"],
+        "behaviorChange": true
+      },
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["customer-portal"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "signals": ["customer-journey"],
+        "ownerTeam": "customer-web-experience",
+        "department": "client-experience",
+        "reviewProfiles": ["experience"],
+        "documents": ["customer-portal-experience-accessibility"],
+        "documentHeadings": {
+          "customer-portal-experience-accessibility": "## Journey states"
+        },
+        "roles": ["implementer", "reviewer-verifier"],
+        "reviewers": ["reviewer-verifier"],
+        "executionState": "ready",
+        "writerAuthorized": true
+      }
+    },
+    {
+      "id": "customer-bff-without-work-needs-decision",
+      "input": {
+        "request": "Rotate the customer refresh token",
+        "paths": [
+          "apps/customer-portal/src/platform/session/redis-token-vault.ts"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["customer-portal"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["authentication", "customer-bff"],
+        "ownerTeam": "customer-web-experience",
+        "department": "client-experience",
+        "authorities": ["security-owner"],
+        "reviewProfiles": ["security"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "keycloak-identity-theme-controlled",
+      "input": {
+        "request": "Cập nhật Keycloak theme và design token dùng cho hai realm",
+        "work": "VFBIZ-0074",
+        "paths": ["apps/identity-theme"]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["identity-theme"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "authentication",
+          "brand-rights",
+          "dependency-policy",
+          "design-system",
+          "identity-theme"
+        ],
+        "resources": ["agent-organization-registry", "dependency-lockfile"],
+        "authorities": [
+          "design-lead",
+          "identity-platform-owner",
+          "legal-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "identity-experience",
+        "department": "identity-platform",
+        "reviewProfiles": [
+          "accessibility",
+          "brand-rights",
+          "experience",
+          "security"
+        ],
+        "documents": ["ADR-0006", "VFBIZ-0074-plan"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "executionState": "ready",
+        "writerAuthorized": true
+      }
+    },
+    {
+      "id": "customer-privacy-without-work-needs-decision",
+      "input": {
+        "request": "Implement the customer privacy data-request form",
+        "paths": [
+          "apps/customer-portal/src/features/privacy/data-request-form.tsx"
+        ]
+      },
+      "futurePaths": [
+        "apps/customer-portal/src/features/privacy/data-request-form.tsx"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["customer-portal"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["customer-privacy"],
+        "ownerTeam": "customer-web-experience",
+        "department": "client-experience",
+        "authorities": ["privacy-owner"],
+        "reviewProfiles": ["privacy"],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    }
+  ]
+}

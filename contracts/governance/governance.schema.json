@@ -1,0 +1,985 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/v2",
+  "title": "VFBiz agent-governance contracts V2",
+  "$defs": {
+    "workItemKey": { "type": "string", "pattern": "^VFBIZ-[0-9]{4}$" },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "gitRevision": { "type": "string", "pattern": "^[a-f0-9]{7,64}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "repositoryPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "exitState": {
+      "enum": [
+        "completed",
+        "blocked",
+        "needs-decision",
+        "needs-coordination",
+        "scope-changed",
+        "budget-exhausted",
+        "cancelled",
+        "failed-safely"
+      ]
+    },
+    "providerIdentity": {
+      "type": "object",
+      "required": ["name", "adapter", "adapterVersion"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "model": { "type": "string" },
+        "adapter": { "enum": ["codex", "claude", "gemini", "generic"] },
+        "adapterVersion": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "sourceRevision": {
+      "type": "object",
+      "required": ["sourceId", "revision", "sha256"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "observedCheck": {
+      "type": "object",
+      "required": ["id", "status", "evidenceRef"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "command": { "type": "string" },
+        "status": { "enum": ["passed", "failed", "not-run"] },
+        "evidenceRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "classification": {
+      "type": "object",
+      "required": [
+        "risk",
+        "complexity",
+        "uncertainty",
+        "scope",
+        "mode",
+        "artifactLevel",
+        "autonomyLevel"
+      ],
+      "properties": {
+        "risk": { "enum": ["low", "medium", "high", "critical"] },
+        "complexity": { "enum": ["low", "medium", "high"] },
+        "uncertainty": { "enum": ["low", "medium", "high"] },
+        "scope": { "enum": ["local", "cross-workspace", "cross-system"] },
+        "mode": {
+          "enum": ["fast", "bounded", "controlled", "discovery", "parallel"]
+        },
+        "artifactLevel": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "autonomyLevel": { "enum": ["A", "B", "C", "D", "E"] }
+      },
+      "additionalProperties": false
+    },
+    "budgets": {
+      "type": "object",
+      "required": [
+        "maxDocs",
+        "maxQuestionRounds",
+        "maxAgents",
+        "maxSkillsPerLane",
+        "maxReviewCycles"
+      ],
+      "properties": {
+        "maxDocs": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "maxQuestionRounds": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxAgents": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "maxSkillsPerLane": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxReviewCycles": { "type": "integer", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    },
+    "costEvidence": {
+      "type": "object",
+      "required": ["source", "inputTokens", "outputTokens", "estimatedUsd"],
+      "properties": {
+        "source": { "enum": ["telemetry", "estimate", "unavailable"] },
+        "inputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "outputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "estimatedUsd": { "type": ["number", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "requestEnvelope": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "request",
+        "outcome",
+        "sponsor",
+        "classification",
+        "workspace",
+        "requiredAuthorities",
+        "requiredCapabilities",
+        "budgets"
+      ],
+      "properties": {
+        "requestId": { "$ref": "#/$defs/identifier" },
+        "request": { "type": "string", "minLength": 1 },
+        "outcome": { "type": "string", "minLength": 1 },
+        "sponsor": { "type": "string", "minLength": 1 },
+        "classification": { "$ref": "#/$defs/classification" },
+        "workspace": { "type": "string", "minLength": 1 },
+        "requiredAuthorities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "budgets": { "$ref": "#/$defs/budgets" }
+      },
+      "additionalProperties": false
+    },
+    "workClaim": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "claimId",
+        "workItemKey",
+        "runId",
+        "agentRole",
+        "runMode",
+        "provider",
+        "ownerTeam",
+        "accountableHumanRole",
+        "workspace",
+        "baseRevision",
+        "allowedPaths",
+        "leaseIds",
+        "contextKey",
+        "issuedBy",
+        "claimedAt",
+        "expiresAt",
+        "state",
+        "fencingToken"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "claimId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "predecessorRunId": { "$ref": "#/$defs/identifier" },
+        "agentRole": { "type": "string" },
+        "runMode": { "enum": ["read-only", "scoped-write"] },
+        "provider": { "$ref": "#/$defs/providerIdentity" },
+        "ownerTeam": { "$ref": "#/$defs/identifier" },
+        "accountableHumanRole": { "type": "string", "minLength": 1 },
+        "workspace": { "$ref": "#/$defs/repositoryPath" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "branch": { "type": "string" },
+        "worktree": { "type": "string" },
+        "allowedPaths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "leaseIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" },
+          "uniqueItems": true
+        },
+        "contextKey": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "issuedBy": { "type": "string", "minLength": 1 },
+        "claimedAt": { "$ref": "#/$defs/timestamp" },
+        "lastHeartbeatAt": { "$ref": "#/$defs/timestamp" },
+        "expiresAt": { "$ref": "#/$defs/timestamp" },
+        "releasedAt": { "$ref": "#/$defs/timestamp" },
+        "releaseEvidenceRef": { "type": "string" },
+        "state": {
+          "enum": [
+            "issued",
+            "active",
+            "handoff-ready",
+            "released",
+            "expired",
+            "revoked"
+          ]
+        },
+        "fencingToken": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "runMode": { "const": "scoped-write" } } },
+          "then": { "required": ["branch", "worktree"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "exclusiveResourceLease": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "leaseId",
+        "resourceClass",
+        "resourceKey",
+        "holderClaimId",
+        "holderRunId",
+        "baseRevision",
+        "issuedBy",
+        "acquiredAt",
+        "expiresAt",
+        "state",
+        "renewalCount",
+        "fencingToken"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "leaseId": { "$ref": "#/$defs/identifier" },
+        "resourceClass": {
+          "enum": [
+            "public-contract",
+            "database-migration",
+            "dependency-lockfile",
+            "drupal-config",
+            "ai-dataset-registry",
+            "custom-path"
+          ]
+        },
+        "resourceKey": { "type": "string", "minLength": 1 },
+        "resourcePath": { "$ref": "#/$defs/repositoryPath" },
+        "holderClaimId": { "$ref": "#/$defs/identifier" },
+        "holderRunId": { "$ref": "#/$defs/identifier" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "issuedBy": { "type": "string" },
+        "acquiredAt": { "$ref": "#/$defs/timestamp" },
+        "renewedAt": { "$ref": "#/$defs/timestamp" },
+        "expiresAt": { "$ref": "#/$defs/timestamp" },
+        "releasedAt": { "$ref": "#/$defs/timestamp" },
+        "releaseEvidenceRef": { "type": "string" },
+        "state": { "enum": ["active", "released", "expired", "revoked"] },
+        "renewalCount": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "fencingToken": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "resourceClass": { "const": "custom-path" } }
+          },
+          "then": { "required": ["resourcePath"] }
+        },
+        {
+          "if": {
+            "properties": { "state": { "enum": ["released", "revoked"] } }
+          },
+          "then": { "required": ["releasedAt", "releaseEvidenceRef"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "providerRun": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "runId",
+        "workItemKey",
+        "claimId",
+        "agentRole",
+        "provider",
+        "attemptNumber",
+        "contextKey",
+        "baseRevision",
+        "startedAt",
+        "status",
+        "cost"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "predecessorRunId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "claimId": { "$ref": "#/$defs/identifier" },
+        "agentRole": { "type": "string" },
+        "provider": { "$ref": "#/$defs/providerIdentity" },
+        "attemptNumber": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "causeFingerprint": { "type": "string" },
+        "findingFingerprints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "contextKey": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "headRevision": { "$ref": "#/$defs/gitRevision" },
+        "startedAt": { "$ref": "#/$defs/timestamp" },
+        "finishedAt": { "$ref": "#/$defs/timestamp" },
+        "status": {
+          "enum": [
+            "claimed",
+            "running",
+            "paused",
+            "handoff-ready",
+            "completed",
+            "failed-safely",
+            "cancelled"
+          ]
+        },
+        "exitState": { "$ref": "#/$defs/exitState" },
+        "capsuleRef": { "type": "string" },
+        "reportRef": { "type": "string" },
+        "handoffToRunId": { "$ref": "#/$defs/identifier" },
+        "cost": { "$ref": "#/$defs/costEvidence" }
+      },
+      "additionalProperties": false
+    },
+    "agentRunEnvelope": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "runId",
+        "claimId",
+        "workItemKey",
+        "workspace",
+        "runMode",
+        "role",
+        "objective",
+        "acceptanceCriteria",
+        "baseRevision",
+        "contextKey",
+        "contextSourceRevisions",
+        "leaseIds",
+        "allowedPaths",
+        "allowedTools",
+        "requiredCapabilities",
+        "budgets",
+        "stopConditions"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "claimId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "workspace": { "$ref": "#/$defs/repositoryPath" },
+        "runMode": { "enum": ["read-only", "scoped-write"] },
+        "role": { "type": "string" },
+        "objective": { "type": "string", "minLength": 1 },
+        "acceptanceCriteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "branch": { "type": "string" },
+        "worktree": { "type": "string" },
+        "contextKey": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "contextSourceRevisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "leaseIds": { "type": "array", "items": { "type": "string" } },
+        "allowedPaths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" },
+          "minItems": 1
+        },
+        "allowedTools": { "type": "array", "items": { "type": "string" } },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "budgets": { "$ref": "#/$defs/budgets" },
+        "stopConditions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "inputArtifactRefs": { "type": "array", "items": { "type": "string" } },
+        "reviewFindingFingerprints": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "runMode": { "const": "scoped-write" } } },
+          "then": { "required": ["branch", "worktree"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "agentRunReport": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "runId",
+        "claimId",
+        "workItemKey",
+        "contextKey",
+        "baseRevision",
+        "headRevision",
+        "leaseIds",
+        "exitState",
+        "changedPaths",
+        "decisions",
+        "checksObserved",
+        "risksOrBlockers",
+        "cost",
+        "evidenceRefs",
+        "contextSourceRevisions",
+        "nextAction"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "claimId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "contextKey": { "type": "string" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "headRevision": { "$ref": "#/$defs/gitRevision" },
+        "branch": { "type": "string" },
+        "worktree": { "type": "string" },
+        "leaseIds": { "type": "array", "items": { "type": "string" } },
+        "exitState": { "$ref": "#/$defs/exitState" },
+        "changedPaths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" }
+        },
+        "decisions": { "type": "array", "items": { "type": "string" } },
+        "checksObserved": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/observedCheck" }
+        },
+        "risksOrBlockers": { "type": "array", "items": { "type": "string" } },
+        "cost": { "$ref": "#/$defs/costEvidence" },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "contextSourceRevisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "commitRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gitRevision" }
+        },
+        "causeFingerprint": { "type": "string" },
+        "findingFingerprints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "leaseReleaseEvidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "nextAction": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "contextCapsule": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "runId",
+        "claimId",
+        "workItemKey",
+        "goal",
+        "status",
+        "workspace",
+        "baseRevision",
+        "headRevision",
+        "leaseIds",
+        "cleanCheckpoint",
+        "changedPaths",
+        "decisions",
+        "checksObserved",
+        "risksOrBlockers",
+        "contextSourceRevisions",
+        "nextAction"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "claimId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "goal": { "type": "string" },
+        "status": {
+          "enum": ["planned", "active", "in_review", "blocked", "done"]
+        },
+        "workspace": { "$ref": "#/$defs/repositoryPath" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "headRevision": { "$ref": "#/$defs/gitRevision" },
+        "branch": { "type": "string" },
+        "worktree": { "type": "string" },
+        "leaseIds": { "type": "array", "items": { "type": "string" } },
+        "handoffReason": { "type": "string" },
+        "cleanCheckpoint": {
+          "type": "object",
+          "required": ["revision", "gitStatusClean"],
+          "properties": {
+            "revision": { "$ref": "#/$defs/gitRevision" },
+            "gitStatusClean": { "const": true },
+            "patchArtifactRef": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "prdRequirementIds": { "type": "array", "items": { "type": "string" } },
+        "changedPaths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" }
+        },
+        "decisions": { "type": "array", "items": { "type": "string" } },
+        "assumptions": { "type": "array", "items": { "type": "string" } },
+        "checksObserved": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/observedCheck" }
+        },
+        "acceptanceRemaining": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "openFindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["fingerprint", "severity", "evidenceRef"],
+            "properties": {
+              "fingerprint": { "type": "string" },
+              "severity": { "enum": ["low", "medium", "high", "critical"] },
+              "evidenceRef": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "risksOrBlockers": { "type": "array", "items": { "type": "string" } },
+        "contextSourceRevisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "nextAction": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "contextManifest": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "contextKey",
+        "stage",
+        "classification",
+        "ownerTeam",
+        "accountableRole",
+        "workspaces",
+        "instructions",
+        "documents",
+        "skills",
+        "sourceRevisions",
+        "budgets"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "contextKey": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "stage": { "type": "string", "minLength": 1 },
+        "classification": { "$ref": "#/$defs/classification" },
+        "ownerTeam": { "type": ["string", "null"] },
+        "ownerDepartment": { "type": ["string", "null"] },
+        "accountableRole": { "type": "string", "minLength": 1 },
+        "workspaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/workItemKey" },
+          "uniqueItems": true
+        },
+        "instructions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "documents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" },
+          "maxItems": 2
+        },
+        "sourceRevisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceRevision" }
+        },
+        "budgets": { "$ref": "#/$defs/budgets" }
+      },
+      "additionalProperties": false
+    },
+    "reviewFinding": {
+      "type": "object",
+      "required": [
+        "workItemKey",
+        "runId",
+        "fingerprint",
+        "evidenceHash",
+        "cycle",
+        "severity",
+        "disposition",
+        "recordedAt"
+      ],
+      "properties": {
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "runId": { "$ref": "#/$defs/identifier" },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "evidenceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "cycle": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "disposition": {
+          "enum": ["open", "accepted", "fixed", "rejected", "superseded"]
+        },
+        "recordedAt": { "$ref": "#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "integrationManifest": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "integrationId",
+        "integrationOwnerRole",
+        "targetBranch",
+        "baseRevision",
+        "sourceChanges",
+        "contractRevisions",
+        "leaseIds",
+        "checks",
+        "conflicts",
+        "decisionRefs",
+        "rollbackRef",
+        "state",
+        "createdAt"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "integrationId": { "$ref": "#/$defs/identifier" },
+        "integrationOwnerRole": { "type": "string" },
+        "targetBranch": { "type": "string" },
+        "baseRevision": { "$ref": "#/$defs/gitRevision" },
+        "sourceChanges": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["workItemKey", "runId", "commit", "changedPaths"],
+            "properties": {
+              "workItemKey": { "$ref": "#/$defs/workItemKey" },
+              "runId": { "type": "string" },
+              "commit": { "$ref": "#/$defs/gitRevision" },
+              "changedPaths": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/repositoryPath" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "contractRevisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "contractId",
+              "beforeRevision",
+              "afterRevision",
+              "changeType"
+            ],
+            "properties": {
+              "contractId": { "type": "string" },
+              "beforeRevision": { "type": "string" },
+              "afterRevision": { "type": "string" },
+              "changeType": { "enum": ["additive", "breaking"] },
+              "approvalRef": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "leaseIds": { "type": "array", "items": { "type": "string" } },
+        "checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/observedCheck" }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["resourceKey", "runIds", "status"],
+            "properties": {
+              "resourceKey": { "type": "string" },
+              "runIds": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 2
+              },
+              "status": { "enum": ["open", "resolved"] },
+              "resolutionRef": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "decisionRefs": { "type": "array", "items": { "type": "string" } },
+        "rollbackRef": { "type": "string", "minLength": 1 },
+        "state": {
+          "enum": [
+            "proposed",
+            "verified",
+            "ready",
+            "blocked",
+            "integrated",
+            "rolled-back"
+          ]
+        },
+        "createdAt": { "$ref": "#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "agentAssignment": {
+      "type": "object",
+      "required": [
+        "work_id",
+        "role",
+        "owner_team",
+        "accountable_role",
+        "objective",
+        "working_directory",
+        "allowed_paths",
+        "dependencies",
+        "exclusive_resources",
+        "required_context",
+        "review_profiles",
+        "deliverable",
+        "acceptance",
+        "tools_allowed",
+        "may_delegate",
+        "max_turns",
+        "stop_conditions"
+      ],
+      "properties": {
+        "work_id": {
+          "anyOf": [{ "$ref": "#/$defs/workItemKey" }, { "type": "null" }]
+        },
+        "run_id": { "type": ["string", "null"] },
+        "role": {
+          "enum": [
+            "explorer",
+            "implementer",
+            "reviewer-verifier",
+            "risk-reviewer",
+            "integrator",
+            "dataset-source-researcher",
+            "synthetic-dataset-builder",
+            "dataset-quality-reviewer"
+          ]
+        },
+        "owner_team": { "type": ["string", "null"] },
+        "accountable_role": { "type": "string", "minLength": 1 },
+        "objective": { "type": "string", "minLength": 1 },
+        "working_directory": { "$ref": "#/$defs/repositoryPath" },
+        "allowed_paths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/workItemKey" },
+          "uniqueItems": true
+        },
+        "exclusive_resources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "required_context": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 8
+        },
+        "review_profiles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "deliverable": { "type": "string", "minLength": 1 },
+        "acceptance": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "tools_allowed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "may_delegate": { "const": false },
+        "max_turns": { "type": "integer", "minimum": 1, "maximum": 30 },
+        "stop_conditions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "workerReport": {
+      "type": "object",
+      "required": [
+        "status",
+        "summary",
+        "changed_paths",
+        "evidence",
+        "risks",
+        "next_action"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["completed", "blocked", "needs-decision", "failed-safely"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "changed_paths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repositoryPath" },
+          "uniqueItems": true
+        },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "risks": { "type": "array", "items": { "type": "string" } },
+        "next_action": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "assumptionRecord": {
+      "type": "object",
+      "required": [
+        "assumption",
+        "evidence",
+        "reversible",
+        "impact",
+        "owner",
+        "expiresAt"
+      ],
+      "properties": {
+        "assumption": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "reversible": { "const": true },
+        "impact": { "enum": ["low", "medium"] },
+        "owner": { "type": "string" },
+        "expiresAt": { "$ref": "#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "coordinationRequest": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "coordinationId",
+        "workItemKey",
+        "requestingTeam",
+        "owningTeam",
+        "sharedOutcome",
+        "interfaceOrDependency",
+        "factsAlreadyKnown",
+        "decisionOrArtifactNeeded",
+        "blocking",
+        "requiredBy",
+        "state",
+        "responses",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "coordinationId": { "$ref": "#/$defs/identifier" },
+        "workItemKey": { "$ref": "#/$defs/workItemKey" },
+        "requestingTeam": { "type": "string" },
+        "owningTeam": { "type": "string" },
+        "sharedOutcome": { "type": "string" },
+        "interfaceOrDependency": { "type": "string" },
+        "factsAlreadyKnown": { "type": "array", "items": { "type": "string" } },
+        "decisionOrArtifactNeeded": { "type": "string" },
+        "blocking": { "type": "boolean" },
+        "requiredBy": { "type": "string" },
+        "defaultIfNotBlocking": { "type": "string" },
+        "state": { "enum": ["open", "responded", "closed", "cancelled"] },
+        "responses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "responderTeam",
+              "response",
+              "evidenceRefs",
+              "respondedAt"
+            ],
+            "properties": {
+              "responderTeam": { "type": "string" },
+              "response": { "type": "string", "minLength": 1 },
+              "evidenceRefs": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "respondedAt": { "$ref": "#/$defs/timestamp" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "resolution": { "type": "string" },
+        "closedBy": { "type": "string" },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "updatedAt": { "$ref": "#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "closed" } } },
+          "then": { "required": ["resolution", "closedBy"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "decisionPacket": {
+      "type": "object",
+      "required": [
+        "signal",
+        "impact",
+        "evidence",
+        "options",
+        "recommendation",
+        "decisionOwner",
+        "decisionNeeded",
+        "blockingCondition"
+      ],
+      "properties": {
+        "signal": { "type": "string" },
+        "impact": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "type": "object" }
+        },
+        "recommendation": { "type": "string" },
+        "decisionOwner": { "type": "string" },
+        "decisionNeeded": { "type": "string" },
+        "safeDefaultIfNoResponse": { "type": "string" },
+        "blockingCondition": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

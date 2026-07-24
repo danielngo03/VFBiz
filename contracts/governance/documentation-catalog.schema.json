@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/documentation-catalog/v2",
+  "title": "Generated VFBiz documentation catalog",
+  "type": "object",
+  "required": ["version", "generated_from", "documents", "errors"],
+  "properties": {
+    "version": {"const": 1},
+    "generated_from": {"const": "YAML frontmatter"},
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status", "owner_role", "scope", "when_to_read", "tags", "revision", "review_date", "supersedes", "path", "source_hash"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "status": {"enum": ["proposed", "active", "superseded", "archived"]},
+          "owner_role": {"type": "string", "minLength": 1},
+          "scope": {"type": "string", "minLength": 1},
+          "when_to_read": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "context_anchors": {
+            "type": "object",
+            "propertyNames": {"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+            "additionalProperties": {"type": "string", "pattern": "^#{1,3}\\s+\\S"}
+          },
+          "tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "revision": {"type": ["integer", "string"]},
+          "review_date": {},
+          "supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "path": {"type": "string", "minLength": 1},
+          "source_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "errors": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

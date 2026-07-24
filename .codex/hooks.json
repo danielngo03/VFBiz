@@ -1,0 +1,44 @@
+{
+  "description": "VFBiz project guardrails. CI remains the enforcement authority.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/agent-hook.mjs\" pre-write codex",
+            "timeout": 3,
+            "statusMessage": "Checking VFBiz write boundary"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/agent-hook.mjs\" post-write codex",
+            "timeout": 3,
+            "statusMessage": "Verifying VFBiz write boundary"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/agent-hook.mjs\" pre-compact codex",
+            "timeout": 3,
+            "statusMessage": "Checking checkpoint readiness"
+          }
+        ]
+      }
+    ]
+  }
+}

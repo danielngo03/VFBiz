@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/organization/v8",
+  "title": "VFBiz agent organization",
+  "$defs": {
+    "budgets": {
+      "type": "object",
+      "required": [
+        "maxDocs",
+        "maxQuestionRounds",
+        "maxAgents",
+        "maxSkillsPerLane",
+        "maxReviewCycles"
+      ],
+      "properties": {
+        "maxDocs": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "maxQuestionRounds": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxAgents": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "maxSkillsPerLane": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxReviewCycles": { "type": "integer", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": [
+    "version",
+    "runtime",
+    "controlPlane",
+    "humanAuthorities",
+    "supportingHumanRoles",
+    "roles",
+    "workspaces",
+    "departments",
+    "teams",
+    "authorityRouting",
+    "deliveryModes",
+    "exitStates",
+    "canonicalSkills",
+    "skillPolicy"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 9 },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "maxWriterLanes",
+        "maxSpawnDepth",
+        "maxSameCauseAttempts",
+        "maxReviewFixCycles",
+        "maxCapsuleTokens",
+        "claimTtlMinutes",
+        "leaseTtlMinutes",
+        "heartbeatMinutes",
+        "maxLeaseRenewals",
+        "maxSameCauseHandoffs"
+      ],
+      "properties": {
+        "maxWriterLanes": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "maxSpawnDepth": { "const": 1 },
+        "maxSameCauseAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "maxReviewFixCycles": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxCapsuleTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1500
+        },
+        "claimTtlMinutes": { "type": "integer", "minimum": 1, "maximum": 1440 },
+        "leaseTtlMinutes": { "type": "integer", "minimum": 1, "maximum": 240 },
+        "heartbeatMinutes": { "type": "integer", "minimum": 1, "maximum": 30 },
+        "maxLeaseRenewals": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "maxSameCauseHandoffs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlPlane": {
+      "type": "object",
+      "required": [
+        "dispatcherMode",
+        "bootstrapState",
+        "multiMachineReady",
+        "exclusiveResourceClasses",
+        "sharedPathResources"
+      ],
+      "properties": {
+        "dispatcherMode": { "const": "single-writer" },
+        "bootstrapState": { "const": "git-common-dir" },
+        "multiMachineReady": { "const": false },
+        "exclusiveResourceClasses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "minItems": 5
+        },
+        "sharedPathResources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "resource"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "resource": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "humanAuthorities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "supportingHumanRoles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "mode",
+          "authority",
+          "capabilities",
+          "maxTurns",
+          "trigger"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "mode": { "enum": ["read-only", "scoped-write"] },
+          "authority": {
+            "enum": [
+              "advisory",
+              "coordination",
+              "implementation",
+              "integration",
+              "evidence"
+            ]
+          },
+          "capabilities": {
+            "type": "array",
+            "items": { "enum": ["read", "search", "write", "shell"] },
+            "uniqueItems": true
+          },
+          "maxTurns": { "type": "integer", "minimum": 1, "maximum": 30 },
+          "trigger": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "owns"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "owns": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "departments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "leadHumanRole", "mandate", "workspaces"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "leadHumanRole": { "type": "string" },
+          "mandate": { "type": "string", "minLength": 1 },
+          "workspaces": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "teams": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "departmentId",
+          "leadHumanRole",
+          "workspaces",
+          "owns",
+          "paths",
+          "specializations",
+          "reviewProfiles"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "departmentId": { "type": "string" },
+          "leadHumanRole": { "type": "string" },
+          "workspaces": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "owns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "paths": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "specializations": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "reviewProfiles": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "authorityRouting": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9]+(?:-[a-z0-9]+)*$": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "deliveryModes": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z-]+$": { "$ref": "#/$defs/budgets" }
+      },
+      "additionalProperties": false
+    },
+    "exitStates": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "canonicalSkills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "skillPolicy": { "type": "object" }
+  },
+  "additionalProperties": false
+}

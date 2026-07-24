@@ -1,0 +1,908 @@
+{
+  "$schema": "../contracts/governance/organization.schema.json",
+  "version": 9,
+  "runtime": {
+    "maxWriterLanes": 3,
+    "maxSpawnDepth": 1,
+    "maxSameCauseAttempts": 2,
+    "maxReviewFixCycles": 2,
+    "maxCapsuleTokens": 1500,
+    "claimTtlMinutes": 120,
+    "leaseTtlMinutes": 30,
+    "heartbeatMinutes": 5,
+    "maxLeaseRenewals": 3,
+    "maxSameCauseHandoffs": 2
+  },
+  "controlPlane": {
+    "dispatcherMode": "single-writer",
+    "bootstrapState": "git-common-dir",
+    "multiMachineReady": false,
+    "exclusiveResourceClasses": [
+      "agent-organization-registry",
+      "public-contract",
+      "database-migration",
+      "dependency-lockfile",
+      "drupal-config",
+      "ai-source-registry",
+      "ai-knowledge-release-registry",
+      "ai-dataset-registry"
+    ],
+    "sharedPathResources": [
+      {
+        "path": "package-lock.json",
+        "resource": "dependency-lockfile"
+      },
+      {
+        "path": "backend/api/prisma/migrations",
+        "resource": "database-migration"
+      },
+      {
+        "path": "backend/ai/migrations",
+        "resource": "database-migration"
+      },
+      {
+        "path": "backend/ai/pyproject.toml",
+        "resource": "dependency-lockfile"
+      },
+      {
+        "path": "backend/ai/uv.lock",
+        "resource": "dependency-lockfile"
+      },
+      {
+        "path": "contracts/openapi",
+        "resource": "public-contract"
+      },
+      {
+        "path": "contracts/asyncapi",
+        "resource": "public-contract"
+      },
+      {
+        "path": "packages/api-client/src/generated.ts",
+        "resource": "public-contract"
+      },
+      {
+        "path": "drupal/config",
+        "resource": "drupal-config"
+      },
+      {
+        "path": "drupal/recipes",
+        "resource": "drupal-config"
+      },
+      {
+        "path": "backend/ai/dataset-specs",
+        "resource": "ai-source-registry"
+      },
+      {
+        "path": ".agents/organization.json",
+        "resource": "agent-organization-registry"
+      }
+    ]
+  },
+  "humanAuthorities": [
+    "executive-sponsor",
+    "product-owner",
+    "product-manager",
+    "business-owner",
+    "design-lead",
+    "identity-platform-owner",
+    "architect",
+    "security-owner",
+    "privacy-owner",
+    "legal-owner",
+    "data-owner",
+    "engineering-lead",
+    "release-owner"
+  ],
+  "supportingHumanRoles": [
+    "product-analyst",
+    "business-analyst",
+    "data-steward",
+    "quality-lead"
+  ],
+  "roles": [
+    {
+      "id": "orchestrator",
+      "description": "Own one work item, route bounded context and coordinate direct specialists without implementing approval decisions.",
+      "mode": "read-only",
+      "authority": "coordination",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 24,
+      "trigger": ["controlled", "parallel", "cross-system"]
+    },
+    {
+      "id": "explorer",
+      "description": "Perform bounded read-heavy repository or documentation research and return a concise evidence summary.",
+      "mode": "read-only",
+      "authority": "advisory",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 18,
+      "trigger": ["discovery", "research", "noisy-analysis"]
+    },
+    {
+      "id": "implementer",
+      "description": "Implement one approved outcome inside declared paths and return observed evidence.",
+      "mode": "scoped-write",
+      "authority": "implementation",
+      "capabilities": ["read", "search", "write", "shell"],
+      "maxTurns": 30,
+      "trigger": ["fast", "bounded", "controlled", "parallel"]
+    },
+    {
+      "id": "reviewer-verifier",
+      "description": "Verify acceptance and review correctness, regression and maintainability without editing.",
+      "mode": "read-only",
+      "authority": "evidence",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 20,
+      "trigger": ["behavior-change", "bounded-review", "controlled-review"]
+    },
+    {
+      "id": "risk-reviewer",
+      "description": "Review security, privacy, data, AI, contracts, rights and operations without accepting risk.",
+      "mode": "read-only",
+      "authority": "advisory",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 20,
+      "trigger": ["controlled"]
+    },
+    {
+      "id": "integrator",
+      "description": "Integrate sealed disjoint lanes, resolve mechanical conflicts and run cross-lane checks without approving release.",
+      "mode": "scoped-write",
+      "authority": "integration",
+      "capabilities": ["read", "search", "write", "shell"],
+      "maxTurns": 24,
+      "trigger": ["parallel", "integration"]
+    },
+    {
+      "id": "dataset-source-researcher",
+      "description": "Research dataset and source candidates read-only, record provenance and license evidence, and never download or accept rights.",
+      "mode": "read-only",
+      "authority": "advisory",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 18,
+      "trigger": ["dataset-source"]
+    },
+    {
+      "id": "synthetic-dataset-builder",
+      "description": "Generate one schema-valid synthetic candidate shard from approved inputs without production PII or release authority.",
+      "mode": "scoped-write",
+      "authority": "implementation",
+      "capabilities": ["read", "search", "write", "shell"],
+      "maxTurns": 30,
+      "trigger": ["synthetic-dataset"]
+    },
+    {
+      "id": "dataset-quality-reviewer",
+      "description": "Independently verify dataset schema, grounding, duplication, contamination, PII, bias and coverage without editing or releasing it.",
+      "mode": "read-only",
+      "authority": "evidence",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 24,
+      "trigger": ["dataset-release", "synthetic-dataset-review"]
+    }
+  ],
+  "workspaces": [
+    {
+      "id": "root",
+      "path": ".",
+      "owns": ["cross-system-governance", "product-policy", "contracts"]
+    },
+    {
+      "id": "drupal",
+      "path": "drupal",
+      "owns": ["public-ssr", "cms", "seo", "editorial-experience"]
+    },
+    {
+      "id": "api",
+      "path": "backend/api",
+      "owns": ["public-api", "authorization", "transactions", "integrations"]
+    },
+    {
+      "id": "ai",
+      "path": "backend/ai",
+      "owns": ["model-policy", "retrieval", "evaluation", "ai-tools"]
+    },
+    {
+      "id": "mobile",
+      "path": "mobile",
+      "owns": ["react-native", "native-auth", "offline-client"]
+    },
+    {
+      "id": "customer-portal",
+      "path": "apps/customer-portal",
+      "owns": ["authenticated-customer-web"]
+    },
+    {
+      "id": "workforce-portal",
+      "path": "apps/workforce-portal",
+      "owns": ["workforce-administration", "workforce-experience"]
+    },
+    {
+      "id": "identity-theme",
+      "path": "apps/identity-theme",
+      "owns": [
+        "keycloak-login-theme",
+        "keycloak-email-theme",
+        "identity-experience"
+      ]
+    },
+    {
+      "id": "design-tokens",
+      "path": "packages/design-tokens",
+      "owns": ["cross-experience-design-tokens"]
+    },
+    {
+      "id": "infra",
+      "path": "infra",
+      "owns": ["environments", "delivery", "observability", "recovery"]
+    }
+  ],
+  "departments": [
+    {
+      "id": "product-delivery",
+      "name": "Product & Delivery",
+      "leadHumanRole": "product-manager",
+      "mandate": "Shape product outcomes, requirements, portfolio, sequencing and delivery evidence.",
+      "workspaces": ["root"]
+    },
+    {
+      "id": "architecture-risk",
+      "name": "Architecture & Risk",
+      "leadHumanRole": "architect",
+      "mandate": "Own system boundaries and route security, privacy, legal and data decisions to named human authorities.",
+      "workspaces": ["root"]
+    },
+    {
+      "id": "engineering-enablement",
+      "name": "Engineering Enablement",
+      "leadHumanRole": "engineering-lead",
+      "mandate": "Own repository standards, agent control plane, developer workflows and cross-provider validation.",
+      "workspaces": ["root"]
+    },
+    {
+      "id": "digital-platform",
+      "name": "Digital Platform",
+      "leadHumanRole": "engineering-lead",
+      "mandate": "Own the public API, authorization, transactional business state and external integration orchestration.",
+      "workspaces": ["api"]
+    },
+    {
+      "id": "ai-data",
+      "name": "AI & Data",
+      "leadHumanRole": "data-owner",
+      "mandate": "Own governed knowledge, retrieval, inference policy, tool proposals, evaluation and AI release evidence.",
+      "workspaces": ["ai"]
+    },
+    {
+      "id": "web-experience",
+      "name": "Web Experience",
+      "leadHumanRole": "design-lead",
+      "mandate": "Own public SSR, CMS, SEO, editorial experience, accessibility and web presentation.",
+      "workspaces": ["drupal"]
+    },
+    {
+      "id": "client-experience",
+      "name": "Client Experience",
+      "leadHumanRole": "engineering-lead",
+      "mandate": "Own authenticated customer web and native client experiences without duplicating server authority.",
+      "workspaces": ["customer-portal", "mobile"]
+    },
+    {
+      "id": "workforce-applications",
+      "name": "Workforce Applications",
+      "leadHumanRole": "business-owner",
+      "mandate": "Own secure workforce experiences, dynamic authorization administration and role-scoped business workflows without becoming an authorization authority.",
+      "workspaces": ["workforce-portal"]
+    },
+    {
+      "id": "identity-platform",
+      "name": "Identity Platform",
+      "leadHumanRole": "identity-platform-owner",
+      "mandate": "Own customer and workforce authentication experience, realm separation and the deployable Keycloak theme without moving credential handling into client applications.",
+      "workspaces": ["identity-theme", "design-tokens"]
+    },
+    {
+      "id": "platform-sre",
+      "name": "Platform & SRE",
+      "leadHumanRole": "release-owner",
+      "mandate": "Own environments, delivery, observability, recovery and production release controls.",
+      "workspaces": ["infra"]
+    }
+  ],
+  "teams": [
+    {
+      "id": "product-management",
+      "name": "Product Management",
+      "departmentId": "product-delivery",
+      "leadHumanRole": "product-manager",
+      "workspaces": ["root"],
+      "owns": ["product-outcomes", "roadmap", "prd"],
+      "paths": ["docs/product", "docs/work"],
+      "specializations": [
+        "product-discovery",
+        "requirements-analysis",
+        "acceptance-traceability"
+      ],
+      "reviewProfiles": []
+    },
+    {
+      "id": "architecture-integration",
+      "name": "Architecture & Integration",
+      "departmentId": "architecture-risk",
+      "leadHumanRole": "architect",
+      "workspaces": ["root"],
+      "owns": ["system-boundaries", "shared-contract-decisions"],
+      "paths": [
+        "docs/architecture",
+        "docs/decisions",
+        "contracts",
+        "packages/api-client",
+        "tests/contract"
+      ],
+      "specializations": ["architecture", "contract", "integration"],
+      "reviewProfiles": ["architecture", "contract"]
+    },
+    {
+      "id": "agent-platform",
+      "name": "Agent Platform",
+      "departmentId": "engineering-enablement",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["root"],
+      "owns": [
+        "agent-routing",
+        "skills",
+        "provider-adapters",
+        "context-control"
+      ],
+      "paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "PLANS.md",
+        "WORK.md",
+        "README.md",
+        "SECURITY.md",
+        "package.json",
+        "package-lock.json",
+        ".gitignore",
+        ".github",
+        ".agents",
+        ".codex",
+        ".claude",
+        ".gemini",
+        "tools",
+        "tests/governance",
+        "contracts/governance",
+        "docs/operating-model",
+        "docs/work"
+      ],
+      "specializations": [
+        "agent-orchestration",
+        "context-routing",
+        "provider-parity",
+        "governance-automation"
+      ],
+      "reviewProfiles": ["governance"]
+    },
+    {
+      "id": "api-foundation",
+      "name": "API Foundation",
+      "departmentId": "digital-platform",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["api"],
+      "owns": [
+        "platform",
+        "access",
+        "operations",
+        "composition",
+        "migrations",
+        "api-engineering-guidance"
+      ],
+      "paths": [
+        "backend/api/AGENTS.md",
+        "backend/api/CLAUDE.md",
+        "backend/api/README.md",
+        "backend/api/.claude",
+        "backend/api/docs",
+        "backend/api/.agents/skills/evolve-backend-capability",
+        "backend/api/src/platform",
+        "backend/api/src/bootstrap",
+        "backend/api/src/app.module.ts",
+        "backend/api/src/main.ts",
+        "backend/api/src/modules/access",
+        "backend/api/src/modules/operations",
+        "backend/api/test/e2e/access",
+        "backend/api/test/integration/access",
+        "backend/api/prisma/schema.prisma",
+        "backend/api/prisma/migrations",
+        "backend/api/prisma/seed",
+        "backend/api/prisma.config.ts",
+        "backend/api/prisma/models/platform.prisma",
+        "backend/api/prisma/models/access.prisma",
+        "backend/api/prisma/models/operations.prisma",
+        "backend/api/scripts",
+        "backend/api/test/architecture",
+        "backend/api/test/contract",
+        "backend/api/package.json",
+        "backend/api/nest-cli.json",
+        "backend/api/tsconfig.json",
+        "backend/api/tsconfig.build.json",
+        "backend/api/eslint.config.mjs",
+        "backend/api/.prettierrc",
+        "backend/api/.env.example",
+        "backend/api/.gitignore"
+      ],
+      "specializations": [
+        "nestjs",
+        "postgresql",
+        "security",
+        "migration",
+        "integration"
+      ],
+      "reviewProfiles": ["security", "migration", "contract"]
+    },
+    {
+      "id": "customer-product",
+      "name": "Customer & Product",
+      "departmentId": "digital-platform",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["api"],
+      "owns": ["customer", "product", "sales", "ownership", "commerce"],
+      "paths": [
+        "backend/api/src/modules/customer",
+        "backend/api/src/modules/product",
+        "backend/api/src/modules/sales",
+        "backend/api/src/modules/ownership",
+        "backend/api/src/modules/commerce",
+        "backend/api/prisma/models/customer.prisma",
+        "backend/api/prisma/models/product.prisma",
+        "backend/api/prisma/models/sales.prisma",
+        "backend/api/prisma/models/ownership.prisma",
+        "backend/api/prisma/models/commerce.prisma",
+        "backend/api/test/e2e/customer",
+        "backend/api/test/e2e/product",
+        "backend/api/test/integration/customer",
+        "backend/api/test/integration/product"
+      ],
+      "specializations": ["domain-modeling", "prisma", "openapi"],
+      "reviewProfiles": ["authorization", "data"]
+    },
+    {
+      "id": "customer-engagement",
+      "name": "Customer Engagement",
+      "departmentId": "digital-platform",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["api"],
+      "owns": [
+        "conversation-runtime",
+        "support-handoff",
+        "notification",
+        "ai-gateway"
+      ],
+      "paths": [
+        "backend/api/src/modules/engagement",
+        "backend/api/prisma/models/engagement.prisma",
+        "backend/api/test/e2e/engagement",
+        "backend/api/test/integration/engagement",
+        "backend/api/docs/conversation-runtime.md",
+        "backend/api/docs/ai-gateway-and-tools.md"
+      ],
+      "specializations": [
+        "chat-session",
+        "object-authorization",
+        "concurrency",
+        "handoff"
+      ],
+      "reviewProfiles": ["security", "privacy", "ai-client"]
+    },
+    {
+      "id": "mobility-platform",
+      "name": "Mobility Platform",
+      "departmentId": "digital-platform",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["api"],
+      "owns": ["mobility", "trip-planning", "maps"],
+      "paths": [
+        "backend/api/src/modules/mobility",
+        "backend/api/prisma/models/mobility.prisma",
+        "backend/api/.agents/skills/validate-trip-release"
+      ],
+      "specializations": ["trip-planning", "energy-model", "maps"],
+      "reviewProfiles": ["provider-resilience", "trip-release"]
+    },
+    {
+      "id": "ai-platform-foundation",
+      "name": "AI Platform Foundation",
+      "departmentId": "ai-data",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["ai"],
+      "owns": [
+        "private-api",
+        "platform",
+        "shared-infrastructure",
+        "migrations",
+        "ai-engineering-guidance"
+      ],
+      "paths": [
+        "backend/ai/AGENTS.md",
+        "backend/ai/CLAUDE.md",
+        "backend/ai/README.md",
+        "backend/ai/.claude",
+        "backend/ai/app/api",
+        "backend/ai/app/bootstrap",
+        "backend/ai/app/platform",
+        "backend/ai/app/main.py",
+        "backend/ai/migrations",
+        "backend/ai/alembic.ini",
+        "backend/ai/pyproject.toml",
+        "backend/ai/uv.lock",
+        "backend/ai/.env.example",
+        "backend/ai/.gitignore",
+        "backend/ai/.python-version",
+        "backend/ai/tests/architecture",
+        "backend/ai/tests/contract",
+        "backend/ai/tests/unit"
+      ],
+      "specializations": ["fastapi", "security", "migration", "architecture"],
+      "reviewProfiles": [
+        "security",
+        "authorization",
+        "migration",
+        "architecture"
+      ]
+    },
+    {
+      "id": "ai-assistant-orchestration",
+      "name": "AI Assistant Orchestration",
+      "departmentId": "ai-data",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["ai"],
+      "owns": [
+        "conversation-graph",
+        "assistant-policy",
+        "vision-observation",
+        "tool-proposal"
+      ],
+      "paths": [
+        "backend/ai/app/modules/assistant",
+        "backend/ai/app/modules/tooling",
+        "backend/ai/tests/unit/assistant",
+        "backend/ai/tests/contract/assistant",
+        "backend/ai/docs/conversation-graph.md",
+        "backend/ai/.agents/skills/register-ai-tool"
+      ],
+      "specializations": [
+        "langgraph",
+        "state-machine",
+        "tool-proposals",
+        "multimodal"
+      ],
+      "reviewProfiles": ["security", "authorization", "ai-safety"]
+    },
+    {
+      "id": "ai-model-platform",
+      "name": "AI Model Platform",
+      "departmentId": "ai-data",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["ai"],
+      "owns": [
+        "model-mesh",
+        "local-inference",
+        "provider-adapters",
+        "ai-finops"
+      ],
+      "paths": [
+        "backend/ai/app/modules/inference",
+        "backend/ai/app/infrastructure",
+        "backend/ai/docs/architecture.md",
+        "backend/ai/docs/inference-serving.md"
+      ],
+      "specializations": [
+        "model-routing",
+        "vllm",
+        "provider-fallback",
+        "capacity"
+      ],
+      "reviewProfiles": ["security", "resilience", "cost"]
+    },
+    {
+      "id": "ai-knowledge-engineering",
+      "name": "AI Knowledge Engineering",
+      "departmentId": "ai-data",
+      "leadHumanRole": "data-owner",
+      "workspaces": ["ai"],
+      "owns": [
+        "knowledge",
+        "ingestion",
+        "retrieval",
+        "knowledge-revision",
+        "synthetic-candidates"
+      ],
+      "paths": [
+        "backend/ai/app/modules/knowledge",
+        "backend/ai/tests/unit/knowledge",
+        "backend/ai/tests/integration/knowledge",
+        "backend/ai/docs/knowledge-release.md",
+        "backend/ai/docs/knowledge-ingestion.md",
+        "backend/ai/docs/dataset-engineering.md",
+        "backend/ai/.agents/skills/onboard-dataset",
+        "backend/ai/.agents/skills/generate-synthetic-dataset",
+        "backend/ai/tests/fixtures/datasets"
+      ],
+      "specializations": [
+        "embedding",
+        "retrieval",
+        "revision",
+        "synthetic-data"
+      ],
+      "reviewProfiles": ["data", "privacy", "acl"]
+    },
+    {
+      "id": "ai-assurance",
+      "name": "AI Assurance",
+      "departmentId": "ai-data",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["ai"],
+      "owns": [
+        "evaluation",
+        "red-team",
+        "shadow",
+        "release-evidence",
+        "ai-safety"
+      ],
+      "paths": [
+        "backend/ai/docs/evaluation-and-release.md",
+        "backend/ai/docs/safety-and-abuse.md",
+        "backend/ai/app/modules/evaluation",
+        "backend/ai/app/modules/governance",
+        "backend/ai/.agents/skills/validate-ai-release",
+        "backend/ai/tests/evaluation",
+        "backend/ai/tests/security"
+      ],
+      "specializations": [
+        "evaluation",
+        "red-team",
+        "shadow",
+        "reproducibility"
+      ],
+      "reviewProfiles": ["ai-safety", "data", "release"]
+    },
+    {
+      "id": "data-governance",
+      "name": "Data Governance",
+      "departmentId": "ai-data",
+      "leadHumanRole": "data-owner",
+      "workspaces": ["root", "ai"],
+      "owns": [
+        "source-register",
+        "dataset-rights",
+        "classification",
+        "retention",
+        "dataset-release-decision"
+      ],
+      "paths": [
+        "contracts/ai",
+        "backend/ai/docs/knowledge-data-governance.md",
+        "backend/ai/dataset-specs"
+      ],
+      "specializations": [
+        "provenance",
+        "license-evidence",
+        "lineage",
+        "retention"
+      ],
+      "reviewProfiles": ["data", "privacy", "legal"]
+    },
+    {
+      "id": "cms-experience",
+      "name": "CMS & Public Experience",
+      "departmentId": "web-experience",
+      "leadHumanRole": "design-lead",
+      "workspaces": ["drupal"],
+      "owns": ["cms", "seo", "public-ssr"],
+      "paths": ["drupal"],
+      "specializations": ["drupal", "seo", "accessibility"],
+      "reviewProfiles": ["experience"]
+    },
+    {
+      "id": "customer-web-experience",
+      "name": "Customer Web Experience",
+      "departmentId": "client-experience",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["customer-portal"],
+      "owns": ["customer-portal", "customer-bff", "account-experience"],
+      "paths": ["apps/customer-portal"],
+      "specializations": [
+        "nextjs",
+        "customer-bff",
+        "customer-journey",
+        "accessibility"
+      ],
+      "reviewProfiles": ["experience", "accessibility", "security"]
+    },
+    {
+      "id": "mobile-experience",
+      "name": "Mobile Experience",
+      "departmentId": "client-experience",
+      "leadHumanRole": "engineering-lead",
+      "workspaces": ["mobile"],
+      "owns": ["react-native", "native-auth", "offline-client"],
+      "paths": ["mobile"],
+      "specializations": ["react-native", "expo", "oidc-pkce", "offline"],
+      "reviewProfiles": ["accessibility", "mobile-release"]
+    },
+    {
+      "id": "workforce-experience",
+      "name": "Workforce Experience",
+      "departmentId": "workforce-applications",
+      "leadHumanRole": "business-owner",
+      "workspaces": ["workforce-portal"],
+      "owns": [
+        "workforce-portal",
+        "workforce-ux",
+        "authorization-administration"
+      ],
+      "paths": ["apps/workforce-portal"],
+      "specializations": [
+        "nextjs",
+        "workforce-bff",
+        "authorization-ux",
+        "audit"
+      ],
+      "reviewProfiles": ["accessibility", "security", "segregation-of-duties"]
+    },
+    {
+      "id": "identity-experience",
+      "name": "Identity Experience",
+      "departmentId": "identity-platform",
+      "leadHumanRole": "identity-platform-owner",
+      "workspaces": ["identity-theme", "design-tokens"],
+      "owns": [
+        "keycloak-login-theme",
+        "keycloak-email-theme",
+        "identity-design-tokens"
+      ],
+      "paths": ["apps/identity-theme", "packages/design-tokens"],
+      "specializations": [
+        "keycloak-theme",
+        "authentication-experience",
+        "accessibility",
+        "design-tokens"
+      ],
+      "reviewProfiles": [
+        "security",
+        "accessibility",
+        "experience",
+        "brand-rights"
+      ]
+    },
+    {
+      "id": "reliability-engineering",
+      "name": "Reliability Engineering",
+      "departmentId": "platform-sre",
+      "leadHumanRole": "release-owner",
+      "workspaces": ["infra"],
+      "owns": ["delivery", "observability", "recovery"],
+      "paths": ["infra"],
+      "specializations": ["sre", "security", "cost-control"],
+      "reviewProfiles": ["release", "resilience"]
+    }
+  ],
+  "authorityRouting": {
+    "architecture": ["architect"],
+    "public-contract": ["architect"],
+    "schema": ["architect"],
+    "migration": ["architect", "release-owner"],
+    "authentication": ["security-owner"],
+    "customer-bff": ["security-owner"],
+    "authorization": ["security-owner"],
+    "workforce-authorization": ["security-owner"],
+    "identity-theme": [
+      "identity-platform-owner",
+      "security-owner",
+      "design-lead"
+    ],
+    "secret": ["security-owner"],
+    "production": ["security-owner", "release-owner"],
+    "pii": ["privacy-owner"],
+    "consent": ["privacy-owner"],
+    "customer-profile": ["privacy-owner"],
+    "customer-garage": ["privacy-owner"],
+    "customer-data": ["privacy-owner"],
+    "customer-privacy": ["privacy-owner"],
+    "data-governance": ["data-owner"],
+    "vehicle-catalog": ["data-owner"],
+    "vehicle-ownership": ["security-owner", "privacy-owner", "data-owner"],
+    "customer-conversation": ["privacy-owner"],
+    "support-handoff": ["security-owner", "privacy-owner"],
+    "session-concurrency": ["engineering-lead"],
+    "ai": ["data-owner"],
+    "ai-assistant": ["data-owner", "security-owner"],
+    "ai-inference": ["data-owner", "security-owner", "release-owner"],
+    "ai-dataset": ["data-owner"],
+    "dataset-source": ["data-owner", "legal-owner"],
+    "synthetic-dataset": ["data-owner"],
+    "dataset-release": [
+      "data-owner",
+      "privacy-owner",
+      "legal-owner",
+      "release-owner"
+    ],
+    "ai-retrieval": ["data-owner"],
+    "knowledge-revision": ["data-owner", "release-owner"],
+    "knowledge-ingestion": ["data-owner", "privacy-owner", "legal-owner"],
+    "ai-tool": ["data-owner", "security-owner"],
+    "ai-vision": ["security-owner", "privacy-owner"],
+    "multimodal-injection": ["security-owner", "privacy-owner"],
+    "local-inference": ["security-owner", "release-owner"],
+    "ai-evaluation": ["data-owner"],
+    "ai-release": ["data-owner", "security-owner", "release-owner"],
+    "trip-release": ["release-owner"],
+    "employee-data": ["data-owner"],
+    "license": ["legal-owner"],
+    "brand-rights": ["legal-owner"],
+    "legal": ["legal-owner"],
+    "payment": ["business-owner"],
+    "discovery": ["product-owner"]
+  },
+  "deliveryModes": {
+    "fast": {
+      "maxDocs": 0,
+      "maxQuestionRounds": 0,
+      "maxAgents": 1,
+      "maxSkillsPerLane": 1,
+      "maxReviewCycles": 0
+    },
+    "bounded": {
+      "maxDocs": 3,
+      "maxQuestionRounds": 1,
+      "maxAgents": 2,
+      "maxSkillsPerLane": 2,
+      "maxReviewCycles": 1
+    },
+    "controlled": {
+      "maxDocs": 6,
+      "maxQuestionRounds": 2,
+      "maxAgents": 3,
+      "maxSkillsPerLane": 2,
+      "maxReviewCycles": 2
+    },
+    "discovery": {
+      "maxDocs": 3,
+      "maxQuestionRounds": 2,
+      "maxAgents": 3,
+      "maxSkillsPerLane": 2,
+      "maxReviewCycles": 0
+    },
+    "parallel": {
+      "maxDocs": 8,
+      "maxQuestionRounds": 2,
+      "maxAgents": 3,
+      "maxSkillsPerLane": 2,
+      "maxReviewCycles": 1
+    }
+  },
+  "exitStates": [
+    "completed",
+    "blocked",
+    "needs-decision",
+    "needs-coordination",
+    "scope-changed",
+    "budget-exhausted",
+    "cancelled",
+    "failed-safely"
+  ],
+  "canonicalSkills": [
+    "triage-change",
+    "plan-change",
+    "deliver-change",
+    "review-change",
+    "handoff-context"
+  ],
+  "skillPolicy": {
+    "providerNativeIsOptional": true,
+    "vendorIntoRepository": false,
+    "requiresAllowlistForNetworkOrSideEffects": true,
+    "claudeMaxPreloadedSkillsPerSubagent": 2
+  }
+}

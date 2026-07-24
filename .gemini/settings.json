@@ -1,0 +1,59 @@
+{
+  "$schema": "https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json",
+  "context": {
+    "fileName": ["AGENTS.md"],
+    "includeDirectoryTree": false
+  },
+  "skills": {
+    "enabled": true
+  },
+  "hooksConfig": {
+    "enabled": true,
+    "notifications": true
+  },
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "^(write_file|replace)$",
+        "sequential": true,
+        "hooks": [
+          {
+            "name": "vfbiz-pre-write",
+            "type": "command",
+            "command": "node \"$GEMINI_PROJECT_DIR/tools/agent-hook.mjs\" pre-write gemini",
+            "timeout": 3000,
+            "description": "Apply the shared path guard; validate a claim only when the work mode requires one."
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "^(write_file|replace)$",
+        "sequential": true,
+        "hooks": [
+          {
+            "name": "vfbiz-post-write",
+            "type": "command",
+            "command": "node \"$GEMINI_PROJECT_DIR/tools/agent-hook.mjs\" post-write gemini",
+            "timeout": 3000,
+            "description": "Apply the same provider-neutral path and optional-claim guard after mutation."
+          }
+        ]
+      }
+    ],
+    "PreCompress": [
+      {
+        "hooks": [
+          {
+            "name": "vfbiz-pre-compact",
+            "type": "command",
+            "command": "node \"$GEMINI_PROJECT_DIR/tools/agent-hook.mjs\" pre-compact gemini",
+            "timeout": 3000,
+            "description": "Check handoff readiness before context compression without starting a retry."
+          }
+        ]
+      }
+    ]
+  }
+}
