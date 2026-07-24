@@ -1,0 +1,12 @@
+{
+  "accent": "{color.blue600}",
+  "accentStrong": "{color.blue700}",
+  "onAccent": "{color.white}",
+  "canvas": "{color.slate50}",
+  "$dark": {
+    "accent": "{color.blue300}",
+    "accentStrong": "{color.blue300}",
+    "onAccent": "{color.slate950}",
+    "canvas": "{color.slate950}"
+  }
+}

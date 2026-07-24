@@ -1,0 +1,294 @@
+{
+  "realm": "vfbiz-workforce",
+  "displayName": "VFBiz Workforce Staging",
+  "enabled": true,
+  "loginTheme": "vfbiz-workforce",
+  "emailTheme": "vfbiz-workforce",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["vi", "en"],
+  "defaultLocale": "vi",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "clientSessionIdleTimeout": 1800,
+  "clientSessionMaxLifespan": 28800,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 3,
+  "waitIncrementSeconds": 90,
+  "maxFailureWaitSeconds": 1800,
+  "maxDeltaTimeSeconds": 43200,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA256",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "webAuthnPolicyRpEntityName": "VFBiz Workforce",
+  "webAuthnPolicySignatureAlgorithms": ["ES256", "RS256"],
+  "webAuthnPolicyResidentKey": "preferred",
+  "webAuthnPolicyUserVerificationRequirement": "required",
+  "webAuthnPolicyPasswordlessRpEntityName": "VFBiz Workforce",
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": ["ES256", "RS256"],
+  "webAuthnPolicyPasswordlessResidentKey": "required",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
+  "requiredActions": [
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30
+    },
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10
+    },
+    {
+      "alias": "webauthn-register",
+      "name": "Webauthn Register",
+      "providerId": "webauthn-register",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 80
+    },
+    {
+      "alias": "webauthn-register-passwordless",
+      "name": "Webauthn Register Passwordless",
+      "providerId": "webauthn-register-passwordless",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 90
+    },
+    {
+      "alias": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "name": "Recovery Authentication Codes",
+      "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 130
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "customer-support-agent" },
+      { "name": "vehicle-data-operator" },
+      { "name": "vehicle-data-reviewer" },
+      { "name": "commercial-data-operator" },
+      { "name": "commercial-data-reviewer" },
+      { "name": "trip-data-analyst" },
+      { "name": "ai-knowledge-editor" },
+      { "name": "ai-release-reviewer" },
+      { "name": "auditor" },
+      { "name": "platform-admin" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "vfbiz-workforce-api",
+      "name": "VFBiz Workforce API",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "vfbiz-workforce-bff",
+      "name": "VFBiz Workforce Portal BFF",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${VFBIZ_WORKFORCE_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:3002/api/auth/callback"],
+      "webOrigins": ["http://localhost:3002"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "defaultClientScopes": [
+        "basic",
+        "profile",
+        "email",
+        "roles",
+        "vfbiz-workforce-audience"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "basic",
+      "description": "OpenID Connect scope for required subject and authentication-time claims",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "false" },
+      "protocolMappers": [
+        {
+          "name": "auth_time",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "AUTH_TIME",
+            "claim.name": "auth_time",
+            "jsonType.label": "long",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "authentication methods",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "lightweight.claim": "false"
+          }
+        },
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "description": "OpenID Connect built-in scope: profile",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true" },
+      "protocolMappers": [
+        {
+          "name": "full name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-full-name-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "description": "OpenID Connect built-in scope: email",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true" },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "claim.name": "email",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "email verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "emailVerified",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "roles",
+      "description": "OpenID Connect scope for workforce role claims",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "false" },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "vfbiz-workforce-audience",
+      "description": "Adds only the workforce API audience.",
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "vfbiz-workforce-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "vfbiz-workforce-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ]
+}

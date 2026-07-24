@@ -1,0 +1,10 @@
+@import url("./tokens/customer.css");
+
+#kc-header-wrapper::after {
+  content: "Customer";
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--vfbiz-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}

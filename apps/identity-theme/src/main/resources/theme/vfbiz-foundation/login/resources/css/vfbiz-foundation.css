@@ -1,0 +1,88 @@
+@import url("./tokens/base.css");
+
+:root {
+  color-scheme: light dark;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+body,
+.login-pf body {
+  min-height: 100vh;
+  color: var(--vfbiz-text);
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      color-mix(in srgb, var(--vfbiz-accent) 14%, transparent),
+      transparent 30rem
+    ),
+    var(--vfbiz-canvas);
+}
+
+.login-pf-page .card-pf,
+.pf-v5-c-login__main,
+.pf-v6-c-login__main {
+  border: 1px solid var(--vfbiz-border);
+  border-radius: var(--vfbiz-radius-large);
+  background: var(--vfbiz-surface);
+  box-shadow: 0 1.5rem 4rem rgb(20 32 51 / 12%);
+}
+
+#kc-header-wrapper {
+  color: var(--vfbiz-text);
+  text-shadow: none;
+}
+
+.pf-v5-c-button.pf-m-primary,
+.pf-v6-c-button.pf-m-primary,
+input[type="submit"].pf-m-primary {
+  border-color: var(--vfbiz-accent);
+  background-color: var(--vfbiz-accent);
+  color: var(--vfbiz-on-accent);
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v6-c-button.pf-m-primary:hover,
+input[type="submit"].pf-m-primary:hover {
+  border-color: var(--vfbiz-accent-strong);
+  background-color: var(--vfbiz-accent-strong);
+}
+
+input,
+button,
+select {
+  font: inherit;
+}
+
+a {
+  color: var(--vfbiz-accent);
+}
+
+#kc-info-wrapper,
+#kc-info-wrapper span {
+  color: var(--vfbiz-text-muted);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--vfbiz-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

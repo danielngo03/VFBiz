@@ -1,0 +1,24 @@
+services:
+  keycloak:
+    build:
+      context: ../../..
+      dockerfile: infra/keycloak/Containerfile
+      args:
+        KEYCLOAK_IMAGE: ${KEYCLOAK_IMAGE:?Set a reviewed, digest-pinned Keycloak image}
+    image: vfbiz-keycloak-local:26.7.0-theme-0.1.0
+    command:
+      - start-dev
+      - --import-realm
+      - --spi-theme--static-max-age=-1
+      - --spi-theme--cache-themes=false
+      - --spi-theme--cache-templates=false
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?Set a local bootstrap username}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?Set a local bootstrap password}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    volumes:
+      - ./realms:/opt/keycloak/data/import:ro
+    restart: unless-stopped

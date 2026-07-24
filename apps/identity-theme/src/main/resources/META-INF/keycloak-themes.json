@@ -1,0 +1,16 @@
+{
+  "themes": [
+    {
+      "name": "vfbiz-foundation",
+      "types": ["login", "email"]
+    },
+    {
+      "name": "vfbiz-customer",
+      "types": ["login", "email"]
+    },
+    {
+      "name": "vfbiz-workforce",
+      "types": ["login", "email"]
+    }
+  ]
+}

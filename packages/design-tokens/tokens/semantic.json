@@ -1,0 +1,19 @@
+{
+  "surface": "{color.white}",
+  "surfaceSubtle": "{color.slate50}",
+  "text": "{color.slate900}",
+  "textMuted": "{color.slate500}",
+  "border": "{color.slate200}",
+  "danger": "{color.red600}",
+  "focus": "{color.amber400}",
+  "radiusSmall": "{radius.small}",
+  "radiusMedium": "{radius.medium}",
+  "radiusLarge": "{radius.large}",
+  "$dark": {
+    "surface": "{color.slate800}",
+    "surfaceSubtle": "{color.slate900}",
+    "text": "{color.white}",
+    "textMuted": "{color.slate400}",
+    "border": "{color.slate700}"
+  }
+}

@@ -1,0 +1,10 @@
+ARG KEYCLOAK_IMAGE
+FROM ${KEYCLOAK_IMAGE}
+
+ARG IDENTITY_THEME_JAR=apps/identity-theme/dist/vfbiz-identity-theme-0.1.0-kc26.7.0.jar
+COPY --chown=1000:0 ${IDENTITY_THEME_JAR} /opt/keycloak/providers/vfbiz-identity-theme.jar
+
+RUN /opt/keycloak/bin/kc.sh build
+
+USER 1000
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]

@@ -1,0 +1,21 @@
+:root {
+  --vfbiz-border: #d8e0ea;
+  --vfbiz-danger: #b42318;
+  --vfbiz-focus: #ffb800;
+  --vfbiz-radius-large: 1.25rem;
+  --vfbiz-radius-medium: 0.875rem;
+  --vfbiz-radius-small: 0.5rem;
+  --vfbiz-surface: #ffffff;
+  --vfbiz-surface-subtle: #f1f4f8;
+  --vfbiz-text: #142033;
+  --vfbiz-text-muted: #5c6979;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vfbiz-border: #344256;
+    --vfbiz-surface: #202c3d;
+    --vfbiz-surface-subtle: #142033;
+    --vfbiz-text: #ffffff;
+    --vfbiz-text-muted: #98a6b8;
+  }
+}

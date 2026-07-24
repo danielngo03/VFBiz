@@ -1,0 +1,14 @@
+:root, [data-vfbiz-experience="workforce"] {
+  --vfbiz-accent: #0056d6;
+  --vfbiz-accent-strong: #0047b2;
+  --vfbiz-canvas: #f1f4f8;
+  --vfbiz-on-accent: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root, [data-vfbiz-experience="workforce"] {
+    --vfbiz-accent: #78a9ff;
+    --vfbiz-accent-strong: #78a9ff;
+    --vfbiz-canvas: #0b1220;
+    --vfbiz-on-accent: #0b1220;
+  }
+}

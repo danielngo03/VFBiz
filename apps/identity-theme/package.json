@@ -1,0 +1,20 @@
+{
+  "name": "@vfbiz/identity-theme",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/contract/*.spec.mjs",
+    "test:e2e": "playwright test --config playwright.config.mjs",
+    "validate": "node scripts/validate.mjs && node scripts/verify-template-inventory.mjs",
+    "verify": "npm run build && npm run validate && npm test"
+  },
+  "dependencies": {
+    "@vfbiz/design-tokens": "0.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.61.1"
+  }
+}

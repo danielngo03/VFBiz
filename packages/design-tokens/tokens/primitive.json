@@ -1,0 +1,35 @@
+{
+  "color": {
+    "white": "#ffffff",
+    "slate25": "#f7f9fc",
+    "slate50": "#f1f4f8",
+    "slate200": "#d8e0ea",
+    "slate400": "#98a6b8",
+    "slate500": "#5c6979",
+    "slate700": "#344256",
+    "slate800": "#202c3d",
+    "slate900": "#142033",
+    "slate950": "#0b1220",
+    "teal300": "#65c9bd",
+    "teal600": "#0f5c55",
+    "teal700": "#0b4742",
+    "blue300": "#78a9ff",
+    "blue600": "#0056d6",
+    "blue700": "#0047b2",
+    "red600": "#b42318",
+    "amber400": "#ffb800"
+  },
+  "radius": {
+    "small": "0.5rem",
+    "medium": "0.875rem",
+    "large": "1.25rem"
+  },
+  "space": {
+    "1": "0.25rem",
+    "2": "0.5rem",
+    "3": "0.75rem",
+    "4": "1rem",
+    "6": "1.5rem",
+    "8": "2rem"
+  }
+}

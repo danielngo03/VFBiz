@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Implementation-Title: VFBiz Identity Theme
+Implementation-Version: 0.1.0
+Keycloak-Version: 26.7.0

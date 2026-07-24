@@ -1,0 +1,14 @@
+:root, [data-vfbiz-experience="customer"] {
+  --vfbiz-accent: #0f5c55;
+  --vfbiz-accent-strong: #0b4742;
+  --vfbiz-canvas: #f7f9fc;
+  --vfbiz-on-accent: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root, [data-vfbiz-experience="customer"] {
+    --vfbiz-accent: #65c9bd;
+    --vfbiz-accent-strong: #65c9bd;
+    --vfbiz-canvas: #0b1220;
+    --vfbiz-on-accent: #0b1220;
+  }
+}
