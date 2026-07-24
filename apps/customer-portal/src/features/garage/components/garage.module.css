@@ -1,0 +1,176 @@
+.layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.skeletonStack,
+.skeletonFields {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel,
+.vehicleCard,
+.emptyState,
+.failureState {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+.panel h2,
+.vehicleCard h2 {
+  margin-bottom: 0.5rem;
+}
+
+.form,
+.inlineForm {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field label,
+.checkbox {
+  font-weight: 700;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.65rem;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.checkbox input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.checkbox {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.checkbox input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.help,
+.vehicleMeta,
+.correlation {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.vehicleList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 1rem;
+  list-style: none;
+}
+
+.vehicleHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.vehicleMeta {
+  margin-bottom: 0.25rem;
+}
+
+.primaryBadge {
+  flex: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.verification {
+  padding: 1rem;
+  margin-block: 1rem;
+  border-left: 0.25rem solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--surface-subtle);
+}
+
+.verification p {
+  margin: 0.35rem 0 0;
+}
+
+.inlineForm {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.hiddenForm {
+  display: none;
+}
+
+.errorMessage,
+.successMessage {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.errorMessage {
+  color: var(--danger-strong);
+  background: color-mix(in srgb, var(--danger) 10%, white);
+}
+
+.successMessage {
+  color: var(--accent-strong);
+  background: var(--success);
+}
+
+.failureState {
+  border-color: var(--danger);
+}
+
+@media (min-width: 48rem) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+    align-items: start;
+  }
+
+  .vehicleList {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .panel {
+    position: sticky;
+    top: 1.5rem;
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

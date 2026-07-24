@@ -1,0 +1,30 @@
+.skeleton {
+  display: block;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(
+      90deg,
+      var(--surface-subtle) 25%,
+      var(--border) 50%,
+      var(--surface-subtle) 75%
+    );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
