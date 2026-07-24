@@ -1,0 +1,111 @@
+name: vfbiz-staging-local
+
+services:
+  api-postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: vfbiz_api
+      POSTGRES_USER: vfbiz_api
+      POSTGRES_PASSWORD: ${VFBIZ_API_DB_PASSWORD:?set VFBIZ_API_DB_PASSWORD}
+    volumes:
+      - api-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U vfbiz_api -d vfbiz_api]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [private]
+
+  ai-postgres:
+    image: pgvector/pgvector:0.8.2-pg17
+    environment:
+      POSTGRES_DB: vfbiz_ai
+      POSTGRES_USER: vfbiz_ai
+      POSTGRES_PASSWORD: ${VFBIZ_AI_DB_PASSWORD:?set VFBIZ_AI_DB_PASSWORD}
+    volumes:
+      - ai-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U vfbiz_ai -d vfbiz_ai]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [private]
+
+  keycloak-postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${VFBIZ_KEYCLOAK_DB_PASSWORD:?set VFBIZ_KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - keycloak-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U keycloak -d keycloak]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [private]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: [start-dev, --import-realm, --health-enabled=true]
+    depends_on:
+      keycloak-postgres: { condition: service_healthy }
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${VFBIZ_KEYCLOAK_DB_PASSWORD:?set VFBIZ_KEYCLOAK_DB_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${VFBIZ_KEYCLOAK_ADMIN_USERNAME:?set VFBIZ_KEYCLOAK_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${VFBIZ_KEYCLOAK_ADMIN_PASSWORD:?set VFBIZ_KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    ports:
+      - 127.0.0.1:8080:8080
+      - 127.0.0.1:9000:9000
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [public, private]
+
+  redis:
+    image: redis:8.8.0-alpine
+    command:
+      [
+        redis-server,
+        --appendonly,
+        "yes",
+        --maxmemory-policy,
+        noeviction,
+        --requirepass,
+        "${VFBIZ_REDIS_PASSWORD:?set VFBIZ_REDIS_PASSWORD}",
+      ]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        [CMD-SHELL, 'redis-cli -a "$${VFBIZ_REDIS_PASSWORD}" ping | grep PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      VFBIZ_REDIS_PASSWORD: ${VFBIZ_REDIS_PASSWORD:?set VFBIZ_REDIS_PASSWORD}
+    networks: [private]
+
+networks:
+  public: {}
+  private:
+    internal: true
+
+volumes:
+  api-postgres-data: {}
+  ai-postgres-data: {}
+  keycloak-postgres-data: {}
+  redis-data: {}

@@ -1,0 +1,14 @@
+{
+  "name": "@vfbiz/workforce-api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "generate": "openapi-typescript ../../contracts/openapi/workforce-v1.yaml -o src/generated.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
