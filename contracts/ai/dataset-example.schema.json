@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-example/v1",
+  "title": "VFBiz Dataset Example",
+  "type": "object",
+  "required": [
+    "example_id",
+    "dataset_class",
+    "assistant_profile",
+    "locale",
+    "turns",
+    "expected",
+    "risk_labels",
+    "source_refs",
+    "synthetic_fact_namespace",
+    "allowed_uses",
+    "requires_human_review"
+  ],
+  "properties": {
+    "example_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "dataset_class": {
+      "enum": [
+        "knowledge",
+        "retrieval-evaluation",
+        "intent-ood",
+        "conversation-quality",
+        "tool-evaluation",
+        "refusal-safety",
+        "red-team",
+        "state-resilience",
+        "multimodal"
+      ]
+    },
+    "assistant_profile": {
+      "enum": ["public_customer", "authenticated_customer"]
+    },
+    "locale": { "enum": ["vi-VN", "en-US", "vi-Latn-no-diacritics", "mixed"] },
+    "turns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": { "enum": ["user", "assistant", "tool"] },
+          "content": { "type": "string", "minLength": 1, "maxLength": 12000 }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 30
+    },
+    "expected": {
+      "type": "object",
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "answer",
+            "clarification",
+            "refusal",
+            "handoff",
+            "tool-proposal"
+          ]
+        },
+        "required_citation_source_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "tool_name": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "risk_labels": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "none",
+          "pricing",
+          "safety",
+          "legal",
+          "pii",
+          "tool-authorization",
+          "prompt-injection",
+          "stale-data",
+          "competitor",
+          "abuse"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "revision"],
+        "properties": {
+          "source_id": { "type": "string", "minLength": 1 },
+          "revision": { "type": "string", "minLength": 1 },
+          "locator": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "synthetic_fact_namespace": { "type": ["string", "null"] },
+    "allowed_uses": {
+      "type": "array",
+      "items": {
+        "enum": ["knowledge", "evaluation", "red-team", "training-candidate"]
+      },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "requires_human_review": { "type": "boolean" },
+    "generator": {
+      "type": ["object", "null"],
+      "properties": {
+        "model_revision": { "type": "string" },
+        "prompt_revision": { "type": "string" },
+        "policy_revision": { "type": "string" },
+        "seed_id": { "type": "string" }
+      },
+      "required": [
+        "model_revision",
+        "prompt_revision",
+        "policy_revision",
+        "seed_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "risk_labels": {
+            "contains": {
+              "enum": [
+                "pricing",
+                "safety",
+                "legal",
+                "pii",
+                "tool-authorization"
+              ]
+            }
+          }
+        }
+      },
+      "then": { "properties": { "requires_human_review": { "const": true } } }
+    }
+  ],
+  "additionalProperties": false
+}

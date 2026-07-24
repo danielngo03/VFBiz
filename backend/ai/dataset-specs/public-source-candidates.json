@@ -1,0 +1,261 @@
+[
+  {
+    "source_id": "csconda-vietnamese-customer-support",
+    "version": "candidate-2026-07-23",
+    "title": "CSConDa Vietnamese Customer Support QA",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/ura-hcmut/Vietnamese-Customer-Support-QA",
+    "source_revision": "unfetched-candidate",
+    "checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality", "intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "Apache-2.0",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Dataset gated; cần duyệt điều kiện truy cập và mục đích sử dụng.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/ura-hcmut/Vietnamese-Customer-Support-QA"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage nếu bị từ chối.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Chưa download; không dùng làm VinFast factual knowledge."
+  },
+  {
+    "source_id": "xquad-vi",
+    "version": "candidate-2026-07-23",
+    "title": "XQuAD Vietnamese",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/google/xquad/tree/main",
+    "source_revision": "main-unfetched",
+    "checksum_sha256": null,
+    "proposed_purposes": ["retrieval-evaluation"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-SA-4.0",
+      "commercial_use": "permitted",
+      "derivatives": "permitted",
+      "redistribution": "permitted",
+      "access_conditions": "Attribution và share-alike cần được Legal xác nhận cho artifact dẫn xuất.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/google/xquad/tree/main"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate artifact và tombstone source revision.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Benchmark QA, không phải automotive knowledge."
+  },
+  {
+    "source_id": "mkqa",
+    "version": "candidate-2026-07-23",
+    "title": "MKQA",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/apple/mkqa/tree/main",
+    "source_revision": "main-unfetched",
+    "checksum_sha256": null,
+    "proposed_purposes": ["retrieval-evaluation"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "conflicting-cc-by-3.0-vs-cc-by-sa-3.0",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Dataset card và loader cũ ghi khác nhau về ShareAlike; Legal phải xác minh upstream license, notice và derived artifact.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/apple/mkqa/tree/main",
+        "https://huggingface.co/datasets/apple/mkqa/blob/main/mkqa.py"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate artifact và tombstone source revision.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Open-domain benchmark, không phải nguồn fact VinFast."
+  },
+  {
+    "source_id": "banking77",
+    "version": "candidate-2026-07-23",
+    "title": "BANKING77",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/PolyAI/banking77/tree/796a4623935746f71378f0ebd435635a8ce08e50",
+    "source_revision": "796a4623935746f71378f0ebd435635a8ce08e50",
+    "checksum_sha256": null,
+    "proposed_purposes": ["intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-4.0",
+      "commercial_use": "permitted",
+      "derivatives": "permitted",
+      "redistribution": "permitted",
+      "access_conditions": "English banking taxonomy; chỉ nghiên cứu pattern, không chuyển domain label trực tiếp.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/PolyAI/banking77/tree/796a4623935746f71378f0ebd435635a8ce08e50"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate artifact và tombstone source revision.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Không dùng làm VinFast fact hoặc nhãn production trực tiếp."
+  },
+  {
+    "source_id": "miracl-vietnamese-derived-triplets",
+    "version": "candidate-2026-07-23",
+    "title": "MIRACL Vietnamese-derived triplets",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/nlpai-lab/miracl-multilingual-triplets",
+    "source_revision": "unfetched-candidate",
+    "checksum_sha256": null,
+    "proposed_purposes": ["retrieval-evaluation"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "unverified-third-party-translation",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Third-party translation; cần xác minh upstream rights và translation quality.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/nlpai-lab/miracl-multilingual-triplets"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Chưa download; cần quality và Legal review."
+  },
+  {
+    "source_id": "bitext-customer-support",
+    "version": "candidate-2026-07-23",
+    "title": "Bitext Customer Support",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+    "source_revision": "unfetched-candidate",
+    "checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality", "intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CDLA-Sharing-1.0",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Giữ legal-hold tới khi Legal xác nhận nghĩa vụ sharing/derived data.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Không download trước khi rights review hoàn tất."
+  },
+  {
+    "source_id": "vitosa",
+    "version": "candidate-2026-07-23",
+    "title": "ViToSA",
+    "status": "rejected",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+    "source_revision": "unfetched-candidate",
+    "checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-NC-ND-4.0",
+      "commercial_use": "prohibited",
+      "derivatives": "prohibited",
+      "redistribution": "unknown",
+      "access_conditions": "Không phù hợp mục đích thương mại và derivative dataset.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+        "https://github.com/vitosa-research/ViToSA-Dataset"
+      ],
+      "legal_review": "rejected"
+    },
+    "retention": {
+      "policy_id": "rejected-source-metadata-v1",
+      "duration_days": 365
+    },
+    "deletion_method": "Không tải content; chỉ giữ metadata quyết định từ chối tới hết retention.",
+    "approval_evidence": [],
+    "review_date": "2027-07-23",
+    "notes": "Rejected; không dùng thương mại."
+  },
+  {
+    "source_id": "vianli-license-conflict",
+    "version": "candidate-2026-07-23",
+    "title": "ViANLI",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/uitnlp/ViANLI",
+    "source_revision": "unfetched-candidate",
+    "checksum_sha256": null,
+    "proposed_purposes": ["intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "conflicting-metadata",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "License metadata mâu thuẫn; quarantine đến khi Legal xác minh upstream.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/uitnlp/ViANLI",
+        "https://huggingface.co/datasets/uitnlp/ViANLI/blob/main/README.md"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
+    "approval_evidence": [],
+    "review_date": "2026-08-23",
+    "notes": "Không download khi license còn mâu thuẫn."
+  }
+]

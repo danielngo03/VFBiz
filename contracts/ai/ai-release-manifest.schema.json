@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/release-manifest/v1",
+  "title": "VFBiz AI Release Manifest",
+  "type": "object",
+  "required": [
+    "release_id",
+    "assistant_profile",
+    "status",
+    "model_deployments",
+    "prompt_revision",
+    "policy_revision",
+    "graph_revision",
+    "retriever_revision",
+    "embedding_revision",
+    "dataset_releases",
+    "tool_registry_revision",
+    "evaluation_suite_revision",
+    "evidence_hashes",
+    "rollback_release_id",
+    "kill_switch",
+    "approval_evidence"
+  ],
+  "properties": {
+    "release_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "assistant_profile": {
+      "enum": ["public_customer", "authenticated_customer"]
+    },
+    "status": {
+      "enum": [
+        "candidate",
+        "evaluated",
+        "decision-ready",
+        "approved",
+        "promoted",
+        "rolled-back",
+        "retired"
+      ]
+    },
+    "model_deployments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tier",
+          "provider",
+          "model_revision",
+          "capability_profile"
+        ],
+        "properties": {
+          "tier": { "enum": ["T0", "T1", "T2", "T3"] },
+          "provider": { "type": "string", "minLength": 1 },
+          "model_revision": { "type": "string", "minLength": 1 },
+          "capability_profile": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "prompt_revision": { "type": "string", "minLength": 1 },
+    "policy_revision": { "type": "string", "minLength": 1 },
+    "graph_revision": { "type": "string", "minLength": 1 },
+    "retriever_revision": { "type": "string", "minLength": 1 },
+    "embedding_revision": { "type": "string", "minLength": 1 },
+    "dataset_releases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "tool_registry_revision": { "type": "string", "minLength": 1 },
+    "evaluation_suite_revision": { "type": "string", "minLength": 1 },
+    "evidence_hashes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "rollback_release_id": { "type": ["string", "null"] },
+    "kill_switch": {
+      "type": "object",
+      "required": ["control_id", "tested_at"],
+      "properties": {
+        "control_id": { "type": "string", "minLength": 1 },
+        "tested_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "approval_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

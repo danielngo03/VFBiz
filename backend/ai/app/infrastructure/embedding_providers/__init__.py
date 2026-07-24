@@ -1,0 +1,1 @@
+"""Approved embedding model adapters."""

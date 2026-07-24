@@ -1,0 +1,56 @@
+[project]
+name = "vfbiz-ai"
+version = "0.1.0"
+description = "Private AI Platform for VFBiz"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18,<2",
+    "asyncpg>=0.31,<1",
+    "fastapi[standard]>=0.139,<1",
+    "httpx>=0.28,<1",
+    "opentelemetry-api>=1.39,<2",
+    "opentelemetry-sdk>=1.39,<2",
+    "pgvector>=0.5,<1",
+    "pydantic>=2.13,<3",
+    "pydantic-settings>=2.14,<3",
+    "pyjwt[crypto]>=2.10,<3",
+    "redis>=7.4,<8",
+    "sqlalchemy[asyncio]>=2.0,<3",
+    "structlog>=25,<26",
+    "tenacity>=9,<10",
+]
+
+[tool.fastapi]
+entrypoint = "app.main:app"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["app"]
+exclude = [".venv", "migrations/versions"]
+venvPath = "."
+venv = ".venv"
+
+[dependency-groups]
+test = [
+    "pyright>=1.1,<2",
+    "pytest>=9,<10",
+    "pytest-asyncio>=1.3,<2",
+    "ruff>=0.15,<1",
+]

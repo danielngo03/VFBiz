@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/source-register/v2",
+  "title": "VFBiz Source Register entry",
+  "type": "object",
+  "required": [
+    "source_id",
+    "version",
+    "title",
+    "status",
+    "source_type",
+    "locator",
+    "source_revision",
+    "proposed_purposes",
+    "classification",
+    "owner_role",
+    "rights",
+    "retention",
+    "deletion_method",
+    "review_date"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "version": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["candidate", "legal-hold", "approved", "rejected", "tombstoned"]
+    },
+    "source_type": {
+      "enum": [
+        "internal-content",
+        "public-dataset",
+        "synthetic",
+        "customer-derived"
+      ]
+    },
+    "locator": { "type": "string", "format": "uri" },
+    "source_revision": { "type": "string", "minLength": 1 },
+    "checksum_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "proposed_purposes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "knowledge",
+          "retrieval-evaluation",
+          "intent-ood",
+          "conversation-quality",
+          "tool-evaluation",
+          "refusal-safety",
+          "red-team",
+          "state-resilience",
+          "multimodal"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "approved_purposes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "knowledge",
+          "retrieval-evaluation",
+          "intent-ood",
+          "conversation-quality",
+          "tool-evaluation",
+          "refusal-safety",
+          "red-team",
+          "state-resilience",
+          "multimodal"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "acl_namespaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(public_customer|authenticated_customer|restricted_evaluation|red_team|training_candidate):[a-z0-9]+(?:-[a-z0-9]+)*:(vi|en)(?:-[A-Z]{2})?$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "classification": {
+      "enum": ["public", "internal", "confidential", "restricted"]
+    },
+    "owner_role": { "type": "string", "minLength": 1 },
+    "custodian_role": { "type": "string", "minLength": 1 },
+    "rights": {
+      "type": "object",
+      "required": [
+        "license_id",
+        "commercial_use",
+        "derivatives",
+        "redistribution",
+        "access_conditions",
+        "evidence_urls",
+        "legal_review"
+      ],
+      "properties": {
+        "license_id": { "type": ["string", "null"] },
+        "commercial_use": { "enum": ["unknown", "permitted", "prohibited"] },
+        "derivatives": { "enum": ["unknown", "permitted", "prohibited"] },
+        "redistribution": { "enum": ["unknown", "permitted", "prohibited"] },
+        "access_conditions": { "type": "string" },
+        "evidence_urls": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true
+        },
+        "legal_review": {
+          "enum": ["not-reviewed", "pending", "approved", "rejected"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "retention": {
+      "type": "object",
+      "required": ["policy_id", "duration_days"],
+      "properties": {
+        "policy_id": { "type": "string", "minLength": 1 },
+        "duration_days": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "deletion_method": { "type": "string", "minLength": 1 },
+    "approval_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "review_date": { "type": "string", "format": "date" },
+    "notes": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "approved" } } },
+      "then": {
+        "required": [
+          "approval_evidence",
+          "checksum_sha256",
+          "approved_purposes",
+          "acl_namespaces",
+          "custodian_role"
+        ],
+        "properties": {
+          "rights": {
+            "properties": {
+              "commercial_use": { "const": "permitted" },
+              "derivatives": { "const": "permitted" },
+              "legal_review": { "const": "approved" }
+            }
+          },
+          "approval_evidence": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["approved_purposes"],
+        "properties": {
+          "approved_purposes": {
+            "contains": { "const": "knowledge" }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "acl_namespaces": {
+            "contains": {
+              "pattern": "^(public_customer|authenticated_customer):"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["acl_namespaces"],
+        "properties": {
+          "acl_namespaces": {
+            "contains": { "pattern": "^public_customer:" }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": { "const": "public" }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["source_type"],
+        "properties": {
+          "source_type": { "const": "customer-derived" }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": { "const": "restricted" },
+          "acl_namespaces": {
+            "not": {
+              "contains": { "pattern": "^public_customer:" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

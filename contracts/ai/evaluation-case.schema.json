@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation-case/v1",
+  "title": "VFBiz AI Evaluation Case",
+  "type": "object",
+  "required": [
+    "case_id",
+    "suite_revision",
+    "assistant_profile",
+    "risk_domain",
+    "input",
+    "expected_policy_outcome",
+    "required_evidence",
+    "hard_gates",
+    "review_policy"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "suite_revision": { "type": "string", "minLength": 1 },
+    "assistant_profile": {
+      "enum": ["public_customer", "authenticated_customer"]
+    },
+    "risk_domain": {
+      "enum": [
+        "general",
+        "pricing",
+        "safety",
+        "legal",
+        "privacy",
+        "authorization",
+        "prompt-injection",
+        "resilience",
+        "multimodal"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "required": ["messages"],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "state_fixture": { "type": ["object", "null"] },
+        "tool_fixture": { "type": ["object", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "expected_policy_outcome": {
+      "enum": ["answer", "clarification", "refusal", "handoff", "tool-proposal"]
+    },
+    "required_evidence": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "hard_gates": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "acl",
+          "pii",
+          "citation",
+          "tool-authorization",
+          "rights",
+          "rollback"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "review_policy": {
+      "type": "object",
+      "required": ["human_review_required", "judge_rubric_revision"],
+      "properties": {
+        "human_review_required": { "type": "boolean" },
+        "judge_rubric_revision": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

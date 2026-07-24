@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-manifest/v1",
+  "title": "VFBiz Dataset Release Manifest",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "version",
+    "status",
+    "purpose",
+    "assistant_profiles",
+    "source_ids",
+    "artifacts",
+    "record_counts",
+    "split_strategy",
+    "quality_metrics",
+    "known_limitations",
+    "retention_policy_id",
+    "deletion_method",
+    "rollback_target",
+    "content_hash"
+  ],
+  "properties": {
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": [
+        "candidate",
+        "decision-ready",
+        "released",
+        "rejected",
+        "tombstoned"
+      ]
+    },
+    "purpose": { "type": "string", "minLength": 1 },
+    "assistant_profiles": {
+      "type": "array",
+      "items": { "enum": ["public_customer", "authenticated_customer"] },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "source_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "generator": {
+      "type": ["object", "null"],
+      "properties": {
+        "model_revision": { "type": "string" },
+        "prompt_revision": { "type": "string" },
+        "policy_revision": { "type": "string" }
+      },
+      "required": ["model_revision", "prompt_revision", "policy_revision"],
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["uri", "sha256", "records", "bytes"],
+        "properties": {
+          "uri": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "records": { "type": "integer", "minimum": 0 },
+          "bytes": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "record_counts": {
+      "type": "object",
+      "required": ["candidate", "accepted", "rejected"],
+      "properties": {
+        "candidate": { "type": "integer", "minimum": 0 },
+        "accepted": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "split_strategy": { "type": "string", "minLength": 1 },
+    "quality_metrics": { "type": "object", "minProperties": 1 },
+    "known_limitations": { "type": "array", "items": { "type": "string" } },
+    "approval_evidence": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "retention_policy_id": { "type": "string", "minLength": 1 },
+    "deletion_method": { "type": "string", "minLength": 1 },
+    "rollback_target": { "type": ["string", "null"] },
+    "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "released" } } },
+      "then": {
+        "required": ["approval_evidence"],
+        "properties": { "approval_evidence": { "minItems": 1 } }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
