@@ -1,0 +1,74 @@
+flowchart TB
+  accTitle: EV Route and Charging Planner
+  accDescr: Planner kết hợp route provider, vehicle energy profile và charging network để tạo phương án hành trình deterministic có uncertainty và freshness.
+
+  Input["Origin · Destination<br/>Vehicle · SOC · Reserve"]
+
+  subgraph Providers["Approved Provider Adapters"]
+    direction LR
+    Route["Maps / Routes"]
+    Weather["Weather / Elevation"]
+    CSMS["V-GREEN / CSMS"]
+  end
+
+  subgraph Data["Governed Mobility Data"]
+    direction LR
+    Vehicle[("Vehicle Energy<br/>Profile Revision")]
+    Spatial[("PostGIS<br/>Location · EVSE · Connector")]
+    Tariff[("Availability · Tariff<br/>Reliability")]
+  end
+
+  subgraph Planner["Deterministic Mobility Service"]
+    direction LR
+    Validate["Validate & Normalize"]
+    Corridor["Route Corridor Query"]
+    Energy["Energy Estimator<br/>Expected + Conservative"]
+    Solver["Constrained Graph Solver<br/>Time · Cost · Reliability"]
+    Charging["Charging Curve<br/>Tariff Calculator"]
+    Gate{"Freshness &<br/>Feasibility Gate"}
+  end
+
+  Result["TripPlan Alternatives<br/>Legs · Stops · SOC · Cost"]
+  Failure["NO_FEASIBLE_ROUTE<br/>Typed reason"]
+  UI["Customer Portal / Mobile"]
+  Chat["Chatbot read-only tool"]
+
+  Input --> Validate
+  Validate --> Route
+  Route --> Corridor
+  Weather --> Energy
+  CSMS --> Spatial
+  CSMS --> Tariff
+  Vehicle --> Energy
+  Spatial --> Corridor
+  Corridor --> Energy
+  Energy --> Solver
+  Tariff --> Charging
+  Solver --> Charging
+  Charging --> Gate
+  Gate -- feasible --> Result
+  Gate -- unsafe / stale --> Failure
+  Result --> UI
+  Result --> Chat
+  Failure --> UI
+  Failure --> Chat
+
+  subgraph Legend["Legend"]
+    direction LR
+    LI["Customer input/output"]
+    LE["External provider"]
+    LD["Governed data"]
+    LP["Deterministic planning"]
+  end
+  Chat ~~~ LI
+
+  classDef customer fill:#78a9ff,stroke:#0056d6,color:#0b1220,stroke-width:2px;
+  classDef external fill:#ffffff,stroke:#98a6b8,color:#344256,stroke-width:2px;
+  classDef data fill:#d8e0ea,stroke:#202c3d,color:#0b1220,stroke-width:2px;
+  classDef platform fill:#f1f4f8,stroke:#344256,color:#142033,stroke-width:2px;
+  classDef guard fill:#ffffff,stroke:#b42318,color:#b42318,stroke-width:2px;
+  class Input,Result,UI,Chat,LI customer;
+  class Route,Weather,CSMS,LE external;
+  class Vehicle,Spatial,Tariff,LD data;
+  class Validate,Corridor,Energy,Solver,Charging,LP platform;
+  class Gate,Failure guard;

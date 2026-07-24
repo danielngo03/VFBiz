@@ -1,0 +1,49 @@
+flowchart TB
+  accTitle: Lộ trình capability VFBiz
+  accDescr: Các wave phát triển từ foundation tới chatbot, discovery, ownership và EV mobility; mỗi wave có human gate và không thể hiện tiến độ hiện tại.
+
+  subgraph Roadmap["Capability Roadmap"]
+    direction LR
+    A["Wave A<br/>Identity · Account · Vehicle<br/>Portals · Authorization"]
+    B["Wave B<br/>Customer Chatbot<br/>Knowledge Platform"]
+    C["Wave C<br/>Drupal Discovery<br/>Conversion"]
+    D["Wave D<br/>Ownership · Commerce<br/>Workforce Operations"]
+    E["Wave E<br/>EV Station Discovery<br/>Pre-trip Planner"]
+    F["Future Safety Program<br/>Live Guidance · Telemetry<br/>Offline / Edge ML"]
+
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+    E --> F
+  end
+
+  G1{"Product &<br/>Architecture Gate"} --> A
+  G2{"Security · Data · AI<br/>Release Gate"} --> B
+  G3{"Content · Brand ·<br/>Commercial Gate"} --> C
+  G4{"Transaction · Privacy<br/>Release Gate"} --> D
+  G5{"Provider · Legal ·<br/>Mobility Gate"} --> E
+  G6{"Vehicle Safety · OEM<br/>Privacy Gate"} --> F
+
+  Note["Roadmap thể hiện dependency;<br/>không thể hiện implementation status"] -.-> E
+
+  subgraph Legend["Legend"]
+    direction LR
+    LC["Customer capability"]
+    LP["Platform capability"]
+    LG["Human gate"]
+  end
+  F ~~~ LC
+
+  classDef customer fill:#78a9ff,stroke:#0056d6,color:#0b1220,stroke-width:2px;
+  classDef platform fill:#f1f4f8,stroke:#344256,color:#142033,stroke-width:2px;
+  classDef ai fill:#ffb800,stroke:#344256,color:#0b1220,stroke-width:2px;
+  classDef workforce fill:#65c9bd,stroke:#0f5c55,color:#0b1220,stroke-width:2px;
+  classDef guard fill:#ffffff,stroke:#b42318,color:#b42318,stroke-width:2px;
+  classDef note fill:#ffffff,stroke:#98a6b8,color:#5c6979,stroke-dasharray:5 5;
+  class A,C,D,E,LC customer;
+  class B ai;
+  class F,LP platform;
+  class G1,G2,G3,G4,G5,G6,LG guard;
+  class Note note;

@@ -1,0 +1,73 @@
+flowchart TB
+  accTitle: Bối cảnh tổng thể của hệ sinh thái VFBiz
+  accDescr: Khách hàng và nhân sự sử dụng các kênh trải nghiệm để truy cập API, AI, dữ liệu và hệ thống doanh nghiệp thông qua các trust boundary.
+
+  subgraph Actors["Actors"]
+    direction LR
+    C["Khách hàng"]
+    W["Nhân sự"]
+  end
+
+  subgraph Experience["Experience Plane"]
+    direction LR
+    D["Drupal<br/>Public Web"]
+    CP["Customer Portal"]
+    M["Mobile"]
+    WP["Workforce Portal"]
+    KC["Keycloak<br/>Identity Experience"]
+  end
+
+  subgraph Platform["Runtime Data Plane"]
+    direction LR
+    API["NestJS API Platform"]
+    AI["FastAPI AI Platform"]
+    EV["EV Journey Platform"]
+  end
+
+  subgraph Enterprise["Enterprise & Provider Systems"]
+    direction LR
+    PIM["PIM / ERP"]
+    CRM["CRM / DMS"]
+    CHG["V-GREEN / CSMS"]
+    MAP["Maps / Routes"]
+    MSG["Email / SMS / Push"]
+  end
+
+  C --> D
+  C --> CP
+  C --> M
+  W --> WP
+  CP --> KC
+  M --> KC
+  WP --> KC
+  D --> API
+  CP --> API
+  M --> API
+  WP --> API
+  API --> AI
+  API --> EV
+  API --> PIM
+  API --> CRM
+  API --> CHG
+  EV --> MAP
+  API --> MSG
+
+  subgraph Legend["Legend"]
+    direction LR
+    LC["Customer"]
+    LW["Workforce"]
+    LP["Platform"]
+    LE["External"]
+  end
+  MSG ~~~ LC
+
+  classDef customer fill:#78a9ff,stroke:#0056d6,color:#0b1220,stroke-width:2px;
+  classDef workforce fill:#65c9bd,stroke:#0f5c55,color:#0b1220,stroke-width:2px;
+  classDef platform fill:#f1f4f8,stroke:#344256,color:#142033,stroke-width:2px;
+  classDef ai fill:#ffb800,stroke:#344256,color:#0b1220,stroke-width:2px;
+  classDef external fill:#ffffff,stroke:#98a6b8,color:#344256,stroke-width:2px;
+  class C,CP,M,D,LC customer;
+  class W,WP,KC,LW workforce;
+  class API,EV,LP platform;
+  class AI ai;
+  class PIM,CRM,CHG,MAP,MSG,LE external;

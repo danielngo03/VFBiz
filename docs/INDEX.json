@@ -1,0 +1,1666 @@
+{
+  "version": 1,
+  "generated_from": "YAML frontmatter",
+  "documents": [
+    {
+      "id": "ai-architecture",
+      "title": "Kiến trúc AI Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "ai",
+      "when_to_read": [
+        "ai-boundary",
+        "customer-chatbot",
+        "ai-tool"
+      ],
+      "tags": [
+        "fastapi",
+        "architecture",
+        "rag"
+      ],
+      "revision": "2026-07-23.2",
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/architecture.md",
+      "source_hash": "2c4d752cc50e4acde00ae2c44cee2967c2504bfc810a94e6ec0a8e3ce9dfd561"
+    },
+    {
+      "id": "ai-conversation-graph",
+      "title": "LangGraph Conversation State Machine",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "ai",
+      "when_to_read": [
+        "customer-conversation",
+        "ai-assistant",
+        "session-concurrency",
+        "ai-vision"
+      ],
+      "tags": [
+        "langgraph",
+        "state-machine",
+        "assistant"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/conversation-graph.md",
+      "source_hash": "c247da52f99e506f5fb229b3d9c767961161ed2db7049ce3e2ed5bb1fc20866f"
+    },
+    {
+      "id": "ai-dataset-engineering",
+      "title": "Dataset Factory cho Customer Chatbot",
+      "status": "active",
+      "owner_role": "data-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "dataset-source",
+        "synthetic-dataset",
+        "dataset-release",
+        "ai-dataset"
+      ],
+      "tags": [
+        "dataset",
+        "evaluation",
+        "synthetic-data"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/dataset-engineering.md",
+      "source_hash": "e94322ffa379707a16205ef702c30188c05e520973a8cb1a1146f5a54b03cf58"
+    },
+    {
+      "id": "ai-evaluation-release",
+      "title": "AI evaluation và release evidence",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "ai",
+      "when_to_read": [
+        "ai-evaluation",
+        "ai-release",
+        "fine-tuning"
+      ],
+      "tags": [
+        "evaluation",
+        "release",
+        "ai-safety"
+      ],
+      "revision": "2026-07-23.2",
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [
+        "ai-security-profiles-release"
+      ],
+      "path": "backend/ai/docs/evaluation-and-release.md",
+      "source_hash": "f8212f895491ebfb23382aa5793b890a82b5ca6b7c456669d76d575639e89d0b"
+    },
+    {
+      "id": "ai-inference-serving",
+      "title": "Model Mesh và local inference serving",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "ai",
+      "when_to_read": [
+        "local-inference",
+        "model-routing",
+        "provider-fallback",
+        "ai-finops"
+      ],
+      "tags": [
+        "inference",
+        "vllm",
+        "finops",
+        "resilience"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/inference-serving.md",
+      "source_hash": "47bc625635de84f9be14885f80b9638335a1a9fb14bb8007d3fd6de0e01100ca"
+    },
+    {
+      "id": "ai-knowledge-data-governance",
+      "title": "Knowledge và dataset governance của AI Platform",
+      "status": "active",
+      "owner_role": "data-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "dataset",
+        "data-governance",
+        "ai-dataset",
+        "ai-retrieval"
+      ],
+      "tags": [
+        "dataset",
+        "rag",
+        "retrieval",
+        "governance"
+      ],
+      "revision": "2026-07-23.2",
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/knowledge-data-governance.md",
+      "source_hash": "262fdd20eae2d220973646c3b5f3b23db5d7e1b048259e008c6a81178c80f77c"
+    },
+    {
+      "id": "ai-knowledge-ingestion",
+      "title": "Knowledge-source ingestion của AI Platform",
+      "status": "active",
+      "owner_role": "data-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "dataset-source",
+        "knowledge-ingestion",
+        "ai-retrieval"
+      ],
+      "tags": [
+        "knowledge",
+        "ingestion",
+        "retrieval",
+        "data-governance"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/knowledge-ingestion.md",
+      "source_hash": "8392c3ba3e18da5c5bd631f5c48ee4ebd79fd2453d33cb30425110aee0e531f0"
+    },
+    {
+      "id": "ai-knowledge-release",
+      "title": "Knowledge revision và atomic release",
+      "status": "active",
+      "owner_role": "data-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "knowledge-revision",
+        "knowledge-release",
+        "ai-retrieval",
+        "webhook"
+      ],
+      "tags": [
+        "rag",
+        "revision",
+        "release"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/ai/docs/knowledge-release.md",
+      "source_hash": "99b41a02aa71382309562537aee1605257959fc3b71f225e717efa004c2eaeb4"
+    },
+    {
+      "id": "ai-safety-abuse",
+      "title": "AI safety and abuse controls",
+      "status": "active",
+      "owner_role": "security-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "ai-safety",
+        "prompt-injection",
+        "data-poisoning",
+        "ai-tool",
+        "ai-incident",
+        "ai-vision",
+        "multimodal-injection"
+      ],
+      "tags": [
+        "ai",
+        "security",
+        "abuse"
+      ],
+      "revision": "2026-07-23.2",
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [
+        "ai-security-profiles-release"
+      ],
+      "path": "backend/ai/docs/safety-and-abuse.md",
+      "source_hash": "6cfd88639e676eaaffcd125e0aefca42c055ae5ab7a93167a3a65316c0af7142"
+    },
+    {
+      "id": "plan-vfbiz-0003",
+      "title": "FastAPI AI Platform rebuild plan",
+      "status": "archived",
+      "owner_role": "data-owner",
+      "scope": "ai",
+      "when_to_read": [
+        "ai-rebuild"
+      ],
+      "tags": [
+        "plan",
+        "fastapi",
+        "ai"
+      ],
+      "revision": 1,
+      "review_date": "2026-07-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/archive/VFBIZ-0003-fastapi-ai-rebuild.md",
+      "source_hash": "b449f0d8b1cb700a55f686f435de90b963ebb98432741926eee0df5dc399f1da"
+    },
+    {
+      "id": "api-ai-gateway-tools",
+      "title": "AI Gateway và read-only tools của API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "customer-conversation",
+        "ai-client",
+        "ai-tool",
+        "ai-vision",
+        "local-inference"
+      ],
+      "tags": [
+        "ai-gateway",
+        "tools",
+        "security",
+        "resilience"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/ai-gateway-and-tools.md",
+      "source_hash": "96ffd1a9337f4e012d6c2ee4efaa2a0f8332b743b2d1f90818e84ee125b6da3e"
+    },
+    {
+      "id": "api-architecture",
+      "title": "Kiến trúc API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "api-boundary",
+        "public-contract",
+        "authorization",
+        "integration"
+      ],
+      "tags": [
+        "nestjs",
+        "architecture"
+      ],
+      "revision": "2026-07-23.5",
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/architecture.md",
+      "source_hash": "43990a322aef9ec233989cded568d28fd153dd44137d5ac49f9557919671480f"
+    },
+    {
+      "id": "api-conversation-runtime",
+      "title": "Conversation runtime của API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "customer-conversation",
+        "support-handoff",
+        "session-concurrency"
+      ],
+      "tags": [
+        "conversation",
+        "handoff",
+        "concurrency",
+        "privacy"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/conversation-runtime.md",
+      "source_hash": "3e68469140ecc61353bf2ff5b741d12064d8c4cb047d8564a2799a7d3ad60fa9"
+    },
+    {
+      "id": "api-data-model",
+      "title": "Data model và quyền sở hữu dữ liệu API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "schema",
+        "migration",
+        "persistence",
+        "data-ownership"
+      ],
+      "tags": [
+        "prisma",
+        "postgresql",
+        "data"
+      ],
+      "revision": "2026-07-24.1",
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/data-model.md",
+      "source_hash": "f039cd18cffbaa8cd38ca132547e6ac760f8bb84da2786ce697b668e8360dc21"
+    },
+    {
+      "id": "api-identity-and-account",
+      "title": "Identity và Account runtime",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "identity",
+        "customer-account",
+        "customer-profile",
+        "consent",
+        "customer-session",
+        "dsar"
+      ],
+      "tags": [
+        "nestjs",
+        "identity",
+        "customer",
+        "privacy"
+      ],
+      "revision": 12,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/identity-and-account.md",
+      "source_hash": "9fa8c266cba825b67a90eb92d46da7e248bfef26a032c1ed4523ae99aa8370dc"
+    },
+    {
+      "id": "api-integration-adapters",
+      "title": "Chuẩn tích hợp provider của API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "integration",
+        "provider-adapter",
+        "webhook",
+        "reconciliation"
+      ],
+      "tags": [
+        "integration",
+        "resilience",
+        "security"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/integration-adapters.md",
+      "source_hash": "8e97798346fd8949ad6fbb7fb14f41d99799856908765b7b683441a9af6aab58"
+    },
+    {
+      "id": "api-vehicle-catalog-and-garage",
+      "title": "Vehicle Catalog, Customer Garage và Ownership boundary",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "vehicle-data",
+        "vehicle-catalog",
+        "customer-garage",
+        "vehicle-ownership",
+        "vin"
+      ],
+      "tags": [
+        "nestjs",
+        "product",
+        "vehicle",
+        "garage"
+      ],
+      "revision": 8,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/vehicle-catalog-and-garage.md",
+      "source_hash": "8d8cfb1d45da126d771a45cf2dd292e02062d9123c785e4e27b44434e2005945"
+    },
+    {
+      "id": "api-workforce-authorization",
+      "title": "Workforce authorization",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "workforce-authorization",
+        "authorization"
+      ],
+      "tags": [
+        "authorization",
+        "workforce-admin",
+        "identity"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24",
+      "supersedes": [],
+      "path": "backend/api/docs/workforce-authorization.md",
+      "source_hash": "50e60a1fef170bbf9210e84b79c4354a8ffc7a065aadf05a3ff1ade91b01591c"
+    },
+    {
+      "id": "plan-vfbiz-0004",
+      "title": "NestJS API Platform rebuild plan",
+      "status": "archived",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "api-rebuild"
+      ],
+      "tags": [
+        "plan",
+        "nestjs",
+        "api"
+      ],
+      "revision": 1,
+      "review_date": "2026-07-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/archive/VFBIZ-0004-nestjs-api-rebuild.md",
+      "source_hash": "66e7f804d4a49c7541dccb27e52b2bd2a760370239d92362bc07e61a7c1e0c51"
+    },
+    {
+      "id": "backend-platform-rebuild",
+      "title": "Quyết định lịch sử về Backend Platform",
+      "status": "superseded",
+      "owner_role": "architect",
+      "scope": "backend",
+      "when_to_read": [
+        "architecture-history"
+      ],
+      "tags": [
+        "architecture",
+        "backend"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/backend-platform-rebuild.md",
+      "source_hash": "966b646c507073edeebc1f47ec8b5f9b39d94191828390d66a74b193641c35df"
+    },
+    {
+      "id": "plan-vfbiz-0002",
+      "title": "Backend domain model implementation plan",
+      "status": "archived",
+      "owner_role": "engineering-lead",
+      "scope": "backend",
+      "when_to_read": [
+        "backend-domain-model"
+      ],
+      "tags": [
+        "plan",
+        "backend"
+      ],
+      "revision": 1,
+      "review_date": "2026-07-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/archive/VFBIZ-0002-backend-domain-model.md",
+      "source_hash": "68abc2d195054ae2c448cf60d3cfe937b38dcce1e2991c9e1e91bea15c56056b"
+    },
+    {
+      "id": "adr-0001-staging-account-chat-trip",
+      "title": "Account, chatbot và Trip Planner trên staging",
+      "status": "superseded",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "identity",
+        "chatbot",
+        "trip",
+        "staging-mvp"
+      ],
+      "tags": [
+        "adr",
+        "identity",
+        "ai",
+        "trip"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0001-staging-account-chat-trip.md",
+      "source_hash": "23884d1e30bf0675f79c0315d45616b24df873ad9c66deac34f56a8983e34d57"
+    },
+    {
+      "id": "adr-0002-customer-chatbot-v6",
+      "title": "ADR 0002 — Customer Chatbot V6",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-chatbot",
+        "architecture",
+        "ai-release",
+        "knowledge-revision"
+      ],
+      "tags": [
+        "adr",
+        "chatbot",
+        "ai"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [
+        "adr-0001-staging-account-chat-trip"
+      ],
+      "path": "docs/decisions/0002-customer-chatbot-v6.md",
+      "source_hash": "1f4476c6840513db94e2c65c619a8f665c46e633750494b43aaa6990b4e4ca13"
+    },
+    {
+      "id": "adr-0003-account-vehicle-before-chatbot-runtime",
+      "title": "ADR 0003 — Account và Vehicle foundation trước Chatbot runtime",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "delivery-order",
+        "identity",
+        "vehicle-data",
+        "customer-chatbot"
+      ],
+      "tags": [
+        "adr",
+        "account",
+        "vehicle",
+        "chatbot"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0003-account-vehicle-before-chatbot-runtime.md",
+      "source_hash": "1e2c6da1872dac99688ec49b8efdf5d2518f8868b44f0ac39eba8cb1eb8ffcb2"
+    },
+    {
+      "id": "adr-0005-customer-portal-bff-and-dal",
+      "title": "ADR 0005 — Customer Portal BFF và server DAL",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-portal",
+        "customer-bff",
+        "customer-auth",
+        "customer-session",
+        "customer-journey"
+      ],
+      "tags": [
+        "adr",
+        "nextjs",
+        "oidc",
+        "customer"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0005-customer-portal-bff-and-dal.md",
+      "source_hash": "44e1fb9d7f3b95f011695e0ce6ef569e44323a82f19792f92f074c321a7e74fe"
+    },
+    {
+      "id": "ADR-0006",
+      "title": "Keycloak sở hữu Identity Experience",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "identity-theme",
+        "authentication",
+        "keycloak"
+      ],
+      "tags": [
+        "architecture",
+        "identity",
+        "keycloak",
+        "design-system"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "context_anchors": {
+        "identity-theme": "## Decision",
+        "authentication": "## Security boundary"
+      },
+      "path": "docs/decisions/0006-enterprise-keycloak-identity-experience.md",
+      "source_hash": "89ed85fda34e32b2ee9c0a7c77cc3fc874441a50a6d2bdd2c109721ca7c3a6af"
+    },
+    {
+      "id": "adr-0007-ev-route-and-charging-planner",
+      "title": "ADR 0007 — EV Route & Charging Planner",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "ev-trip-planner",
+        "charging-station",
+        "maps-provider",
+        "mobility",
+        "architecture"
+      ],
+      "tags": [
+        "adr",
+        "mobility",
+        "trip-planner",
+        "maps"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0007-ev-route-and-charging-planner.md",
+      "source_hash": "a0d6333b36acb8f3d3906b6fc0ce3fe0e4280c4fafc980b93b66e6ca30ae6904"
+    },
+    {
+      "id": "archived-staging-mvp-2026-07-20",
+      "title": "Kế hoạch staging MVP 20–25/07/2026",
+      "status": "archived",
+      "owner_role": "product-manager",
+      "scope": "cross-system",
+      "when_to_read": [
+        "historical-staging-plan"
+      ],
+      "tags": [
+        "archive",
+        "staging"
+      ],
+      "revision": 1,
+      "review_date": "2026-07-25T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/archive/2026-07-20-staging-mvp.md",
+      "source_hash": "365fed203a0bc1f67046341b03c53d5da076f8bcfe65b034146e63329c0ba2a4"
+    },
+    {
+      "id": "customer-account-and-vehicle",
+      "title": "Nền tảng tài khoản khách hàng và dữ liệu xe",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "identity",
+        "customer-account",
+        "customer-profile",
+        "customer-data",
+        "vehicle-data",
+        "vehicle-catalog",
+        "customer-garage"
+      ],
+      "tags": [
+        "product",
+        "account",
+        "customer",
+        "vehicle"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/customer-account-and-vehicle.md",
+      "source_hash": "b0ae894a638b1612a079073ad0f46f9061caaed3291111862661b4762eb66305"
+    },
+    {
+      "id": "customer-chatbot-product",
+      "title": "Customer Chatbot V6",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-chatbot",
+        "customer-conversation",
+        "support-handoff",
+        "product-outcome"
+      ],
+      "tags": [
+        "product",
+        "chatbot",
+        "customer-support"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [
+        "staging-mvp"
+      ],
+      "path": "docs/product/customer-chatbot.md",
+      "source_hash": "9595aaff0bbaa8e7e7819c274f242c4be9506b3fca9cc127544da938e1ef2e02"
+    },
+    {
+      "id": "customer-chatbot-v6-architecture",
+      "title": "Kiến trúc Customer Chatbot V6",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-chatbot",
+        "customer-conversation",
+        "support-handoff",
+        "ai-vision",
+        "multimodal-injection",
+        "knowledge-revision",
+        "local-inference",
+        "cross-system"
+      ],
+      "tags": [
+        "architecture",
+        "chatbot",
+        "ai",
+        "resilience"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [
+        "staging-mvp-boundaries",
+        "backend-platform-rebuild"
+      ],
+      "path": "docs/architecture/customer-chatbot-v6.md",
+      "source_hash": "9eaa19d10f93baedca1d7cea2ba368fc99b24a9d7d612c9ae518920eb06745dd"
+    },
+    {
+      "id": "customer-portal-product",
+      "title": "Customer Portal",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-portal",
+        "customer-journey",
+        "customer-bff",
+        "customer-profile",
+        "customer-privacy",
+        "customer-garage"
+      ],
+      "tags": [
+        "product",
+        "customer",
+        "portal"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/customer-portal.md",
+      "source_hash": "df3ce16ddc810ab01527024cf12d1b4d125b0b71aa8e7dfbf9cf6889cd0029e8"
+    },
+    {
+      "id": "GOV-WORKFORCE-AUTHZ-THREAT-MODEL",
+      "title": "Threat model cho Workforce Authorization",
+      "status": "proposed",
+      "owner_role": "security-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "workforce-authorization",
+        "security-review",
+        "threat-model"
+      ],
+      "tags": [
+        "security",
+        "workforce",
+        "authorization",
+        "threat-model"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/governance/workforce-authorization-threat-model.md",
+      "source_hash": "f0b65b92cc6df84b8f28970f3faea1c9b4749405dfedc1bc484a99be10b42404"
+    },
+    {
+      "id": "identity-customer-vehicle-foundation",
+      "title": "Kiến trúc Identity, Customer và Vehicle foundation",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "identity",
+        "customer-account",
+        "customer-profile",
+        "consent",
+        "dsar",
+        "vehicle-data",
+        "vehicle-catalog",
+        "customer-garage",
+        "vehicle-ownership"
+      ],
+      "tags": [
+        "architecture",
+        "identity",
+        "customer",
+        "vehicle"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/identity-customer-vehicle-foundation.md",
+      "source_hash": "96d7297ed9215e742e10887ea7b7dc2583ef5cea3fb2c47712e8346e268b8ff4"
+    },
+    {
+      "id": "plan-account-customer-vehicle-foundation",
+      "title": "ExecPlan Account, Customer Data và Vehicle Foundation",
+      "status": "archived",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0013",
+        "VFBIZ-0014",
+        "VFBIZ-0015",
+        "VFBIZ-0016"
+      ],
+      "tags": [
+        "identity",
+        "customer",
+        "vehicle",
+        "security"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/account-customer-vehicle-foundation.md",
+      "source_hash": "9983f399f6660fec11abec80600af306b546edbf1ef7764950dae109efb098ba"
+    },
+    {
+      "id": "plan-account-vehicle-enterprise-hardening",
+      "title": "ExecPlan hardening Account và Vehicle foundation",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0027",
+        "VFBIZ-0028",
+        "VFBIZ-0029",
+        "VFBIZ-0030",
+        "VFBIZ-0031",
+        "VFBIZ-0032",
+        "VFBIZ-0033",
+        "VFBIZ-0034",
+        "VFBIZ-0035",
+        "VFBIZ-0036",
+        "VFBIZ-0037",
+        "VFBIZ-0038",
+        "VFBIZ-0039"
+      ],
+      "tags": [
+        "account",
+        "authorization",
+        "vehicle",
+        "data-governance"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/account-vehicle-enterprise-hardening.md",
+      "source_hash": "1e1b327a31c42dac0d95b0ca0cac7aad3fdf68b29452d863b7fe26ba94cdcc7d"
+    },
+    {
+      "id": "plan-customer-chatbot-runtime-sequence",
+      "title": "ExecPlan Conversation Runtime, LangGraph và Knowledge foundation",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0017",
+        "VFBIZ-0018",
+        "VFBIZ-0019",
+        "VFBIZ-0020",
+        "VFBIZ-0021",
+        "VFBIZ-0022",
+        "VFBIZ-0023",
+        "VFBIZ-0024",
+        "VFBIZ-0025",
+        "VFBIZ-0026"
+      ],
+      "tags": [
+        "conversation",
+        "langgraph",
+        "knowledge",
+        "ingestion"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/customer-chatbot-runtime-sequence.md",
+      "source_hash": "533707e7398206a9242a967ba4a9d751ee56b304ef5904ee17e6c80750d323d4"
+    },
+    {
+      "id": "plan-vfbiz-0011",
+      "title": "ExecPlan Chatbot V6 và Dataset Factory",
+      "status": "archived",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0011",
+        "customer-chatbot-v6"
+      ],
+      "tags": [
+        "chatbot",
+        "architecture",
+        "dataset",
+        "agents"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-23T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0011.md",
+      "source_hash": "af5bb09739d65d3d994d443e515f12d1ae2e459f778b119faa5ae30c49db06ea"
+    },
+    {
+      "id": "plan-VFBIZ-0055",
+      "title": "ExecPlan Workforce Portal và Dynamic Authorization",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0055",
+        "VFBIZ-0056",
+        "VFBIZ-0057",
+        "VFBIZ-0058",
+        "VFBIZ-0059",
+        "VFBIZ-0060"
+      ],
+      "tags": [
+        "workforce",
+        "authorization",
+        "nextjs"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0055.md",
+      "source_hash": "f49a3e66f7c0d0ab1e5abb343f68f758af96b5522ca71806f14221f4c2beba56"
+    },
+    {
+      "id": "staging-mvp",
+      "title": "Staging MVP Account, Customer Chatbot và EV Trip Planner",
+      "status": "superseded",
+      "owner_role": "product-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "staging-mvp",
+        "account",
+        "chatbot",
+        "trip"
+      ],
+      "tags": [
+        "product",
+        "account",
+        "ai",
+        "trip"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/staging-mvp.md",
+      "source_hash": "bdc9a70780bdf85de51e68d995ccb5eb7d8ac27844d014fbc0997de2f5d3c651"
+    },
+    {
+      "id": "staging-mvp-boundaries",
+      "title": "Staging MVP runtime boundaries",
+      "status": "superseded",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "staging-mvp",
+        "cross-system",
+        "controlled"
+      ],
+      "tags": [
+        "architecture",
+        "boundaries",
+        "data"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/staging-mvp-boundaries.md",
+      "source_hash": "a6ce4bc3fb401d0a6d25d167493478100a64ef3dc506ca062aa8f15101075535"
+    },
+    {
+      "id": "VFBIZ-0073-plan",
+      "title": "ExecPlan chuẩn hóa kiến trúc hai Next.js portal",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0073",
+        "portal-architecture",
+        "provider-handoff"
+      ],
+      "tags": [
+        "nextjs",
+        "customer-portal",
+        "workforce-portal",
+        "session-security"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0073.md",
+      "source_hash": "272c24dc81d5aeba91031cf381fff515ab9d3136057f76b5d59974290b7e1da6"
+    },
+    {
+      "id": "VFBIZ-0074-plan",
+      "title": "ExecPlan Keycloak Identity Experience",
+      "status": "active",
+      "owner_role": "identity-platform-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0074",
+        "identity-theme"
+      ],
+      "context_anchors": {
+        "VFBIZ-0074": "## Progress",
+        "identity-theme": "## Decisions"
+      },
+      "tags": [
+        "keycloak",
+        "identity",
+        "design-system"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0074.md",
+      "source_hash": "a58a8a7e6373c676a78bb9c2f2ec129daf0356a29d2fcde688a40f7fabb58817"
+    },
+    {
+      "id": "customer-portal-architecture",
+      "title": "Kiến trúc Customer Portal",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "customer-portal",
+      "when_to_read": [
+        "customer-bff",
+        "authentication",
+        "customer-session"
+      ],
+      "context_anchors": {
+        "customer-bff": "## Ranh giới",
+        "authentication": "## Login và session",
+        "customer-session": "## Logout và revocation"
+      },
+      "tags": [
+        "nextjs",
+        "oidc",
+        "security"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/customer-portal/docs/architecture.md",
+      "source_hash": "0629bab5f7c5062efdc90c4628a8bbec93639655e281002f4b9df573c6b46938"
+    },
+    {
+      "id": "customer-portal-design-system",
+      "title": "Design system Customer Portal",
+      "status": "active",
+      "owner_role": "design-lead",
+      "scope": "customer-portal",
+      "when_to_read": [
+        "design-system",
+        "customer-portal-ui",
+        "visual-change"
+      ],
+      "context_anchors": {
+        "design-system": "## Nguyên tắc",
+        "customer-portal-ui": "## Quy tắc component",
+        "visual-change": "## Gate"
+      },
+      "tags": [
+        "design",
+        "accessibility",
+        "nextjs"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/customer-portal/docs/design-system.md",
+      "source_hash": "bb8b0bc4a2a8f959c841f76c510050eb39f668c15788bae0aadc2ead4866878c"
+    },
+    {
+      "id": "customer-portal-experience-accessibility",
+      "title": "Trải nghiệm và accessibility Customer Portal",
+      "status": "active",
+      "owner_role": "design-lead",
+      "scope": "customer-portal",
+      "when_to_read": [
+        "customer-journey",
+        "accessibility",
+        "customer-profile",
+        "customer-privacy",
+        "customer-garage"
+      ],
+      "context_anchors": {
+        "customer-journey": "## Journey states",
+        "accessibility": "## Accessibility acceptance",
+        "customer-profile": "## Account và privacy",
+        "customer-privacy": "## Account và privacy",
+        "customer-garage": "## Garage"
+      },
+      "tags": [
+        "experience",
+        "accessibility",
+        "customer"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/customer-portal/docs/experience-and-accessibility.md",
+      "source_hash": "2775c1b554b00622c9053d1770e996c5e202fea1d84c906244d5b0400c7fed7f"
+    },
+    {
+      "id": "customer-portal-testing",
+      "title": "Kiểm thử Customer Portal",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "customer-portal",
+      "when_to_read": [
+        "customer-portal-test",
+        "customer-portal-e2e"
+      ],
+      "context_anchors": {
+        "customer-portal-test": "## Taxonomy",
+        "customer-portal-e2e": "## Gate"
+      },
+      "tags": [
+        "testing",
+        "nextjs"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/customer-portal/docs/testing.md",
+      "source_hash": "cbda1017782a62379098c944c96ced5f646123426741c6d6dba1a488e787acb5"
+    },
+    {
+      "id": "drupal-ddev-runbook",
+      "title": "DDEV local development",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "drupal",
+      "when_to_read": [
+        "ddev",
+        "local-development",
+        "drupal-config"
+      ],
+      "tags": [
+        "drupal",
+        "ddev"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "drupal/docs/development/ddev.md",
+      "source_hash": "c7289381a3694b387764a6dd08f821ac10f0f7b957300b44ee1cd6e55be2f74e"
+    },
+    {
+      "id": "drupal-workspace-guide",
+      "title": "Drupal workspace guide",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "drupal",
+      "when_to_read": [
+        "drupal-boundary",
+        "drupal-integration"
+      ],
+      "tags": [
+        "drupal",
+        "cms"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "drupal/docs/README.md",
+      "source_hash": "69cf35d99ac144482acd8d5c3615ccad9b9a9ba26cf96261719b13f362500495"
+    },
+    {
+      "id": "adr-0004-dynamic-workforce-authorization",
+      "title": "Dynamic Workforce Authorization",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "root",
+      "when_to_read": [
+        "authorization",
+        "workforce-admin",
+        "workforce-portal"
+      ],
+      "tags": [
+        "adr",
+        "authorization",
+        "workforce"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0004-dynamic-workforce-authorization.md",
+      "source_hash": "a577aaecaa100a686cc7e6f9bc7d7d250d25ec3ba97038002d7159a28ef77928"
+    },
+    {
+      "id": "adr-NNNN",
+      "title": "Decision title",
+      "status": "proposed",
+      "owner_role": "architect",
+      "scope": "root",
+      "when_to_read": [],
+      "tags": [
+        "adr"
+      ],
+      "revision": 1,
+      "review_date": "YYYY-MM-DD",
+      "supersedes": [],
+      "path": "docs/decisions/0000-template.md",
+      "source_hash": "349a7ab877b088b9182dff5f54f741fdb8071d0a6834dbb319a6b7e3053aa2c5"
+    },
+    {
+      "id": "capability-map",
+      "title": "Bản đồ capability",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "root",
+      "when_to_read": [
+        "discovery",
+        "new-capability"
+      ],
+      "tags": [
+        "product",
+        "ownership"
+      ],
+      "revision": 7,
+      "review_date": "2026-10-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/capability-map.md",
+      "source_hash": "c6b9d37a1349f75125b0fb0589213e542fc274be53ffb35da39c19c40671843a"
+    },
+    {
+      "id": "context-and-handoff",
+      "title": "Context routing, compaction và handoff",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "context",
+        "resume",
+        "compact",
+        "handoff"
+      ],
+      "tags": [
+        "context",
+        "tokens",
+        "handoff"
+      ],
+      "revision": 1,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [
+        "context-compaction"
+      ],
+      "path": "docs/operating-model/context-and-handoff.md",
+      "source_hash": "c41fb5d13390fd9b6ef93e3b286a7682c40a660dcbce9df5b65456dee64cdd19"
+    },
+    {
+      "id": "decision-brief-NNNN",
+      "title": "Decision brief title",
+      "status": "proposed",
+      "owner_role": "product-owner",
+      "scope": "root",
+      "when_to_read": [
+        "discovery"
+      ],
+      "tags": [
+        "template",
+        "product"
+      ],
+      "revision": 1,
+      "review_date": "YYYY-MM-DD",
+      "supersedes": [],
+      "path": "docs/work/0000-feature-proposal-template.md",
+      "source_hash": "e0249878572fdbcd5d6a1a0e6ead130d386acc37cc7324f0ab4064b22b9025cf"
+    },
+    {
+      "id": "delivery-and-authority",
+      "title": "Delivery, ownership và authority",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "triage",
+        "discovery",
+        "escalation",
+        "controlled"
+      ],
+      "tags": [
+        "delivery",
+        "authority",
+        "product"
+      ],
+      "revision": 2,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [
+        "task-routing",
+        "roles-authority",
+        "department-team-topology",
+        "product-lifecycle",
+        "work-management"
+      ],
+      "path": "docs/operating-model/delivery-and-authority.md",
+      "source_hash": "a7eeaa95cb00c95d8513b323cff67615401828d339c8541ff85518105e29b660"
+    },
+    {
+      "id": "documentation-router",
+      "title": "Documentation router",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "documentation",
+        "context"
+      ],
+      "tags": [
+        "docs",
+        "routing"
+      ],
+      "revision": 1,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/README.md",
+      "source_hash": "3ff354a6d3aebf428e1d33fb21de406106a5d84d8879b257072f6edd761e7012"
+    },
+    {
+      "id": "multi-agent-and-review",
+      "title": "Multi-agent execution và review policy",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "delegation",
+        "parallel",
+        "verification",
+        "review"
+      ],
+      "tags": [
+        "agents",
+        "review",
+        "anti-loop"
+      ],
+      "revision": 2,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [
+        "multi-agent",
+        "review-policy",
+        "agent-execution-control"
+      ],
+      "path": "docs/operating-model/multi-agent-and-review.md",
+      "source_hash": "ee21488ed4fcdd6fcbc1c820623f00bf49d92194cae9f780fcfad8d55dafd490"
+    },
+    {
+      "id": "open-source-brand-ip",
+      "title": "Quy tắc open-source, brand và intellectual property",
+      "status": "proposed",
+      "owner_role": "legal-owner",
+      "scope": "root",
+      "when_to_read": [
+        "dependency",
+        "license",
+        "brand",
+        "asset"
+      ],
+      "tags": [
+        "legal",
+        "license",
+        "brand"
+      ],
+      "revision": 1,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/governance/open-source-brand-ip.md",
+      "source_hash": "cf0da47e476465e2658ac6484e2386f94527d68b5ab3734247f0b91e2fdfa309"
+    },
+    {
+      "id": "plan-vfbiz-0001",
+      "title": "ExecPlan chuẩn hóa repository đa-agent",
+      "status": "archived",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "VFBIZ-0001",
+        "governance-refactor"
+      ],
+      "tags": [
+        "agents",
+        "governance",
+        "context"
+      ],
+      "revision": 3,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0001.md",
+      "source_hash": "b69c5ac0fc3a22e461eee66cb3ba3a4e0c1f0fa279fc8ac4bc97eab2f8c9a9c2"
+    },
+    {
+      "id": "prd-NNNN",
+      "title": "Product requirements title",
+      "status": "proposed",
+      "owner_role": "product-owner",
+      "scope": "root",
+      "when_to_read": [
+        "product-requirements"
+      ],
+      "tags": [
+        "template",
+        "prd"
+      ],
+      "revision": 1,
+      "review_date": "YYYY-MM-DD",
+      "supersedes": [],
+      "path": "docs/work/0000-product-requirements-template.md",
+      "source_hash": "8fcc14dbdbc37b34c900f33a2375195633de82953316b1cfa660697391898f63"
+    },
+    {
+      "id": "product-roadmap",
+      "title": "Roadmap sản phẩm",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "root",
+      "when_to_read": [
+        "portfolio",
+        "release-planning"
+      ],
+      "tags": [
+        "product",
+        "roadmap"
+      ],
+      "revision": 7,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [
+        "enterprise-portfolio"
+      ],
+      "path": "docs/product/roadmap.md",
+      "source_hash": "0ab4389a70f695d9e026983e306f9794073c2ec8cf110e290f14f584bb092734"
+    },
+    {
+      "id": "product-vision",
+      "title": "Tầm nhìn sản phẩm VFBiz",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "root",
+      "when_to_read": [
+        "discovery",
+        "product-outcome"
+      ],
+      "tags": [
+        "product"
+      ],
+      "revision": 4,
+      "review_date": "2026-10-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/vision.md",
+      "source_hash": "fb6f52fa752cd68c672dbe3bdbce4abfbb419525543672177f0cff0e82eaced0"
+    },
+    {
+      "id": "repository-blueprint",
+      "title": "Repository blueprint",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "root",
+      "when_to_read": [
+        "repository-change",
+        "cross-workspace"
+      ],
+      "tags": [
+        "architecture",
+        "repository"
+      ],
+      "revision": 5,
+      "review_date": "2026-10-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/repository-blueprint.md",
+      "source_hash": "9b1c17282aa744b680df0340f43baaa47b9b0652abc8580fd5a7e5c5117d4439"
+    },
+    {
+      "id": "security-data-ai",
+      "title": "Baseline Security, Data và AI",
+      "status": "active",
+      "owner_role": "security-owner",
+      "scope": "root",
+      "when_to_read": [
+        "security",
+        "privacy",
+        "data",
+        "ai",
+        "controlled"
+      ],
+      "tags": [
+        "security",
+        "privacy",
+        "data",
+        "ai"
+      ],
+      "revision": 4,
+      "review_date": "2026-09-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/governance/security-data-ai.md",
+      "source_hash": "5190c7d66acc8a8b80f9fe6fcda21b20c11fd33bb7383ca24d5789668790282d"
+    },
+    {
+      "id": "system-context",
+      "title": "Bối cảnh hệ thống",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "root",
+      "when_to_read": [
+        "cross-system",
+        "architecture"
+      ],
+      "tags": [
+        "architecture",
+        "boundaries"
+      ],
+      "revision": 6,
+      "review_date": "2026-10-01T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/system-context.md",
+      "source_hash": "76684b70e01fec15064a94fb4b3719212db3e6d5155d0b8fb32d89864b556c9f"
+    },
+    {
+      "id": "work-management",
+      "title": "Quản lý công việc Git-native",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "root",
+      "when_to_read": [
+        "create-work-item",
+        "resume",
+        "handoff"
+      ],
+      "tags": [
+        "work",
+        "plans",
+        "evidence"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-22T00:00:00.000Z",
+      "supersedes": [
+        "external-work-management"
+      ],
+      "path": "docs/work/README.md",
+      "source_hash": "a1ba4f9ffc3cc92f39522ebfb075e56aef45644243ea6f9073ff7c84afe323c7"
+    },
+    {
+      "id": "workforce-portal-architecture",
+      "title": "Kiến trúc Workforce Portal",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "workforce-portal",
+      "when_to_read": [
+        "workforce-admin",
+        "authentication",
+        "authorization"
+      ],
+      "context_anchors": {
+        "workforce-admin": "## Mục đích",
+        "authentication": "## Session và token vault",
+        "authorization": "## Ranh giới runtime"
+      },
+      "tags": [
+        "nextjs",
+        "workforce",
+        "security"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/workforce-portal/docs/architecture.md",
+      "source_hash": "e37314ebda13a0bf9755cce9f18ae32d9694d1e3bc9e7f3ec3ae08c843a31860"
+    },
+    {
+      "id": "workforce-portal-authorization-ux",
+      "title": "Authorization UX của Workforce Portal",
+      "status": "active",
+      "owner_role": "design-lead",
+      "scope": "workforce-portal",
+      "when_to_read": [
+        "workforce-admin",
+        "authorization",
+        "accessibility"
+      ],
+      "context_anchors": {
+        "workforce-admin": "## Nguyên tắc",
+        "authorization": "## Role editor",
+        "accessibility": "## Accessibility"
+      },
+      "tags": [
+        "authorization",
+        "workforce",
+        "accessibility"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/workforce-portal/docs/authorization-ux.md",
+      "source_hash": "911a34ec6ce2bb88cecebeb5ff42681d544ca3fab5d2a05bca42966a07ea8524"
+    },
+    {
+      "id": "workforce-portal-design-system",
+      "title": "Design system Workforce Portal",
+      "status": "active",
+      "owner_role": "design-lead",
+      "scope": "workforce-portal",
+      "when_to_read": [
+        "design-system",
+        "accessibility"
+      ],
+      "context_anchors": {
+        "design-system": "## Token",
+        "accessibility": "## Chất lượng"
+      },
+      "tags": [
+        "design",
+        "workforce",
+        "accessibility"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/workforce-portal/docs/design-system.md",
+      "source_hash": "062d2597cb9e50e560fdca48f3ffe529829f5fc4dec45b747afe17c3e48b39c4"
+    },
+    {
+      "id": "workforce-portal-testing",
+      "title": "Kiểm thử Workforce Portal",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "workforce-portal",
+      "when_to_read": [
+        "workforce-testing"
+      ],
+      "context_anchors": {
+        "workforce-testing": "## Taxonomy"
+      },
+      "tags": [
+        "testing",
+        "nextjs"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/workforce-portal/docs/testing.md",
+      "source_hash": "12497c5119024196bce87af0a91f2203f509321872329c0edeedbc378ba4c3f4"
+    }
+  ],
+  "errors": []
+}

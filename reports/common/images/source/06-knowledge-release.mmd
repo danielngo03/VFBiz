@@ -1,0 +1,69 @@
+flowchart TB
+  accTitle: Knowledge ingestion và release
+  accDescr: Workforce đăng ký và upload source; pipeline quarantine, scan, parse, evaluate và yêu cầu approval trước khi atomic activation.
+
+  Author["Knowledge Editor"]
+
+  subgraph Workforce["Workforce Control Plane"]
+    direction LR
+    Draft["Source Draft<br/>Owner · Purpose · Rights"]
+    Upload["Signed Upload"]
+    Sim["Simulator<br/>Citation Audit"]
+    Submit["Submit Release"]
+    Approve{"Risk-based<br/>Approval"}
+  end
+
+  subgraph Pipeline["AI Knowledge Pipeline"]
+    direction LR
+    Quarantine[("Quarantine")]
+    Scan["Malware · PII · Secret<br/>License · MIME"]
+    Parse["Parse / OCR"]
+    Chunk["Semantic Chunk<br/>Metadata"]
+    Embed["Embedding"]
+    Candidate[("Candidate Index")]
+    Evaluate["Golden · Safety<br/>Retrieval Evaluation"]
+    Activate["Atomic Activate"]
+    Active[("Active Revision")]
+  end
+
+  Cache[("Revision-scoped Cache")]
+  Rollback["Rollback / Tombstone"]
+
+  Author --> Draft
+  Draft --> Upload
+  Upload --> Quarantine
+  Quarantine --> Scan
+  Scan --> Parse
+  Parse --> Chunk
+  Chunk --> Embed
+  Embed --> Candidate
+  Candidate --> Evaluate
+  Evaluate --> Sim
+  Sim --> Submit
+  Submit --> Approve
+  Approve -- approved --> Activate
+  Approve -- rejected --> Draft
+  Activate --> Active
+  Activate -. invalidate .-> Cache
+  Active --> Rollback
+  Rollback --> Active
+
+  HighRisk["Giá · Bảo hành · Safety<br/>Legal · Tài chính"] -. "maker-checker" .-> Approve
+
+  subgraph Legend["Legend"]
+    direction LR
+    LW["Workforce"]
+    LP["Pipeline"]
+    LD["Revisioned data"]
+    LG["Human gate"]
+  end
+  Rollback ~~~ LW
+
+  classDef workforce fill:#65c9bd,stroke:#0f5c55,color:#0b1220,stroke-width:2px;
+  classDef ai fill:#ffb800,stroke:#344256,color:#0b1220,stroke-width:2px;
+  classDef data fill:#d8e0ea,stroke:#202c3d,color:#0b1220,stroke-width:2px;
+  classDef guard fill:#ffffff,stroke:#b42318,color:#b42318,stroke-width:2px;
+  class Author,Draft,Upload,Sim,Submit,LW workforce;
+  class Scan,Parse,Chunk,Embed,Evaluate,Activate,LP ai;
+  class Quarantine,Candidate,Active,Cache,Rollback,LD data;
+  class Approve,HighRisk,LG guard;

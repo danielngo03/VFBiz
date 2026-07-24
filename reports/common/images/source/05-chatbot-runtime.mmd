@@ -1,0 +1,65 @@
+flowchart TB
+  accTitle: Customer Chatbot runtime
+  accDescr: Tin nhắn đi qua NestJS Conversation Runtime tới FastAPI LangGraph; retrieval, model và tool proposal không vượt business authority của API.
+
+  Client["Drupal / Portal / Mobile"]
+
+  subgraph APIPlane["NestJS — Business Authority"]
+    direction LR
+    Edge["Identity · Scope · Quota<br/>Size · Sequence"]
+    Inbox[("Conversation Inbox<br/>OCC · Outbox")]
+    Tools["Read-only Tool Gateway<br/>Auth · Schema · Anomaly"]
+    Handoff["Durable Handoff<br/>Reconnect · Notification"]
+  end
+
+  subgraph AIPlane["FastAPI — AI Orchestration"]
+    direction LR
+    Graph["LangGraph Supervisor"]
+    State[("Versioned Checkpoint<br/>Global · Active · Control")]
+    Retrieval["Hybrid Retrieval<br/>ACL · Freshness · Citation"]
+    Mesh["Model Mesh<br/>Tier · Budget · Fallback"]
+    Proposal["Typed Tool Proposal"]
+  end
+
+  Sources[("Approved Knowledge")]
+  Systems["Business Systems"]
+  Human["Nhân viên CSKH"]
+
+  Client --> Edge
+  Edge --> Inbox
+  Inbox --> Graph
+  Graph --> State
+  Graph --> Retrieval
+  Retrieval --> Sources
+  Graph --> Mesh
+  Graph --> Proposal
+  Proposal --> Tools
+  Tools --> Systems
+  Graph --> Handoff
+  Handoff --> Human
+  Graph --> Inbox
+  Inbox --> Client
+
+  Guard["Citation hoặc<br/>Refuse / Handoff"] -.-> Graph
+
+  subgraph Legend["Legend"]
+    direction LR
+    LC["Customer"]
+    LA["API authority"]
+    LMLEG["AI orchestration"]
+    LR["Human recovery"]
+  end
+  Systems ~~~ LC
+
+  classDef customer fill:#78a9ff,stroke:#0056d6,color:#0b1220,stroke-width:2px;
+  classDef platform fill:#f1f4f8,stroke:#344256,color:#142033,stroke-width:2px;
+  classDef ai fill:#ffb800,stroke:#344256,color:#0b1220,stroke-width:2px;
+  classDef workforce fill:#65c9bd,stroke:#0f5c55,color:#0b1220,stroke-width:2px;
+  classDef data fill:#d8e0ea,stroke:#202c3d,color:#0b1220,stroke-width:2px;
+  classDef guard fill:#ffffff,stroke:#b42318,color:#b42318,stroke-width:2px;
+  class Client,LC customer;
+  class Edge,Inbox,Tools,Handoff,LA platform;
+  class Graph,State,Retrieval,Mesh,Proposal,LMLEG ai;
+  class Sources,Systems data;
+  class Human,LR workforce;
+  class Guard guard;

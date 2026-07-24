@@ -1,0 +1,57 @@
+flowchart TB
+  accTitle: Cross-cutting Security and Assurance
+  accDescr: Preventive, detective và recovery controls bao phủ Experience, Runtime, Data và Release, trong khi human authorities giữ quyền phê duyệt.
+
+  subgraph ProductPlanes["Product Planes"]
+    direction LR
+    Experience["Experience Plane"]
+    Runtime["Runtime Data Plane"]
+    Data["Data & Knowledge Plane"]
+    Release["Control & Release Plane"]
+    Experience --> Runtime --> Data --> Release
+  end
+
+  subgraph Controls["Cross-cutting Controls"]
+    direction LR
+    Prevent["Preventive<br/>Identity · MFA · Scope<br/>Schema · ACL · Policy<br/>Consent · Rights · SBOM"]
+    Detect["Detective<br/>Metrics · Trace · Audit<br/>Golden · Red-team · Shadow<br/>Data · Tool · Cost Anomaly"]
+    Recover["Recovery<br/>Timeout · Circuit Breaker<br/>Rollback · Kill Switch<br/>Incident · Handoff · Restore"]
+  end
+
+  Human["Human Authorities<br/>Product · Architecture · Security · Privacy<br/>Data · Legal · Release"]
+
+  Prevent -. controls .-> Experience
+  Prevent -. controls .-> Runtime
+  Prevent -. controls .-> Data
+  Detect -. observes .-> Runtime
+  Detect -. observes .-> Data
+  Detect -. gates .-> Release
+  Recover -. protects .-> Runtime
+  Recover -. protects .-> Data
+  Recover -. protects .-> Release
+  Human -. approves .-> Release
+
+  subgraph Legend["Legend"]
+    direction LR
+    LX["Experience"]
+    LP["Runtime / Data"]
+    LA["Assurance"]
+    LH["Human authority"]
+  end
+  Human ~~~ LX
+
+  classDef customer fill:#78a9ff,stroke:#0056d6,color:#0b1220,stroke-width:2px;
+  classDef platform fill:#f1f4f8,stroke:#344256,color:#142033,stroke-width:2px;
+  classDef ai fill:#ffb800,stroke:#344256,color:#0b1220,stroke-width:2px;
+  classDef workforce fill:#65c9bd,stroke:#0f5c55,color:#0b1220,stroke-width:2px;
+  classDef guard fill:#ffffff,stroke:#b42318,color:#b42318,stroke-width:2px;
+  class Experience customer;
+  class Runtime,Data platform;
+  class Release ai;
+  class Prevent,Recover guard;
+  class Detect ai;
+  class Human workforce;
+  class LX customer;
+  class LP platform;
+  class LA ai;
+  class LH workforce;
