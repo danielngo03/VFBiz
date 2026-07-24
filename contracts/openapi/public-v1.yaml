@@ -1,0 +1,959 @@
+openapi: 3.1.0
+info:
+  title: VFBiz Customer API
+  version: 1.0.0-staging
+  description: |
+    Provider-neutral resource contract for customer account, garage and vehicle foundations.
+
+    - Browser OIDC and opaque sessions belong to Customer Portal BFF.
+    - This API accepts verified Bearer tokens; it never receives passwords or refresh tokens.
+    - Customer resources are subject-scoped and fail closed on missing identity, scope or freshness.
+    - Mutations use idempotency, optimistic concurrency and RFC Problem Details.
+  license:
+    {
+      name: Proprietary - VFBiz internal staging contract,
+      identifier: LicenseRef-VFBiz-Proprietary,
+    }
+  x-scalar-links:
+    - { name: Security model, url: /docs/security-data-ai }
+    - { name: OpenAPI JSON, url: /api-docs/customer/openapi.json }
+  x-scalar-sdk-installation:
+    - lang: TypeScript
+      description: |
+        The shared TypeScript SDK is generated from this reviewed OpenAPI contract.
+
+        ```sh
+        npm run sdk:generate
+        ```
+servers:
+  - url: https://staging-api.vfbiz.example
+security:
+  - customerAccessToken: []
+tags:
+  - name: Customer
+    x-displayName: "\u00A0\u00A01.1 Customer"
+    description: Subject-scoped profile, consent and sessions
+  - name: Garage
+    x-displayName: "\u00A0\u00A01.2 Garage"
+    description: Customer garage and self-reported vehicle references
+  - name: Vehicle Catalog
+    x-displayName: "\u00A0\u00A02.1 Vehicles"
+    description: Public structured vehicle projections
+  - name: health
+    x-displayName: "\u00A0\u00A03.1 System"
+    description: Health and operational diagnostics
+x-tagGroups:
+  - { name: 1. Customer Experience, tags: [Customer, Garage] }
+  - { name: 2. Product Data, tags: [Vehicle Catalog] }
+  - { name: 3. Platform, tags: [health] }
+paths:
+  /api/v1/health/live:
+    get:
+      tags: [health]
+      security: []
+      summary: Check liveness
+      operationId: liveness
+      responses:
+        "200":
+          description: API process is serving requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: ok }
+  /api/v1/health/ready:
+    get:
+      tags: [health]
+      security: []
+      summary: Check readiness
+      operationId: readiness
+      responses:
+        "200":
+          description: Required API dependencies are ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, dependencies]
+                properties:
+                  status: { type: string, const: ready }
+                  dependencies:
+                    type: object
+                    required: [database]
+                    properties:
+                      database: { type: string, const: up }
+        "503": { $ref: "#/components/responses/Problem" }
+  /api/v1/me:
+    get:
+      tags: [Customer]
+      summary: Get profile
+      operationId: getMyProfile
+      responses:
+        "200":
+          description: Current customer profile
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            {
+              application/json:
+                { schema: { $ref: "#/components/schemas/CustomerProfile" } },
+            }
+        default: { $ref: "#/components/responses/Problem" }
+    patch:
+      tags: [Customer]
+      summary: Update profile
+      operationId: updateMyProfile
+      parameters: [{ $ref: "#/components/parameters/IfMatch" }]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/CustomerProfilePatch" } },
+          }
+      responses:
+        "200":
+          description: Updated profile
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            {
+              application/json:
+                { schema: { $ref: "#/components/schemas/CustomerProfile" } },
+            }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/sessions:
+    get:
+      tags: [Customer]
+      summary: List sessions
+      operationId: listMySessions
+      responses:
+        "200":
+          {
+            description: Active sessions,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items: { $ref: "#/components/schemas/CustomerSession" },
+                      },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Customer]
+      summary: Sign out all devices
+      operationId: revokeAllMySessions
+      description: |
+        Immediately deny every active local session owned by the verified
+        customer and request subject-wide logout from CIAM.
+      responses:
+        "200":
+          description: Local denial count and provider reconciliation result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RevokeAllSessionsResult" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/sessions/security:
+    get:
+      tags: [Customer]
+      summary: Get identity security status
+      operationId: getMyIdentitySecurity
+      description: |
+        Returns email verification, MFA enrollment and current-session MFA
+        evidence. Provider-backed fields are null when the protected CIAM
+        administration bridge is unavailable.
+      responses:
+        "200":
+          description: Current customer identity assurance
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/CustomerIdentitySecurity" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/sessions/{sessionId}:
+    delete:
+      tags: [Customer]
+      summary: Revoke session
+      operationId: revokeMySession
+      parameters:
+        - {
+            name: sessionId,
+            in: path,
+            required: true,
+            schema: { type: string, format: uuid },
+          }
+      responses:
+        "200":
+          {
+            description: Session revocation intent and reconciliation state,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: "#/components/schemas/RevokeSessionResult" },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/consents:
+    get:
+      tags: [Customer]
+      summary: List consents
+      operationId: listMyConsents
+      responses:
+        "200":
+          {
+            description: Current consent state,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items: { $ref: "#/components/schemas/ConsentRecord" },
+                      },
+                  },
+              },
+          }
+    put:
+      tags: [Customer]
+      summary: Update consents
+      operationId: putMyConsent
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/ConsentWriteBatch" } },
+          }
+      responses:
+        "200":
+          {
+            description: Current consent state,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items: { $ref: "#/components/schemas/ConsentRecord" },
+                      },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/data-requests:
+    get:
+      tags: [Customer]
+      summary: List data requests
+      operationId: listMyDataRequests
+      responses:
+        "200":
+          {
+            description: Subject-scoped data requests,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items: { $ref: "#/components/schemas/DataRequest" },
+                      },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Customer]
+      summary: Request data export/delete
+      operationId: createMyDataRequest
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/DataRequestInput" } },
+          }
+      responses:
+        "202":
+          {
+            description: Request accepted,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/DataRequest" } },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/data-requests/{requestId}:
+    get:
+      tags: [Customer]
+      summary: Get data request
+      operationId: getMyDataRequest
+      parameters:
+        - {
+            name: requestId,
+            in: path,
+            required: true,
+            schema: { type: string, format: uuid },
+          }
+      responses:
+        "200":
+          {
+            description: Subject-scoped data request,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/DataRequest" } },
+              },
+          }
+        "404":
+          {
+            description: Data request not found,
+            content:
+              {
+                application/problem+json:
+                  { schema: { $ref: "#/components/schemas/ProblemDetails" } },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/vehicles:
+    get:
+      tags: [Garage]
+      summary: List garage
+      operationId: listMyVehicles
+      responses:
+        "200":
+          {
+            description: Customer garage,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items:
+                          { $ref: "#/components/schemas/CustomerGarageEntry" },
+                      },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Garage]
+      summary: Add a vehicle
+      operationId: createMyVehicle
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  { $ref: "#/components/schemas/CreateCustomerGarageEntry" },
+              },
+          }
+      responses:
+        "201":
+          description: Unverified customer garage entry
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            {
+              application/json:
+                {
+                  schema: { $ref: "#/components/schemas/CustomerGarageEntry" },
+                },
+            }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/me/vehicles/{entryId}:
+    patch:
+      tags: [Garage]
+      summary: Update vehicle
+      operationId: updateMyVehicle
+      parameters:
+        - {
+            name: entryId,
+            in: path,
+            required: true,
+            schema: { type: string, format: uuid },
+          }
+        - { $ref: "#/components/parameters/GarageIfMatch" }
+      requestBody:
+        {
+          required: true,
+          content:
+            {
+              application/json:
+                {
+                  schema:
+                    { $ref: "#/components/schemas/UpdateCustomerGarageEntry" },
+                },
+            },
+        }
+      responses:
+        "200":
+          description: Updated garage entry
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            {
+              application/json:
+                {
+                  schema: { $ref: "#/components/schemas/CustomerGarageEntry" },
+                },
+            }
+        default: { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Garage]
+      summary: Archive vehicle
+      operationId: deleteMyVehicle
+      parameters:
+        - {
+            name: entryId,
+            in: path,
+            required: true,
+            schema: { type: string, format: uuid },
+          }
+        - { $ref: "#/components/parameters/GarageIfMatch" }
+      responses:
+        "200":
+          description: Archived garage entry
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            {
+              application/json:
+                {
+                  schema: { $ref: "#/components/schemas/CustomerGarageEntry" },
+                },
+            }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/vehicles/models:
+    get:
+      tags: [Vehicle Catalog]
+      security: []
+      summary: List vehicle models
+      operationId: listVehicleModels
+      parameters:
+        [
+          {
+            name: market,
+            in: query,
+            required: false,
+            schema: { enum: [VN], default: VN },
+          },
+        ]
+      responses:
+        "200":
+          {
+            description: Published models,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items:
+                          {
+                            $ref: "#/components/schemas/VehicleModelProjection",
+                          },
+                      },
+                  },
+              },
+          }
+  /api/v1/vehicles/models/{slug}:
+    get:
+      tags: [Vehicle Catalog]
+      security: []
+      summary: Get vehicle model
+      operationId: getVehicleModelBySlug
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - {
+            name: market,
+            in: query,
+            required: false,
+            schema: { enum: [VN], default: VN },
+          }
+      responses:
+        "200":
+          {
+            description: Published model,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: "#/components/schemas/VehicleModelProjection" },
+                  },
+              },
+          }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/vehicles/models/{slug}/commercial:
+    get:
+      tags: [Vehicle Catalog]
+      security: []
+      summary: Get current commercial data
+      description: Returns governed public price offers and promotions from one active commercial release. Inventory is intentionally excluded.
+      operationId: getVehicleModelCommercialData
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - {
+            name: market,
+            in: query,
+            required: false,
+            schema: { enum: [VN], default: VN },
+          }
+      responses:
+        "200":
+          description: Current verified commercial facts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VehicleCommercialData" }
+        default: { $ref: "#/components/responses/Problem" }
+components:
+  securitySchemes:
+    customerAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Customer access token verified against the customer trust profile.
+  parameters:
+    IdempotencyKey:
+      {
+        name: Idempotency-Key,
+        in: header,
+        required: true,
+        schema: { type: string, minLength: 16, maxLength: 128 },
+      }
+    IfMatch:
+      {
+        name: If-Match,
+        in: header,
+        required: true,
+        schema: { type: string, pattern: '^(W/)?"profile-[1-9][0-9]*"$' },
+      }
+    GarageIfMatch:
+      {
+        name: If-Match,
+        in: header,
+        required: true,
+        schema: { type: string, pattern: '^(W/)?"garage-[1-9][0-9]*"$' },
+      }
+  headers:
+    ETag: { schema: { type: string }, description: Entity revision validator }
+  responses:
+    Problem:
+      description: RFC 9457 Problem Details
+      headers: { X-Correlation-ID: { schema: { type: string } } }
+      content:
+        {
+          application/problem+json:
+            { schema: { $ref: "#/components/schemas/ProblemDetails" } },
+        }
+  schemas:
+    SourceMetadata:
+      type: object
+      required: [sourceId, revision, effectiveFrom, freshness]
+      properties:
+        sourceId: { type: string }
+        revision: { type: string }
+        effectiveFrom: { type: string, format: date-time }
+        freshness: { enum: [fresh, stale, unavailable] }
+      additionalProperties: false
+    CustomerProfile:
+      type: object
+      required:
+        [locale, timezone, market, communicationPreferences, version, updatedAt]
+      properties:
+        displayName: { type: [string, "null"], maxLength: 120 }
+        locale: { enum: [vi, en] }
+        timezone: { type: string, minLength: 1, maxLength: 64 }
+        market: { enum: [VN] }
+        communicationPreferences:
+          { $ref: "#/components/schemas/CommunicationPreferences" }
+        version: { type: integer, minimum: 1 }
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false
+    CommunicationPreferences:
+      type: object
+      required: [email, sms, push]
+      properties:
+        email: { type: boolean }
+        sms: { type: boolean }
+        push: { type: boolean }
+      additionalProperties: false
+    CustomerProfilePatch:
+      type: object
+      properties:
+        displayName: { type: [string, "null"], maxLength: 120 }
+        locale: { enum: [vi, en] }
+        timezone: { type: string, minLength: 1, maxLength: 64 }
+        market: { enum: [VN] }
+        communicationPreferences:
+          type: object
+          properties:
+            email: { type: boolean }
+            sms: { type: boolean }
+            push: { type: boolean }
+          minProperties: 1
+          additionalProperties: false
+      minProperties: 1
+      additionalProperties: false
+    CustomerSession:
+      type: object
+      required:
+        [
+          id,
+          isCurrent,
+          status,
+          authenticatedAt,
+          lastSeenAt,
+          expiresAt,
+          revokedAt,
+          deviceLabel,
+          networkHint,
+          userAgentSummary,
+          mfaSatisfied,
+          emailVerified,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        isCurrent: { type: boolean }
+        status: { enum: [active, expired, revoked] }
+        authenticatedAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        revokedAt: { type: [string, "null"], format: date-time }
+        deviceLabel: { type: [string, "null"] }
+        networkHint: { type: [string, "null"] }
+        userAgentSummary: { type: [string, "null"] }
+        mfaSatisfied: { type: boolean }
+        emailVerified: { type: [boolean, "null"] }
+      additionalProperties: false
+    RevokeSessionResult:
+      type: object
+      required: [reconciliation, session]
+      properties:
+        reconciliation:
+          { enum: [confirmed, manual_review_required, pending, retry_required] }
+        session: { $ref: "#/components/schemas/CustomerSession" }
+      additionalProperties: false
+    RevokeAllSessionsResult:
+      type: object
+      required: [locallyRevokedCount, reconciliation]
+      properties:
+        locallyRevokedCount: { type: integer, minimum: 0 }
+        reconciliation:
+          { enum: [confirmed, manual_review_required, retry_required] }
+      additionalProperties: false
+    CustomerIdentitySecurity:
+      type: object
+      required:
+        [
+          currentSessionMfaSatisfied,
+          emailVerified,
+          mfaConfigured,
+          providerStatus,
+        ]
+      properties:
+        currentSessionMfaSatisfied: { type: boolean }
+        emailVerified: { type: [boolean, "null"] }
+        mfaConfigured: { type: [boolean, "null"] }
+        providerStatus: { enum: [available, unavailable] }
+      additionalProperties: false
+    ConsentRecord:
+      type: object
+      required: [purpose, policyVersion, state, source, occurredAt]
+      properties:
+        purpose:
+          {
+            enum:
+              [
+                analytics,
+                marketing_email,
+                marketing_sms,
+                marketing_push,
+                personalization,
+              ],
+          }
+        policyVersion: { type: string }
+        state: { enum: [granted, withdrawn] }
+        source:
+          { enum: [customer_portal, mobile, operations_admin, system_import] }
+        occurredAt: { type: string, format: date-time }
+      additionalProperties: false
+    ConsentWrite:
+      type: object
+      required: [purpose, policyVersion, state]
+      properties:
+        purpose:
+          {
+            enum:
+              [
+                analytics,
+                marketing_email,
+                marketing_sms,
+                marketing_push,
+                personalization,
+              ],
+          }
+        policyVersion: { type: string, minLength: 1, maxLength: 64 }
+        state: { enum: [granted, withdrawn] }
+      additionalProperties: false
+    ConsentWriteBatch:
+      type: object
+      required: [consents]
+      properties:
+        consents:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: "#/components/schemas/ConsentWrite" }
+      additionalProperties: false
+    DataRequestInput:
+      type: object
+      required: [type]
+      properties: { type: { enum: [export, delete] } }
+      additionalProperties: false
+    DataRequest:
+      type: object
+      required: [id, type, status, requestedAt, completedAt]
+      properties:
+        id: { type: string, format: uuid }
+        type: { enum: [export, delete] }
+        status:
+          {
+            enum:
+              [requested, processing, partially_completed, completed, rejected],
+          }
+        requestedAt: { type: string, format: date-time }
+        completedAt: { type: [string, "null"], format: date-time }
+      additionalProperties: false
+    CreateCustomerGarageEntry:
+      type: object
+      required: [claimedVehicleVariantId]
+      properties:
+        claimedVehicleVariantId: { type: string, format: uuid }
+        nickname: { type: [string, "null"], maxLength: 80 }
+        isPrimary: { type: boolean, default: false }
+      additionalProperties: false
+    UpdateCustomerGarageEntry:
+      type: object
+      properties:
+        nickname: { type: [string, "null"], maxLength: 80 }
+        isPrimary: { type: boolean }
+      minProperties: 1
+      additionalProperties: false
+    CustomerGarageEntry:
+      type: object
+      required:
+        [
+          id,
+          claimedVehicleVariantId,
+          nickname,
+          isPrimary,
+          source,
+          status,
+          ownershipStatus,
+          version,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        claimedVehicleVariantId: { type: string, format: uuid }
+        nickname: { type: [string, "null"] }
+        isPrimary: { type: boolean }
+        source: { enum: [self-reported, imported] }
+        status: { enum: [active, archived] }
+        ownershipStatus:
+          const: unverified
+          description: A garage entry is not proof of verified vehicle ownership.
+        version: { type: integer, minimum: 1 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false
+    VehicleModelProjection:
+      type: object
+      required:
+        [
+          id,
+          brandCode,
+          modelCode,
+          slug,
+          name,
+          category,
+          commercialStatus,
+          modelYear,
+          market,
+          releaseVersion,
+          variants,
+          source,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        brandCode: { type: string }
+        modelCode: { type: string }
+        slug: { type: string }
+        name: { type: string }
+        category: { type: string }
+        commercialStatus: { enum: [announced, active, discontinued] }
+        modelYear: { type: [integer, "null"], minimum: 2000, maximum: 2200 }
+        market: { enum: [VN] }
+        releaseVersion: { type: string }
+        variants:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/VehicleVariantProjection" },
+          }
+        source: { $ref: "#/components/schemas/SourceMetadata" }
+      additionalProperties: false
+    VehicleVariantProjection:
+      type: object
+      required:
+        [
+          id,
+          variantCode,
+          name,
+          commercialStatus,
+          seats,
+          drivetrain,
+          grossBatteryCapacityKwh,
+          usableBatteryCapacityKwh,
+          declaredRangeKm,
+          rangeTestStandard,
+          maximumAcChargePowerKw,
+          maximumDcChargePowerKw,
+          connectorStandards,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        variantCode: { type: string }
+        name: { type: string }
+        commercialStatus: { enum: [announced, active, discontinued] }
+        seats: { type: [integer, "null"], minimum: 1 }
+        drivetrain: { type: [string, "null"] }
+        grossBatteryCapacityKwh: { type: [number, "null"], exclusiveMinimum: 0 }
+        usableBatteryCapacityKwh:
+          { type: [number, "null"], exclusiveMinimum: 0 }
+        declaredRangeKm: { type: [number, "null"], exclusiveMinimum: 0 }
+        rangeTestStandard: { type: [string, "null"] }
+        maximumAcChargePowerKw: { type: [number, "null"], exclusiveMinimum: 0 }
+        maximumDcChargePowerKw: { type: [number, "null"], exclusiveMinimum: 0 }
+        connectorStandards:
+          { type: array, uniqueItems: true, items: { type: string } }
+      additionalProperties: false
+    CommercialSourceMetadata:
+      type: object
+      required:
+        [sourceId, revision, observedAt, effectiveFrom, expiresAt, freshness]
+      properties:
+        sourceId: { type: string }
+        revision: { type: string }
+        observedAt: { type: string, format: date-time }
+        effectiveFrom: { type: string, format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
+        freshness: { const: fresh }
+      additionalProperties: false
+    PriceOffer:
+      type: object
+      required:
+        [
+          variantId,
+          offerCode,
+          priceType,
+          market,
+          currency,
+          amountMinor,
+          taxTreatment,
+          channel,
+          validFrom,
+          validTo,
+          source,
+        ]
+      properties:
+        variantId: { type: string, format: uuid }
+        offerCode: { type: string }
+        priceType: { enum: [msrp, list, option, service] }
+        market: { enum: [VN] }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        amountMinor: { type: string, pattern: "^[0-9]+$" }
+        taxTreatment: { enum: [tax_inclusive, tax_exclusive, not_applicable] }
+        channel: { enum: [public, retail, fleet, employee] }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: [string, "null"], format: date-time }
+        source: { $ref: "#/components/schemas/CommercialSourceMetadata" }
+      additionalProperties: false
+    Promotion:
+      type: object
+      required:
+        [
+          promotionCode,
+          promotionVersion,
+          title,
+          channel,
+          vehicleModelId,
+          vehicleVariantId,
+          benefitType,
+          benefitAmountMinor,
+          benefitPercentage,
+          currency,
+          stackingPolicy,
+          validFrom,
+          validTo,
+          source,
+        ]
+      properties:
+        promotionCode: { type: string }
+        promotionVersion: { type: string }
+        title: { type: string }
+        channel: { enum: [public, retail, fleet, employee] }
+        vehicleModelId: { type: [string, "null"], format: uuid }
+        vehicleVariantId: { type: [string, "null"], format: uuid }
+        benefitType: { enum: [fixed_amount, percentage, in_kind, composite] }
+        benefitAmountMinor: { type: [string, "null"], pattern: "^[0-9]+$" }
+        benefitPercentage:
+          { type: [number, "null"], exclusiveMinimum: 0, maximum: 100 }
+        currency: { type: [string, "null"], pattern: "^[A-Z]{3}$" }
+        stackingPolicy: { enum: [exclusive, stackable, rule_based] }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: [string, "null"], format: date-time }
+        source: { $ref: "#/components/schemas/CommercialSourceMetadata" }
+      additionalProperties: false
+    VehicleCommercialData:
+      type: object
+      required: [market, releaseVersion, priceOffers, promotions]
+      properties:
+        market: { enum: [VN] }
+        releaseVersion: { type: string }
+        priceOffers:
+          type: array
+          items: { $ref: "#/components/schemas/PriceOffer" }
+        promotions:
+          type: array
+          items: { $ref: "#/components/schemas/Promotion" }
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      required: [type, title, status, detail, instance, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string }
+        correlationId: { type: string }
+      additionalProperties: true

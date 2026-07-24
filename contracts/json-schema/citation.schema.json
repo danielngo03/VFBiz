@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/citation/v1",
+  "title": "Citation",
+  "type": "object",
+  "required": ["sourceId", "title", "uri", "revision", "retrievedAt"],
+  "properties": {
+    "sourceId": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "uri": {"type": "string", "format": "uri"},
+    "revision": {"type": "string", "minLength": 1},
+    "retrievedAt": {"type": "string", "format": "date-time"},
+    "freshness": {"enum": ["fresh", "stale", "unavailable"]},
+    "excerptHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "additionalProperties": false
+}

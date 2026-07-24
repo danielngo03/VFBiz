@@ -1,0 +1,353 @@
+openapi: 3.1.0
+info:
+  title: VFBiz Customer BFF
+  version: 1.0.0-staging
+  description: |
+    Same-origin browser contract owned by Customer Portal.
+
+    - Keycloak owns authentication and MFA.
+    - The browser stores only an opaque HttpOnly session cookie.
+    - Access and refresh tokens remain in the encrypted server-side token vault.
+    - NestJS resource APIs are called server-to-server with a Bearer token.
+  license:
+    name: Proprietary - VFBiz internal staging contract
+    identifier: LicenseRef-VFBiz-Proprietary
+servers:
+  - url: /
+    description: Same-origin Customer Portal
+security:
+  - opaqueCustomerSession: []
+tags:
+  - name: Authentication
+    description: OIDC Authorization Code + PKCE and local session lifecycle
+  - name: Session
+    description: Current-session assurance and subject-wide session control
+  - name: Customer Bridge
+    description: Same-origin browser access to subject-scoped resource data
+  - name: Provider Events
+    description: Signed back-channel events from the configured CIAM
+paths:
+  /api/auth/login:
+    get:
+      tags: [Authentication]
+      security: []
+      summary: Start login
+      operationId: startCustomerBffLogin
+      parameters:
+        - $ref: "#/components/parameters/ReturnTo"
+      responses:
+        "302":
+          description: Redirect to the configured customer CIAM
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "400": { $ref: "#/components/responses/Problem" }
+  /api/auth/register:
+    get:
+      tags: [Authentication]
+      security: []
+      summary: Start registration
+      operationId: startCustomerBffRegistration
+      parameters:
+        - $ref: "#/components/parameters/ReturnTo"
+      responses:
+        "302":
+          description: Redirect to the configured customer registration flow
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "400": { $ref: "#/components/responses/Problem" }
+  /api/auth/reset-password:
+    get:
+      tags: [Authentication]
+      security: []
+      summary: Start password recovery
+      operationId: startCustomerBffPasswordRecovery
+      responses:
+        "302":
+          description: Redirect to the configured customer password recovery flow
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "503": { $ref: "#/components/responses/Problem" }
+  /api/auth/configure-mfa:
+    get:
+      tags: [Authentication]
+      summary: Configure MFA
+      description: |
+        Starts the provider-managed MFA required action. VFBiz never receives
+        the OTP seed or recovery codes.
+      operationId: configureCustomerBffMfa
+      parameters:
+        - $ref: "#/components/parameters/ReturnTo"
+      responses:
+        "302":
+          description: Redirect to the configured CIAM MFA flow
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "503": { $ref: "#/components/responses/Problem" }
+  /api/auth/callback:
+    get:
+      tags: [Authentication]
+      security: []
+      summary: Complete login
+      operationId: completeCustomerBffLogin
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 4096 }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string, minLength: 16, maxLength: 512 }
+      responses:
+        "302":
+          description: Opaque customer session established and browser redirected
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+            Set-Cookie: { $ref: "#/components/headers/SetCookie" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "503": { $ref: "#/components/responses/Problem" }
+  /api/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh session
+      operationId: refreshCustomerBffSession
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204":
+          description: Token set rotated in the server-side vault
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "503": { $ref: "#/components/responses/Problem" }
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      security: []
+      summary: Log out
+      operationId: logoutCustomerBffSession
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "204":
+          description: No local session existed; logout is idempotently complete
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+        "200":
+          description: Local session removed and provider reconciliation recorded
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+            Set-Cookie: { $ref: "#/components/headers/SetCookie" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RevocationResult" }
+        "403": { $ref: "#/components/responses/Problem" }
+  /api/auth/security:
+    get:
+      tags: [Session]
+      summary: Get current security state
+      operationId: getCustomerBffSecurityState
+      responses:
+        "200":
+          description: Current session assurance and CSRF bootstrap
+          headers:
+            Cache-Control: { $ref: "#/components/headers/PrivateCacheControl" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecurityState" }
+        "401": { $ref: "#/components/responses/Problem" }
+  /api/auth/sessions:
+    get:
+      tags: [Session]
+      summary: List portal sessions
+      operationId: listCustomerBffSessions
+      responses:
+        "200":
+          description: Minimized sessions for the authenticated subject
+          headers:
+            Cache-Control: { $ref: "#/components/headers/PrivateCacheControl" }
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PortalSession" }
+        "401": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [Session]
+      summary: Log out all sessions
+      operationId: logoutAllCustomerBffSessions
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "200":
+          description: Subject sessions removed and provider reconciliation recorded
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheControl" }
+            Set-Cookie: { $ref: "#/components/headers/SetCookie" }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/RevocationResult"
+                  - type: object
+                    required: [revokedCount]
+                    properties:
+                      revokedCount: { type: integer, minimum: 0 }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+  /api/auth/backchannel-logout:
+    post:
+      tags: [Provider Events]
+      security: []
+      summary: Process back-channel logout
+      operationId: processCustomerBackchannelLogout
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [logout_token]
+              properties:
+                logout_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 16384
+      responses:
+        "204": { description: Signed logout event accepted or replay ignored }
+        "400": { $ref: "#/components/responses/Problem" }
+        "413": { $ref: "#/components/responses/Problem" }
+        "415": { $ref: "#/components/responses/Problem" }
+        "503": { $ref: "#/components/responses/Problem" }
+  /bff/me:
+    get:
+      tags: [Customer Bridge]
+      summary: Get current customer
+      operationId: getCustomerBffProfile
+      responses:
+        "200":
+          description: Subject-scoped profile from the NestJS resource API
+          headers:
+            Cache-Control: { $ref: "#/components/headers/PrivateCacheControl" }
+            ETag: { $ref: "#/components/headers/ETag" }
+            X-Correlation-ID: { $ref: "#/components/headers/CorrelationId" }
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401": { $ref: "#/components/responses/Problem" }
+        "502": { $ref: "#/components/responses/Problem" }
+components:
+  securitySchemes:
+    opaqueCustomerSession:
+      type: apiKey
+      in: cookie
+      name: vfbiz_customer_session
+      description: Opaque HttpOnly identifier; never an access or refresh token.
+  parameters:
+    ReturnTo:
+      name: returnTo
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uri-reference
+        maxLength: 2048
+      description: Same-origin relative path validated by the Customer Portal.
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 256 }
+  headers:
+    CacheControl:
+      description: Sensitive response is never stored
+      schema: { type: string, const: no-store }
+    PrivateCacheControl:
+      description: Subject-scoped response is private and never stored
+      schema: { type: string, const: "private, no-store" }
+    SetCookie:
+      description: Opaque HttpOnly customer session cookie
+      schema: { type: string }
+    ETag:
+      description: Upstream resource revision
+      schema: { type: string }
+    CorrelationId:
+      description: End-to-end request correlation identifier
+      schema: { type: string }
+  responses:
+    Problem:
+      description: RFC 9457 Problem Details or a minimized BFF error
+      headers:
+        Cache-Control: { $ref: "#/components/headers/CacheControl" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetails" }
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ProblemDetails"
+              - $ref: "#/components/schemas/BffError"
+  schemas:
+    BffError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Stable, minimized BFF error code
+        retryAfterSeconds:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      required: [status, title]
+      properties:
+        type: { type: string, format: uri-reference, default: about:blank }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        code: { type: string }
+        correlationId: { type: string }
+      additionalProperties: false
+    RevocationResult:
+      type: object
+      required: [providerReconciliation]
+      properties:
+        providerReconciliation:
+          enum: [confirmed, pending, retry_required]
+      additionalProperties: false
+    SecurityState:
+      type: object
+      required: [csrfToken, emailVerified, mfaSatisfied]
+      properties:
+        csrfToken: { type: string, minLength: 16 }
+        emailVerified: { type: boolean }
+        mfaSatisfied: { type: boolean }
+      additionalProperties: false
+    PortalSession:
+      type: object
+      required:
+        - id
+        - authenticatedAt
+        - expiresAt
+        - isCurrent
+        - lastSeenAt
+        - mfaSatisfied
+      properties:
+        id: { type: string }
+        authenticatedAt: { type: string, format: date-time }
+        deviceLabel: { type: [string, "null"] }
+        expiresAt: { type: string, format: date-time }
+        isCurrent: { type: boolean }
+        lastSeenAt: { type: string, format: date-time }
+        mfaSatisfied: { type: boolean }
+        networkHint: { type: [string, "null"] }
+        userAgentSummary: { type: [string, "null"] }
+      additionalProperties: false

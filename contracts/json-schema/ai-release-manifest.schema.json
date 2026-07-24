@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai-release-manifest/v1",
+  "title": "AI Release Manifest",
+  "type": "object",
+  "required": ["releaseId", "profile", "model", "promptRevision", "policyRevision", "retrieverRevision", "datasetReleases", "embeddingRevision", "toolRegistryRevision", "evaluationEvidence", "killSwitch", "createdAt"],
+  "properties": {
+    "releaseId": {"type": "string", "minLength": 1},
+    "profile": {"enum": ["public_customer", "authenticated_customer", "employee"]},
+    "model": {
+      "type": "object",
+      "required": ["provider", "modelId", "revision"],
+      "properties": {
+        "provider": {"type": "string"},
+        "modelId": {"type": "string"},
+        "revision": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "promptRevision": {"type": "string"},
+    "policyRevision": {"type": "string"},
+    "retrieverRevision": {"type": "string"},
+    "datasetReleases": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "embeddingRevision": {"type": "string"},
+    "toolRegistryRevision": {"type": "string"},
+    "evaluationEvidence": {
+      "type": "object",
+      "required": ["suiteRevision", "groundedness", "citationCorrectness", "aclLeakageCount", "piiLeakageCount"],
+      "properties": {
+        "suiteRevision": {"type": "string"},
+        "groundedness": {"type": "number", "minimum": 0, "maximum": 1},
+        "citationCorrectness": {"type": "number", "minimum": 0, "maximum": 1},
+        "aclLeakageCount": {"const": 0},
+        "piiLeakageCount": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "killSwitch": {"type": "string", "minLength": 1},
+    "rollbackReleaseId": {"type": ["string", "null"]},
+    "createdAt": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": false
+}

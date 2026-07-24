@@ -1,0 +1,65 @@
+openapi: 3.1.0
+info:
+  title: VFBiz AI Internal API
+  version: 1.0.0-staging
+  description: Private API Platform to AI Platform contract; never exposed to clients.
+  license: {name: Proprietary - VFBiz internal staging contract, identifier: LicenseRef-VFBiz-Proprietary}
+servers:
+  - url: https://ai.internal.staging.vfbiz.example
+security: [{serviceIdentity: []}]
+paths:
+  /internal/v1/answers:
+    post:
+      summary: Produce a governed answer, refusal or read-only tool proposal
+      operationId: createGovernedAnswer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AnswerRequest'}
+      responses:
+        '200': {description: Governed result, content: {application/json: {schema: {$ref: '#/components/schemas/AnswerResult'}}}}
+        '403': {description: Policy denied}
+  /internal/v1/evaluations/releases/{release_id}:
+    get:
+      summary: Read immutable evaluation evidence for a release candidate
+      operationId: getAIReleaseEvaluation
+      parameters: [{name: release_id, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: Release evaluation evidence}}
+components:
+  securitySchemes:
+    serviceIdentity: {type: mutualTLS}
+  schemas:
+    AnswerRequest:
+      type: object
+      required: [requestId, profile, locale, message, allowedTools, policyRevision]
+      properties:
+        requestId: {type: string, format: uuid}
+        profile: {enum: [public_customer, authenticated_customer]}
+        subjectRef: {type: [string, 'null']}
+        locale: {enum: [vi, en]}
+        message: {type: string, minLength: 1, maxLength: 4000}
+        allowedTools: {type: array, uniqueItems: true, items: {type: string}}
+        policyRevision: {type: string}
+      additionalProperties: false
+    AnswerResult:
+      type: object
+      required: [outcome, content, citations, releaseRevision, auditRef]
+      properties:
+        outcome: {enum: [answered, refused, handoff, tool_proposal]}
+        content: {type: string}
+        citations: {type: array, items: {$ref: '#/components/schemas/Citation'}}
+        toolProposal: {type: [object, 'null']}
+        releaseRevision: {type: string}
+        auditRef: {type: string}
+      additionalProperties: false
+    Citation:
+      type: object
+      required: [sourceId, title, uri, revision, retrievedAt]
+      properties:
+        sourceId: {type: string}
+        title: {type: string}
+        uri: {type: string, format: uri}
+        revision: {type: string}
+        retrievedAt: {type: string, format: date-time}
+      additionalProperties: false

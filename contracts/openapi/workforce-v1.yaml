@@ -1,0 +1,987 @@
+openapi: 3.1.0
+info:
+  title: VFBiz Workforce API
+  version: 1.0.0-staging
+  description: |
+    Contract nội bộ cho Workforce Portal, entitlement và dynamic authorization.
+
+    - Nhân sự bắt đầu đăng nhập tại Workforce Portal, không đăng nhập trực tiếp
+      vào NestJS. Khi chạy local, dùng
+      `http://localhost:3002/api/auth/login?returnTo=/authorization`.
+    - Next.js BFF thực hiện Authorization Code + PKCE, giữ access/refresh token
+      trong encrypted Redis token vault và chỉ gửi opaque session cookie cho browser.
+    - Keycloak xác thực identity và MFA; PostgreSQL là authority cho capability,
+      role, assignment và organizational scope.
+    - Mọi operation deny-by-default. Sensitive/privileged action cần recent MFA,
+      expected version, business reason, audit và maker-checker khi policy yêu cầu.
+    - Scalar này là tài liệu read-only. Không dán refresh token, client secret hoặc
+      production token vào browser.
+  license:
+    name: Proprietary - VFBiz internal staging contract
+    identifier: LicenseRef-VFBiz-Proprietary
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local development
+  - url: https://staging-api.vfbiz.example
+    description: Staging private ingress
+security:
+  - workforceAccessToken: []
+tags:
+  - name: Workforce authentication
+    x-displayName: "\u00A0\u00A01.1 Authentication"
+    description: OIDC entry, callback, refresh and logout through the Next.js BFF
+  - name: Workforce identity
+    x-displayName: "\u00A0\u00A01.2 Entitlements"
+    description: Current subject and effective authorization
+  - name: Authorization roles
+    x-displayName: "\u00A0\u00A02.1 Roles & Capabilities"
+    description: Code-owned capabilities and dynamically composed roles
+  - name: Authorization assignments
+    x-displayName: "\u00A0\u00A02.2 Assignments"
+    description: Time-bound role assignments with organizational scopes
+  - name: Authorization approvals
+    x-displayName: "\u00A0\u00A02.3 Approvals"
+    description: Maker-checker workflow for privileged changes
+  - name: Workforce directory
+    x-displayName: "\u00A0\u00A03.1 Directory"
+    description: Opaque workforce subjects and organizational scope projections
+  - name: Workforce audit
+    x-displayName: "\u00A0\u00A03.2 Audit"
+    description: Security-relevant workforce authorization evidence
+  - name: Customer support
+    x-displayName: "\u00A0\u00A04.1 Customers"
+    description: Privacy-minimized customer lookup for authorized support staff
+x-tagGroups:
+  - name: 1. Workforce Access
+    tags: [Workforce authentication, Workforce identity]
+  - name: 2. Dynamic Authorization
+    tags:
+      - Authorization roles
+      - Authorization assignments
+      - Authorization approvals
+  - name: 3. Governance
+    tags:
+      - Workforce directory
+      - Workforce audit
+  - name: 4. Customer Support
+    tags:
+      - Customer support
+paths:
+  /api/auth/login:
+    get:
+      tags: [Workforce authentication]
+      operationId: startWorkforceLogin
+      summary: Sign in
+      description: |
+        Tạo OIDC state, nonce và PKCE verifier trong encrypted Redis token vault,
+        sau đó redirect browser tới workforce realm. Endpoint không nhận password.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security: []
+      parameters:
+        - name: returnTo
+          in: query
+          description: Same-origin portal path sau khi đăng nhập thành công.
+          schema: { type: string, default: /authorization }
+      responses:
+        "307":
+          description: Redirect tới Keycloak workforce authorization endpoint
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/auth/callback:
+    get:
+      tags: [Workforce authentication]
+      operationId: completeWorkforceLogin
+      summary: Complete sign-in
+      description: |
+        Xác minh one-time attempt cookie, state, authorization code, ID-token
+        signature/issuer/audience, nonce và MFA evidence; sau đó tạo opaque BFF
+        session. Đây là OIDC callback, không phải endpoint người dùng tự gọi.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        "307":
+          description: Tạo session thành công và redirect tới same-origin return path
+        "400": { $ref: "#/components/responses/InvalidOidcCallback" }
+        "403":
+          description: Verified email and workforce MFA assurance are required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BffAuthError" }
+        "502":
+          description: Identity provider trả response không hợp lệ
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BffAuthError" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/auth/refresh:
+    post:
+      tags: [Workforce authentication]
+      operationId: refreshWorkforceSession
+      summary: Refresh session
+      description: |
+        Dùng refresh token trong encrypted server-side vault để lấy access token
+        mới. Distributed single-flight lease ngăn refresh-token rotation race
+        giữa nhiều tab; browser không nhận token.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security:
+        - workforceBffSession: []
+      responses:
+        "204":
+          description: Access token trong server-side vault đã được refresh
+        "401": { $ref: "#/components/responses/WorkforceSessionRequired" }
+        "403": { $ref: "#/components/responses/InvalidOrigin" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/auth/logout:
+    post:
+      tags: [Workforce authentication]
+      operationId: logoutWorkforce
+      summary: Sign out
+      description: |
+        Xóa local token-vault session trước, cố gắng revoke refresh token tại
+        Keycloak và luôn xóa opaque browser cookie kể cả khi provider unavailable.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security:
+        - workforceBffSession: []
+      responses:
+        "303":
+          description: Local session đã bị xóa; redirect về trang đăng nhập
+        "403": { $ref: "#/components/responses/InvalidOrigin" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/auth/security:
+    get:
+      tags: [Workforce authentication]
+      operationId: getWorkforceIdentitySecurity
+      summary: Get security status
+      description: |
+        Return verified email and MFA assurance for the current Workforce BFF
+        session. Workforce login is rejected unless both are satisfied.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security:
+        - workforceBffSession: []
+      responses:
+        "200":
+          description: Current workforce identity assurance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceSecurityStatus" }
+        "401": { $ref: "#/components/responses/WorkforceSessionRequired" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/auth/sessions:
+    get:
+      tags: [Workforce authentication]
+      operationId: listWorkforceBffSessions
+      summary: List devices
+      description: |
+        List privacy-minimized BFF sessions for the current workforce subject.
+        Tokens and raw IP addresses are never returned.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security:
+        - workforceBffSession: []
+      responses:
+        "200":
+          description: Active Workforce Portal sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WorkforceBffSession" }
+        "401": { $ref: "#/components/responses/WorkforceSessionRequired" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+    delete:
+      tags: [Workforce authentication]
+      operationId: revokeAllWorkforceBffSessions
+      summary: Sign out all devices
+      description: |
+        Revoke every refresh token indexed for the subject, delete all local
+        encrypted BFF sessions and clear the current browser cookie.
+      servers:
+        - url: http://{workforcePortalHost}:{workforcePortalPort}
+          description: Local Workforce Portal BFF
+          variables:
+            workforcePortalHost:
+              default: 127.0.0.1
+            workforcePortalPort:
+              default: "3002"
+      security:
+        - workforceBffSession: []
+      responses:
+        "200":
+          description: All indexed local workforce sessions were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [revokedCount]
+                properties:
+                  revokedCount: { type: integer, minimum: 0 }
+        "401": { $ref: "#/components/responses/WorkforceSessionRequired" }
+        "403": { $ref: "#/components/responses/InvalidOrigin" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /api/v1/workforce/me/entitlements:
+    get:
+      tags: [Workforce identity]
+      operationId: getMyWorkforceEntitlements
+      summary: Get effective entitlements
+      responses:
+        "200":
+          description: Effective capabilities, scopes and authorization revision
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceEntitlements" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/customer-support/customers:
+    get:
+      tags: [Customer support]
+      operationId: searchWorkforceCustomers
+      summary: Search customers
+      description: |
+        Search the privacy-minimized customer projection by profile ID or
+        display name. Results are restricted to the caller's global or market
+        assignment scopes. The raw search term is never written to audit logs.
+        Requires MFA, `customer-support.customer.read` and a business reason.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Profile ID or at least three characters of display name.
+          schema: {type: string, minLength: 3, maxLength: 120}
+        - name: limit
+          in: query
+          description: Maximum number of minimized records.
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+        - name: X-Access-Reason
+          in: header
+          required: true
+          description: Audited business purpose for accessing customer data.
+          schema: {type: string, minLength: 10, maxLength: 500}
+      responses:
+        "200":
+          description: Customer summaries within the caller's assignment scope
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/WorkforceCustomerSummary"}
+        "400":
+          description: Query, limit or access reason is invalid
+          content:
+            application/problem+json:
+              schema: {$ref: "#/components/schemas/Problem"}
+        "401":
+          description: Workforce token is missing, invalid or expired
+          content:
+            application/problem+json:
+              schema: {$ref: "#/components/schemas/Problem"}
+        "403":
+          description: Wrong realm, missing MFA/capability or out-of-scope access
+          content:
+            application/problem+json:
+              schema: {$ref: "#/components/schemas/Problem"}
+        "503":
+          description: Authorization or customer data authority is unavailable
+          content:
+            application/problem+json:
+              schema: {$ref: "#/components/schemas/Problem"}
+  /api/v1/workforce/authorization/capabilities:
+    get:
+      tags: [Authorization roles]
+      operationId: listWorkforceCapabilities
+      summary: List capability catalog
+      responses:
+        "200":
+          description: Code-owned capability definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CapabilityDefinition" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/roles:
+    get:
+      tags: [Authorization roles]
+      operationId: listWorkforceRoles
+      summary: List workforce roles
+      responses:
+        "200":
+          description: System and custom roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WorkforceRole" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Authorization roles]
+      operationId: createWorkforceRole
+      summary: Create workforce role
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateWorkforceRole" }
+      responses:
+        "201":
+          description: Role created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceRole" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/roles/{roleId}:
+    parameters:
+      - { $ref: "#/components/parameters/RoleId" }
+    get:
+      tags: [Authorization roles]
+      operationId: getWorkforceRole
+      summary: Get workforce role
+      responses:
+        "200":
+          description: Role and current capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceRole" }
+        default: { $ref: "#/components/responses/Problem" }
+    patch:
+      tags: [Authorization roles]
+      operationId: updateWorkforceRole
+      summary: Update workforce role metadata
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateWorkforceRole" }
+      responses:
+        "200":
+          description: Updated role
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceRole" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/roles/{roleId}/capabilities:
+    parameters:
+      - { $ref: "#/components/parameters/RoleId" }
+    put:
+      tags: [Authorization roles]
+      operationId: replaceWorkforceRoleCapabilities
+      summary: Replace non-privileged role capabilities
+      description: Privileged capability changes must use the approval workflow.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReplaceRoleCapabilities" }
+      responses:
+        "200":
+          description: Updated role
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceRole" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/assignments:
+    get:
+      tags: [Authorization assignments]
+      operationId: listWorkforceAssignments
+      summary: List workforce assignments
+      responses:
+        "200":
+          description: Workforce role assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WorkforceAssignment" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Authorization assignments]
+      operationId: createWorkforceAssignment
+      summary: Assign non-privileged role
+      description: Privileged role assignments must use the approval workflow.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateWorkforceAssignment" }
+      responses:
+        "201":
+          description: Assignment created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceAssignment" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/assignments/{assignmentId}/revoke:
+    post:
+      tags: [Authorization assignments]
+      operationId: revokeWorkforceAssignment
+      summary: Revoke workforce assignment
+      parameters:
+        - { $ref: "#/components/parameters/AssignmentId" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionedMutation" }
+      responses:
+        "200":
+          description: Revoked assignment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkforceAssignment" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/change-requests:
+    get:
+      tags: [Authorization approvals]
+      operationId: listAuthorizationChangeRequests
+      summary: List authorization change requests
+      responses:
+        "200":
+          description: Authorization approval queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  { $ref: "#/components/schemas/AuthorizationChangeRequest" }
+        default: { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [Authorization approvals]
+      operationId: createAuthorizationChangeRequest
+      summary: Request privileged authorization change
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/CreateAuthorizationChangeRequest" }
+      responses:
+        "201":
+          description: Change request created
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/AuthorizationChangeRequest" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/change-requests/{requestId}/approve:
+    post:
+      tags: [Authorization approvals]
+      operationId: approveAuthorizationChangeRequest
+      summary: Approve authorization change
+      parameters:
+        - { $ref: "#/components/parameters/RequestId" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthorizationDecision" }
+      responses:
+        "200":
+          description: Approved request and applied change
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/AuthorizationChangeRequest" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/authorization/change-requests/{requestId}/reject:
+    post:
+      tags: [Authorization approvals]
+      operationId: rejectAuthorizationChangeRequest
+      summary: Reject authorization change
+      parameters:
+        - { $ref: "#/components/parameters/RequestId" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthorizationDecision" }
+      responses:
+        "200":
+          description: Rejected request
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/AuthorizationChangeRequest" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/directory/subjects:
+    get:
+      tags: [Workforce directory]
+      operationId: listWorkforceDirectorySubjects
+      summary: List workforce subjects
+      responses:
+        "200":
+          description: Opaque workforce identity subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  { $ref: "#/components/schemas/WorkforceDirectorySubject" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/directory/organization-units:
+    get:
+      tags: [Workforce directory]
+      operationId: listWorkforceOrganizationUnits
+      summary: List organizational units
+      responses:
+        "200":
+          description: Active and historical organization-unit projections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  { $ref: "#/components/schemas/WorkforceOrganizationUnit" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/workforce/audit-events:
+    get:
+      tags: [Workforce audit]
+      operationId: listWorkforceAuditEvents
+      summary: List recent workforce audit events
+      responses:
+        "200":
+          description: Recent minimized audit-event views
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WorkforceAuditEvent" }
+        default: { $ref: "#/components/responses/Problem" }
+components:
+  securitySchemes:
+    workforceAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Short-lived access token issued for the `vfbiz-workforce-api` audience.
+        Workforce users authenticate through the Next.js BFF. This contract
+        intentionally does not expose a NestJS password or token-minting endpoint;
+        the documented BFF refresh operation never returns tokens to the browser.
+    workforceBffSession:
+      type: apiKey
+      in: cookie
+      name: vfbiz-workforce-session
+      description: |
+        Opaque HttpOnly browser session. Access/refresh tokens remain encrypted
+        in the Workforce Portal Redis token vault.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    RoleId:
+      name: roleId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AssignmentId:
+      name: assignmentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Problem:
+      description: RFC Problem Details response
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    InvalidOidcCallback:
+      description: Missing, expired or mismatched OIDC state/code/nonce
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/BffAuthError" }
+    WorkforceSessionRequired:
+      description: Missing, expired, revoked or unrefreshable workforce session
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/BffAuthError" }
+    InvalidOrigin:
+      description: Cross-origin state-changing request was rejected
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/BffAuthError" }
+    ServiceUnavailable:
+      description: Identity, session-vault or required dependency unavailable
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/BffAuthError" }
+  schemas:
+    BffAuthError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Stable machine-readable error code without provider details
+    WorkforceSecurityStatus:
+      type: object
+      additionalProperties: false
+      required: [emailVerified, mfaConfigured, mfaSatisfied]
+      properties:
+        emailVerified: { type: boolean }
+        mfaConfigured:
+          type: [boolean, "null"]
+          description: >-
+            True when the accepted session proves an MFA authenticator exists;
+            null when provider credential inventory was not queried.
+        mfaSatisfied: { type: boolean }
+    WorkforceBffSession:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          isCurrent,
+          deviceLabel,
+          networkHint,
+          userAgentSummary,
+          emailVerified,
+          mfaSatisfied,
+          authenticatedAt,
+          lastSeenAt,
+          expiresAt,
+        ]
+      properties:
+        id: { type: string, description: Opaque BFF session identifier }
+        isCurrent: { type: boolean }
+        deviceLabel: { type: [string, "null"] }
+        networkHint:
+          {
+            type: [string, "null"],
+            description: "Privacy-minimized network prefix, never a raw IP",
+          }
+        userAgentSummary: { type: [string, "null"], maxLength: 255 }
+        emailVerified: { type: boolean }
+        mfaSatisfied: { type: boolean }
+        authenticatedAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    CapabilityDefinition:
+      type: object
+      required:
+        [
+          key,
+          resource,
+          action,
+          riskTier,
+          displayName,
+          deprecated,
+          catalogVersion,
+        ]
+      properties:
+        key: { type: string }
+        resource: { type: string }
+        action: { type: string }
+        riskTier: { enum: [standard, sensitive, privileged] }
+        displayName: { type: string }
+        deprecated: { type: boolean }
+        catalogVersion: { type: integer, minimum: 1 }
+    AuthorizationScope:
+      type: object
+      required: [type, ref]
+      properties:
+        type: { enum: [global, market, showroom, department] }
+        ref: { type: string }
+    WorkforceEntitlements:
+      type: object
+      required: [identitySubjectId, revision, capabilities]
+      properties:
+        identitySubjectId: { type: string, format: uuid }
+        revision: { type: string }
+        capabilities:
+          type: array
+          items:
+            type: object
+            required: [key, riskTier, scopes]
+            properties:
+              key: { type: string }
+              riskTier: { enum: [standard, sensitive, privileged] }
+              scopes:
+                type: array
+                items: { $ref: "#/components/schemas/AuthorizationScope" }
+    WorkforceCustomerSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [id, displayName, locale, market, status, garageVehicleCount, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        displayName: {type: [string, "null"], maxLength: 120}
+        locale: {type: string, maxLength: 8}
+        market: {type: string, maxLength: 8}
+        status: {enum: [active, suspended, deleted]}
+        garageVehicleCount: {type: integer, minimum: 0}
+        updatedAt: {type: string, format: date-time}
+    WorkforceRole:
+      type: object
+      required:
+        [
+          id,
+          key,
+          displayName,
+          status,
+          system,
+          version,
+          capabilityKeys,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string }
+        displayName: { type: string }
+        description: { type: [string, "null"] }
+        status: { enum: [active, disabled] }
+        system: { type: boolean }
+        version: { type: integer, minimum: 1 }
+        capabilityKeys: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateWorkforceRole:
+      type: object
+      additionalProperties: false
+      required: [key, displayName]
+      properties:
+        key: { type: string, pattern: "^[a-z][a-z0-9-]{0,79}$" }
+        displayName: { type: string, minLength: 1, maxLength: 160 }
+        description: { type: string, maxLength: 500 }
+    UpdateWorkforceRole:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        displayName: { type: string, minLength: 1, maxLength: 160 }
+        description: { type: [string, "null"], maxLength: 500 }
+    ReplaceRoleCapabilities:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, capabilityKeys]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        capabilityKeys:
+          {
+            type: array,
+            maxItems: 100,
+            items: { type: string },
+            uniqueItems: true,
+          }
+    WorkforceAssignment:
+      type: object
+      required:
+        [
+          id,
+          identitySubjectId,
+          roleId,
+          roleKey,
+          status,
+          effectiveAt,
+          reason,
+          version,
+          scopes,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        identitySubjectId: { type: string, format: uuid }
+        roleId: { type: string, format: uuid }
+        roleKey: { type: string }
+        status: { enum: [active, revoked] }
+        effectiveAt: { type: string, format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
+        reason: { type: string }
+        version: { type: integer, minimum: 1 }
+        scopes:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/AuthorizationScope" },
+          }
+    CreateWorkforceAssignment:
+      type: object
+      additionalProperties: false
+      required: [identitySubjectId, roleId, effectiveAt, reason, scopes]
+      properties:
+        identitySubjectId: { type: string, format: uuid }
+        roleId: { type: string, format: uuid }
+        effectiveAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        reason: { type: string, minLength: 8, maxLength: 500 }
+        scopes:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 20,
+            items: { $ref: "#/components/schemas/AuthorizationScope" },
+          }
+    VersionedMutation:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+    AuthorizationChangeRequest:
+      type: object
+      required:
+        [
+          id,
+          requestType,
+          status,
+          riskTier,
+          requesterRef,
+          targetType,
+          targetRef,
+          reason,
+          payload,
+          expiresAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        requestType: { type: string }
+        status: { enum: [pending, approved, rejected] }
+        riskTier: { enum: [standard, sensitive, privileged] }
+        requesterRef: { type: string }
+        targetType: { type: string }
+        targetRef: { type: string }
+        reason: { type: string }
+        payload: {}
+        expiresAt: { type: string, format: date-time }
+        decidedAt: { type: [string, "null"], format: date-time }
+    CreateAuthorizationChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [requestType, riskTier, targetType, targetRef, reason, payload]
+      properties:
+        requestType:
+          {
+            enum:
+              [
+                replace-role-capabilities,
+                disable-role,
+                create-privileged-assignment,
+              ],
+          }
+        riskTier: { const: privileged }
+        targetType: { enum: [workforce-role, workforce-subject] }
+        targetRef: { type: string, format: uuid }
+        reason: { type: string, minLength: 8, maxLength: 500 }
+        payload: { type: object }
+    AuthorizationDecision:
+      type: object
+      additionalProperties: false
+      required: [evidenceRef]
+      properties:
+        evidenceRef: { type: string, minLength: 1, maxLength: 512 }
+        reason: { type: string, maxLength: 500 }
+    WorkforceDirectorySubject:
+      type: object
+      required: [id, externalSubject, status]
+      properties:
+        id: { type: string, format: uuid }
+        externalSubject: { type: string }
+        status: { type: string }
+    WorkforceOrganizationUnit:
+      type: object
+      required:
+        [
+          id,
+          externalRef,
+          type,
+          displayName,
+          status,
+          source,
+          revision,
+          observedAt,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        externalRef: { type: string }
+        type: { enum: [market, showroom, department] }
+        displayName: { type: string }
+        status: { type: string }
+        source: { type: string }
+        revision: { type: string }
+        observedAt: { type: string, format: date-time }
+    WorkforceAuditEvent:
+      type: object
+      required: [id, action, resourceType, outcome, correlationId, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorRef: { type: [string, "null"] }
+        action: { type: string }
+        resourceType: { type: string }
+        resourceId: { type: [string, "null"] }
+        outcome: { type: string }
+        correlationId: { type: string, format: uuid }
+        occurredAt: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        code: { type: string }
+        correlationId: { type: string, format: uuid }

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/authorization/workforce-capability.schema.json",
+  "title": "VFBiz workforce capability catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "capabilities"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "resource",
+          "action",
+          "riskTier",
+          "displayName"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){2,3}$",
+            "maxLength": 120
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$",
+            "maxLength": 100
+          },
+          "action": {
+            "enum": [
+              "read",
+              "create",
+              "update",
+              "close",
+              "archive",
+              "disable",
+              "submit",
+              "approve",
+              "reject",
+              "activate",
+              "rollback",
+              "revoke",
+              "export"
+            ]
+          },
+          "riskTier": {
+            "enum": ["standard", "sensitive", "privileged"]
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "deprecated": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    }
+  }
+}

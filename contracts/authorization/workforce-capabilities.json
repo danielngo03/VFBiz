@@ -1,0 +1,30 @@
+{
+  "$schema": "./workforce-capability.schema.json",
+  "version": 1,
+  "capabilities": [
+    {"key":"authorization.role.read","resource":"authorization.role","action":"read","riskTier":"sensitive","displayName":"Xem vai trò"},
+    {"key":"authorization.role.create","resource":"authorization.role","action":"create","riskTier":"privileged","displayName":"Tạo vai trò"},
+    {"key":"authorization.role.update","resource":"authorization.role","action":"update","riskTier":"privileged","displayName":"Cập nhật vai trò"},
+    {"key":"authorization.role.disable","resource":"authorization.role","action":"disable","riskTier":"privileged","displayName":"Vô hiệu hóa vai trò"},
+    {"key":"authorization.assignment.read","resource":"authorization.assignment","action":"read","riskTier":"sensitive","displayName":"Xem phân quyền"},
+    {"key":"authorization.assignment.create","resource":"authorization.assignment","action":"create","riskTier":"privileged","displayName":"Cấp vai trò"},
+    {"key":"authorization.assignment.revoke","resource":"authorization.assignment","action":"revoke","riskTier":"privileged","displayName":"Thu hồi vai trò"},
+    {"key":"authorization.approval.read","resource":"authorization.approval","action":"read","riskTier":"sensitive","displayName":"Xem yêu cầu phê duyệt"},
+    {"key":"authorization.approval.approve","resource":"authorization.approval","action":"approve","riskTier":"privileged","displayName":"Phê duyệt thay đổi quyền"},
+    {"key":"authorization.approval.reject","resource":"authorization.approval","action":"reject","riskTier":"privileged","displayName":"Từ chối thay đổi quyền"},
+    {"key":"customer-support.case.read","resource":"customer-support.case","action":"read","riskTier":"sensitive","displayName":"Xem hồ sơ hỗ trợ"},
+    {"key":"customer-support.case.update","resource":"customer-support.case","action":"update","riskTier":"sensitive","displayName":"Cập nhật hồ sơ hỗ trợ"},
+    {"key":"customer-support.case.close","resource":"customer-support.case","action":"close","riskTier":"sensitive","displayName":"Đóng hồ sơ hỗ trợ"},
+    {"key":"customer-support.customer.read","resource":"customer-support.customer","action":"read","riskTier":"sensitive","displayName":"Xem hồ sơ khách hàng tối thiểu"},
+    {"key":"vehicle-catalog.release.read","resource":"vehicle-catalog.release","action":"read","riskTier":"standard","displayName":"Xem bản phát hành dữ liệu xe"},
+    {"key":"vehicle-catalog.release.submit","resource":"vehicle-catalog.release","action":"submit","riskTier":"sensitive","displayName":"Gửi duyệt dữ liệu xe"},
+    {"key":"vehicle-catalog.release.approve","resource":"vehicle-catalog.release","action":"approve","riskTier":"privileged","displayName":"Duyệt dữ liệu xe"},
+    {"key":"vehicle-catalog.release.activate","resource":"vehicle-catalog.release","action":"activate","riskTier":"privileged","displayName":"Kích hoạt dữ liệu xe"},
+    {"key":"vehicle-catalog.release.rollback","resource":"vehicle-catalog.release","action":"rollback","riskTier":"privileged","displayName":"Rollback dữ liệu xe"},
+    {"key":"commercial-data.release.approve","resource":"commercial-data.release","action":"approve","riskTier":"privileged","displayName":"Duyệt dữ liệu thương mại"},
+    {"key":"commercial-data.release.activate","resource":"commercial-data.release","action":"activate","riskTier":"privileged","displayName":"Kích hoạt dữ liệu thương mại"},
+    {"key":"commercial-data.release.rollback","resource":"commercial-data.release","action":"rollback","riskTier":"privileged","displayName":"Rollback dữ liệu thương mại"},
+    {"key":"audit.event.read","resource":"audit.event","action":"read","riskTier":"sensitive","displayName":"Xem nhật ký kiểm toán"},
+    {"key":"audit.event.export","resource":"audit.event","action":"export","riskTier":"privileged","displayName":"Xuất nhật ký kiểm toán"}
+  ]
+}
