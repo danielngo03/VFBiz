@@ -1,0 +1,20 @@
+settings:
+  plugins:
+    ckeditor5_codeBlock:
+      languages:
+        0:
+          label: 'Văn bản thuần'
+        4:
+          label: CSS
+        5:
+          label: 'Khác biệt'
+        7:
+          label: Java
+        8:
+          label: JavaScript
+        9:
+          label: PHP
+        10:
+          label: Python
+        11:
+          label: Ruby

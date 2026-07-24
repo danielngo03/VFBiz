@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ruleset name="VFBiz Drupal coding standards">
+  <description>Drupal and DrupalPractice standards for VFBiz-owned PHP code.</description>
+
+  <file>web/modules/custom</file>
+
+  <arg name="extensions" value="php,module,inc,install,test,profile,theme"/>
+  <arg name="colors"/>
+  <arg value="sp"/>
+
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <exclude-pattern>*/node_modules/*</exclude-pattern>
+
+  <rule ref="Drupal"/>
+  <rule ref="DrupalPractice"/>
+</ruleset>

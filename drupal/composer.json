@@ -1,0 +1,72 @@
+{
+  "name": "vfbiz/public-web",
+  "description": "Drupal 11 public web and CMS workspace for VFBiz",
+  "type": "project",
+  "license": "proprietary",
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  ],
+  "require": {
+    "composer/installers": "^2.3",
+    "drupal/core-composer-scaffold": "^11.4",
+    "drupal/core-project-message": "^11.4",
+    "drupal/core-recommended": "^11.4",
+    "drush/drush": "^13.6"
+  },
+  "require-dev": {
+    "drupal/coder": "^8.3",
+    "drupal/core-dev": "^11.4",
+    "mglaman/phpstan-drupal": "^2.0",
+    "phpstan/extension-installer": "^1.4"
+  },
+  "conflict": {
+    "drupal/drupal": "*"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "drupal/core-composer-scaffold": true,
+      "drupal/core-project-message": true,
+      "phpstan/extension-installer": true,
+      "php-http/discovery": true,
+      "symfony/runtime": true
+    },
+    "sort-packages": true
+  },
+  "extra": {
+    "drupal-scaffold": {
+      "locations": {
+        "web-root": "web/"
+      }
+    },
+    "installer-paths": {
+      "web/core": ["type:drupal-core"],
+      "web/libraries/{$name}": ["type:drupal-library"],
+      "web/modules/contrib/{$name}": ["type:drupal-module"],
+      "web/profiles/contrib/{$name}": ["type:drupal-profile"],
+      "web/themes/contrib/{$name}": ["type:drupal-theme"],
+      "drush/Commands/contrib/{$name}": ["type:drupal-drush"]
+    },
+    "drupal-core-project-message": {
+      "include-keys": ["homepage", "support"],
+      "post-create-project-cmd-message": []
+    }
+  },
+  "scripts": {
+    "check": [
+      "@composer validate --strict",
+      "@phpcs",
+      "@phpstan",
+      "@phpunit"
+    ],
+    "phpcs": "phpcs --standard=Drupal,DrupalPractice --extensions=php,module,inc,install,test,profile,theme web/modules/custom",
+    "phpstan": "phpstan analyse --configuration=phpstan.neon",
+    "phpunit": "phpunit --configuration=phpunit.xml"
+  }
+}

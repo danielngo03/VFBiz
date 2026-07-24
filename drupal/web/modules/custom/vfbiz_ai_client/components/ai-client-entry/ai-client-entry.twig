@@ -1,0 +1,21 @@
+<section class="vfbiz-ai-entry" data-vfbiz-ai-entry>
+  <div class="vfbiz-ai-entry__copy">
+    <h2>{{ heading }}</h2>
+    <p>{{ description }}</p>
+  </div>
+  <div class="vfbiz-ai-entry__actions">
+    <button
+      class="vfbiz-ai-entry__primary"
+      type="button"
+      data-vfbiz-ai-open
+      aria-controls="vfbiz-customer-assistant"
+      aria-expanded="false"
+      aria-describedby="{{ status_id }}"
+    >
+      {{ open_label }}
+    </button>
+    <a href="{{ account_path }}">{{ account_label }}</a>
+    <a href="{{ trip_path }}">{{ trip_label }}</a>
+  </div>
+  <p id="{{ status_id }}" class="vfbiz-ai-entry__status" data-vfbiz-ai-status aria-live="polite"></p>
+</section>

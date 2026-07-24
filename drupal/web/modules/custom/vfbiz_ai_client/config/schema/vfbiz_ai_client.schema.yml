@@ -1,0 +1,26 @@
+block.settings.vfbiz_ai_client_entry:
+  type: block_settings
+  label: 'VFBiz AI client entry settings'
+  mapping:
+    heading:
+      type: label
+      label: 'Heading'
+    description:
+      type: text
+      label: 'Description'
+    open_label:
+      type: label
+      label: 'Open assistant label'
+    account_label:
+      type: label
+      label: 'Account CTA label'
+    account_path:
+      type: string
+      label: 'Account CTA path'
+    trip_label:
+      type: label
+      label: 'Trip planner CTA label'
+    trip_path:
+      type: string
+      label: 'Trip planner CTA path'
+

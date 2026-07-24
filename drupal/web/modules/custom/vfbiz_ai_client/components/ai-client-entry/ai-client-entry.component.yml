@@ -1,0 +1,32 @@
+'$schema': 'https://git.drupalcode.org/project/drupal/-/raw/11.x/core/assets/schemas/v1/metadata.schema.json'
+name: AI client entry
+status: stable
+description: Accessible entry points for the customer assistant, account and EV Trip Planner.
+props:
+  type: object
+  required:
+    - heading
+    - description
+    - open_label
+    - account_label
+    - account_path
+    - trip_label
+    - trip_path
+    - status_id
+  properties:
+    heading:
+      type: string
+    description:
+      type: string
+    open_label:
+      type: string
+    account_label:
+      type: string
+    account_path:
+      type: string
+    trip_label:
+      type: string
+    trip_path:
+      type: string
+    status_id:
+      type: string

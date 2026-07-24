@@ -1,0 +1,8 @@
+name: VFBiz AI Client
+type: module
+description: 'Accessible public assistant entry points; all AI authority remains behind the API Platform.'
+package: VFBiz
+core_version_requirement: ^11
+dependencies:
+  - drupal:block
+
