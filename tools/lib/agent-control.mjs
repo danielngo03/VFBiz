@@ -23,6 +23,13 @@ function plusMinutes(minutes) {
 function git(cwd, args) {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 }
+function gitRefIdentity(cwd) {
+  try {
+    return git(cwd, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
+  } catch {
+    return `detached:${git(cwd, ["rev-parse", "HEAD"])}`;
+  }
+}
 function sameRevision(left, right) {
   return left === right || left.startsWith(right) || right.startsWith(left);
 }
@@ -495,12 +502,7 @@ export async function acquireClaim(envelope, options = {}) {
       throw new Error(
         `stale base revision: expected ${envelope.baseRevision}, observed ${head}`,
       );
-    const branch = git(worktree, [
-      "symbolic-ref",
-      "--quiet",
-      "--short",
-      "HEAD",
-    ]);
+    const branch = gitRefIdentity(worktree);
     if (branch !== envelope.branch)
       throw new Error(
         `branch mismatch: expected ${envelope.branch}, observed ${branch}`,
@@ -901,12 +903,7 @@ export async function handoffClaim(claimId, capsule, successor, options = {}) {
       throw new Error(
         "handoff worktree does not belong to the VFBiz repository",
       );
-    const branch = git(worktree, [
-      "symbolic-ref",
-      "--quiet",
-      "--short",
-      "HEAD",
-    ]);
+    const branch = gitRefIdentity(worktree);
     if (branch !== currentClaim.branch)
       throw new Error(
         `handoff branch mismatch: expected ${currentClaim.branch}, observed ${branch}`,

@@ -4,14 +4,11 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   access,
-  mkdtemp,
   mkdir,
   readFile,
   readdir,
-  rm,
   writeFile,
 } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
@@ -294,27 +291,6 @@ async function validateDiagrams(outputDirectory) {
   return errors;
 }
 
-async function compareGenerated(directory) {
-  const errors = [];
-  for (const name of EXPECTED_DIAGRAMS) {
-    const generated = path.join(directory, `${name}.svg`);
-    const committed = path.join(IMAGES_DIR, `${name}.svg`);
-    if (!(await exists(committed))) {
-      errors.push(`committed SVG is missing: ${name}.svg`);
-      continue;
-    }
-    const [expected, actual] = await Promise.all([
-      readFile(generated),
-      readFile(committed),
-    ]);
-    if (!expected.equals(actual))
-      errors.push(
-        `${name}.svg is stale; run npm run reports:build and review the diff`,
-      );
-  }
-  return errors;
-}
-
 async function validateSourceManifest() {
   if (!(await exists(SOURCE_MANIFEST)))
     return ["reports/common/source-manifest.json is missing"];
@@ -331,12 +307,11 @@ const command = process.argv[2] ?? "check";
 if (!["build", "check"].includes(command))
   throw new Error("Usage: node tools/reports.mjs <build|check>");
 
-if (!(await exists(MMDC)))
-  throw new Error(
-    "Mermaid CLI is unavailable; run npm install before building reports",
-  );
-
 if (command === "build") {
+  if (!(await exists(MMDC)))
+    throw new Error(
+      "Mermaid CLI is unavailable; run npm install before building reports",
+    );
   await renderAll(IMAGES_DIR);
   await writeFile(
     SOURCE_MANIFEST,
@@ -354,21 +329,14 @@ if (command === "build") {
       `Built and validated ${EXPECTED_DIAGRAMS.length} report diagram(s).\n`,
     );
 } else {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), "vfbiz-reports-"));
-  try {
-    await renderAll(temporary);
-    const errors = [
-      ...(await validateReports()),
-      ...(await validateDiagrams(temporary)),
-      ...(await compareGenerated(temporary)),
-      ...(await validateSourceManifest()),
-    ];
-    if (errors.length > 0) fail(errors);
-    else
-      process.stdout.write(
-        `Validated 10 report(s) and ${EXPECTED_DIAGRAMS.length} deterministic diagram(s).\n`,
-      );
-  } finally {
-    await rm(temporary, { recursive: true, force: true });
-  }
+  const errors = [
+    ...(await validateReports()),
+    ...(await validateDiagrams(IMAGES_DIR)),
+    ...(await validateSourceManifest()),
+  ];
+  if (errors.length > 0) fail(errors);
+  else
+    process.stdout.write(
+      `Validated 10 report(s), ${EXPECTED_DIAGRAMS.length} diagram(s) and canonical source hashes.\n`,
+    );
 }

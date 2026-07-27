@@ -102,6 +102,9 @@
       "<rootDir>/test/integration/**/*.spec.ts",
       "<rootDir>/test/contract/**/*.spec.ts"
     ],
+    "setupFiles": [
+      "<rootDir>/test/setup-env.ts"
+    ],
     "moduleNameMapper": {
       "^.*generated/prisma/client$": "<rootDir>/test/mocks/prisma-client.ts"
     },

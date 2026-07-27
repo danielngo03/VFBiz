@@ -434,7 +434,7 @@ function fixture(override: Partial<InternalAiTrustConfig> = {}): {
     policyRevision: 'policy-r1',
     requestTimeoutMs: 5_000,
     retryBudget: 0,
-    subjectPseudonymizationKey: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
+    subjectPseudonymizationKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
     ...override,
   } as unknown as InternalAiTrustConfig;
   const signer = {

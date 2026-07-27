@@ -908,7 +908,7 @@ try {
     "git",
     ["symbolic-ref", "--quiet", "--short", "HEAD"],
     { cwd: process.cwd(), encoding: "utf8" },
-  ).stdout.trim();
+  ).stdout.trim() || `detached:${observedHead}`;
   const gitClaim = await acquireClaim(
     {
       ...base,

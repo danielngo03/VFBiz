@@ -245,5 +245,5 @@ describe('public OpenAPI contract', () => {
     expect(legacyReference.headers.location).toBe('/reference/customer');
   });
 
-  afterAll(async () => app.close());
+  afterAll(async () => app?.close());
 });
