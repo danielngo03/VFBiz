@@ -20,7 +20,6 @@ supersedes:
   - roles-authority
   - department-team-topology
   - product-lifecycle
-  - work-management
 ---
 
 # Delivery and authority
@@ -96,10 +95,12 @@ Bốn khái niệm này không thay thế nhau:
 - **Runtime role** là năng lực tạm thời của một agent run: explore, implement,
   review, risk review hoặc integrate. Provider/model không thay đổi authority.
 
-Digital Platform hiện có API Foundation, Customer & Product và Mobility &
-Engagement. AI & Data có AI Platform Engineering, AI Knowledge & Data và AI
-Evaluation & Governance. Phân tách này tạo separation of duties trong routing
-mà không tạo thêm agent theo chức danh hoặc buộc task nhỏ phải qua mọi team.
+Digital Platform hiện có API Foundation, Customer & Product, Customer
+Engagement và Mobility Platform. AI & Data có AI Platform Foundation, AI
+Assistant Orchestration, AI Model Platform, AI Knowledge Engineering, AI
+Assurance và Data Governance. Phân tách này tạo separation of duties trong
+routing mà không tạo thêm agent theo chức danh hoặc buộc task nhỏ phải qua mọi
+team.
 
 ## Luồng giao việc mặc định
 
@@ -121,7 +122,9 @@ mà không tạo thêm agent theo chức danh hoặc buộc task nhỏ phải qu
 - AI: retrieval, inference policy, evaluation and tool proposals.
 - Drupal: CMS, public SSR, editorial workflow and SEO.
 - Customer clients: authenticated web/mobile presentation and local state.
-- Operations Admin: workforce workflows constrained by API authority.
+- Workforce Portal: workforce workflows constrained by API authority.
+- Identity Theme: Keycloak login/email theme and identity experience,
+  constrained by Identity Platform authority.
 - Infra: environments, delivery, observability and recovery.
 
 ## Product artifacts and states

@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0030
 title: Public Account contract parity
-status: review
+status: done
 mode: controlled
 priority: P0
 owner_team: architecture-integration
@@ -23,9 +23,9 @@ exclusive_resources:
 required_checks:
   - npm run contracts:lint
   - npm run governance:check
-revision: 4
+revision: 5
 review_date: "2026-08-23"
-updated_at: "2026-07-23T11:25:12.264Z"
+updated_at: "2026-07-24T17:18:01.702Z"
 ---
 
 # Outcome
@@ -49,8 +49,8 @@ evidence; BFF route không bị mô tả nhầm như API Platform route.
 
 ## Checkpoint
 
-- Exact next action: Architect review route inventory/parity evidence; mọi thay
-  đổi Account public contract tiếp theo phải tiếp tục giữ exclusive lease.
+- Human authority đã duyệt route inventory/parity evidence ngày 25/07/2026.
+  Mọi thay đổi Account public contract tiếp theo vẫn phải giữ exclusive lease.
 
 ## Evidence
 
@@ -61,6 +61,8 @@ evidence; BFF route không bị mô tả nhầm như API Platform route.
 - [x] `npm run verify:api` — Account runtime-versus-reviewed inventory test,
   137 unit tests, 47 E2E tests, lint/typecheck/Prisma/build đạt ngày
   23/07/2026.
+- [x] Architect approval — người dùng phê duyệt rõ `VFBIZ-0030` ngày
+  25/07/2026.
 
 ### ready — 2026-07-23T11:21:59.819Z
 

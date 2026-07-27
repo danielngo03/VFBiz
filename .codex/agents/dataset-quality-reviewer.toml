@@ -2,4 +2,5 @@
 name = "dataset-quality-reviewer"
 description = "Independently verify dataset schema, grounding, duplication, contamination, PII, bias and coverage without editing or releasing it."
 sandbox_mode = "read-only"
+model_reasoning_effort = "xhigh"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/dataset-quality-reviewer.md. Follow the canonical authority, budgets, stop conditions and required output."

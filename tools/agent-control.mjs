@@ -6,6 +6,7 @@ import {
   handoffClaim,
   heartbeatClaim,
   recordReviewFinding,
+  reconcileAgentControlState,
   releaseClaim,
   renewLease,
   validateClaim,
@@ -59,6 +60,8 @@ try {
       value("--run"),
       await readJson(value("--input")),
     );
+  else if (entity === "state" && action === "reconcile")
+    result = await reconcileAgentControlState();
   else throw new Error("unsupported command");
   process.stdout.write(`${JSON.stringify({ ok: true, result })}\n`);
 } catch (error) {

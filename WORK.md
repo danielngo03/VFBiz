@@ -4,17 +4,7 @@
 
 | Work ID | Priority | Status | Owner team | Workspace | Dependencies | Blocker | Work item |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| VFBIZ-0018 | P0 | proposed | Customer Engagement | api | VFBIZ-0017, VFBIZ-0032 | — | [Conversation Runtime persistence integration](docs/work/items/VFBIZ-0018.md) |
-| VFBIZ-0019 | P0 | proposed | Architecture & Integration | root | VFBIZ-0018, VFBIZ-0028, VFBIZ-0030 | — | [Conversation Turn Protocol và public contract v1](docs/work/items/VFBIZ-0019.md) |
-| VFBIZ-0020 | P0 | proposed | AI Platform Foundation | ai | VFBIZ-0019 | — | [LangGraph dependency và private protocol foundation](docs/work/items/VFBIZ-0020.md) |
-| VFBIZ-0021 | P0 | proposed | AI Assistant Orchestration | ai | VFBIZ-0020 | — | [LangGraph Conversation Graph state machine](docs/work/items/VFBIZ-0021.md) |
-| VFBIZ-0022 | P0 | proposed | AI Knowledge Engineering | ai | VFBIZ-0021 | — | [Knowledge Release control plane](docs/work/items/VFBIZ-0022.md) |
-| VFBIZ-0023 | P0 | proposed | AI Knowledge Engineering | ai | VFBIZ-0022 | — | [Approved knowledge-source ingestion pipeline](docs/work/items/VFBIZ-0023.md) |
-| VFBIZ-0024 | P0 | proposed | Customer Engagement | api | VFBIZ-0019, VFBIZ-0021 | — | [API–AI Conversation Transport integration](docs/work/items/VFBIZ-0024.md) |
-| VFBIZ-0025 | P0 | proposed | AI Knowledge Engineering | ai | VFBIZ-0022, VFBIZ-0023 | — | [Active retriever và Knowledge Release đầu tiên](docs/work/items/VFBIZ-0025.md) |
-| VFBIZ-0026 | P0 | proposed | Architecture & Integration | root | VFBIZ-0024, VFBIZ-0025, VFBIZ-0033, VFBIZ-0034, VFBIZ-0035, VFBIZ-0037, VFBIZ-0038 | — | [Customer Chatbot staging integration và release evidence](docs/work/items/VFBIZ-0026.md) |
-| VFBIZ-0030 | P0 | review | Architecture & Integration | root | VFBIZ-0028, VFBIZ-0029 | — | [Public Account contract parity](docs/work/items/VFBIZ-0030.md) |
-| VFBIZ-0032 | P0 | review | Customer & Product | api | VFBIZ-0014, VFBIZ-0029, VFBIZ-0031, VFBIZ-0044 | — | [DSAR intake, target snapshot và customer status](docs/work/items/VFBIZ-0032.md) |
+| VFBIZ-0026 | P0 | proposed | Architecture & Integration | root | VFBIZ-0024, VFBIZ-0025, VFBIZ-0100, VFBIZ-0033, VFBIZ-0034, VFBIZ-0035, VFBIZ-0037, VFBIZ-0038, VFBIZ-0094, VFBIZ-0095, VFBIZ-0096, VFBIZ-0097, VFBIZ-0098, VFBIZ-0099, VFBIZ-0101, VFBIZ-0102, VFBIZ-0103, VFBIZ-0104 | — | [Customer Chatbot staging integration và release evidence](docs/work/items/VFBIZ-0026.md) |
 | VFBIZ-0033 | P0 | proposed | Customer & Product | api | VFBIZ-0015, VFBIZ-0039, VFBIZ-0052 | — | [Vehicle Catalog release operations và atomic activation](docs/work/items/VFBIZ-0033.md) |
 | VFBIZ-0034 | P0 | proposed | Customer & Product | api | VFBIZ-0033, VFBIZ-0053 | — | [Price, promotion và inventory governed projections](docs/work/items/VFBIZ-0034.md) |
 | VFBIZ-0037 | P0 | proposed | Architecture & Integration | root | VFBIZ-0033 | — | [Vehicle Catalog contract parity và generated SDK](docs/work/items/VFBIZ-0037.md) |
@@ -42,6 +32,32 @@
 | VFBIZ-0072 | P0 | proposed | Architecture & Integration | root | VFBIZ-0070, VFBIZ-0071 | — | [Tích hợp và nghiệm thu Customer Portal](docs/work/items/VFBIZ-0072.md) |
 | VFBIZ-0073 | P0 | active | Customer Web Experience | customer-portal | VFBIZ-0069 | — | [Next.js portal architecture consolidation](docs/work/items/VFBIZ-0073.md) |
 | VFBIZ-0074 | P0 | review | Identity Experience | identity-theme | — | — | [Enterprise Keycloak identity experience](docs/work/items/VFBIZ-0074.md) |
+| VFBIZ-0077 | P0 | proposed | Mobility Platform | root | — | — | [EV Journey Planner product, architecture và contracts](docs/work/items/VFBIZ-0077.md) |
+| VFBIZ-0078 | P0 | proposed | Mobility Platform | api | VFBIZ-0033, VFBIZ-0037, VFBIZ-0077 | — | [Chuẩn hóa charging data và migration](docs/work/items/VFBIZ-0078.md) |
+| VFBIZ-0079 | P0 | proposed | Mobility Platform | api | VFBIZ-0078 | — | [Charging projection, adapters và discovery API](docs/work/items/VFBIZ-0079.md) |
+| VFBIZ-0080 | P0 | proposed | Mobility Platform | api | VFBIZ-0077 | — | [Google route adapters và FinOps controls](docs/work/items/VFBIZ-0080.md) |
+| VFBIZ-0081 | P0 | proposed | Mobility Platform | api | VFBIZ-0033, VFBIZ-0077, VFBIZ-0078 | — | [Energy estimator và uncertainty calibration](docs/work/items/VFBIZ-0081.md) |
+| VFBIZ-0082 | P0 | proposed | Mobility Platform | api | VFBIZ-0037, VFBIZ-0079, VFBIZ-0080, VFBIZ-0081 | — | [Constrained planner, asynchronous jobs và persistence](docs/work/items/VFBIZ-0082.md) |
+| VFBIZ-0085 | P0 | proposed | Mobility Platform | api | VFBIZ-0083, VFBIZ-0084 | — | [EV Journey Planner release evidence](docs/work/items/VFBIZ-0085.md) |
+| VFBIZ-0094 | P0 | active | AI Assistant Orchestration | ai | VFBIZ-0024, VFBIZ-0025, VFBIZ-0099, VFBIZ-0103, VFBIZ-0104 | — | [Internal Conversation Graph execution runtime](docs/work/items/VFBIZ-0094.md) |
+| VFBIZ-0095 | P0 | proposed | Customer Engagement | api | VFBIZ-0094 | — | [Public Chat API and SSE activation](docs/work/items/VFBIZ-0095.md) |
+| VFBIZ-0096 | P0 | proposed | Customer Web Experience | customer-portal | VFBIZ-0095, VFBIZ-0098 | — | [Customer Portal chat experience](docs/work/items/VFBIZ-0096.md) |
+| VFBIZ-0097 | P0 | proposed | Workforce Experience | workforce-portal | VFBIZ-0101 | — | [Workforce Knowledge Hub operations](docs/work/items/VFBIZ-0097.md) |
+| VFBIZ-0098 | P0 | proposed | Customer Engagement | api | VFBIZ-0095 | — | [Durable support handoff and contact-center integration](docs/work/items/VFBIZ-0098.md) |
+| VFBIZ-0100 | P0 | proposed | AI Knowledge Engineering | ai | VFBIZ-0025 | — | [First governed business Knowledge Release](docs/work/items/VFBIZ-0100.md) |
+| VFBIZ-0101 | P0 | proposed | Customer Engagement | api | VFBIZ-0025 | — | [Workforce Knowledge Management API](docs/work/items/VFBIZ-0101.md) |
+| VFBIZ-0102 | P0 | proposed | Workforce Experience | workforce-portal | VFBIZ-0098 | — | [Workforce Support Console experience](docs/work/items/VFBIZ-0102.md) |
+| VFBIZ-0110 | P0 | proposed | AI Assurance | ai | VFBIZ-0103, VFBIZ-0108, VFBIZ-0111 | — | [Execute approved Vietnamese retrieval bake-off](docs/work/items/VFBIZ-0110.md) |
+| VFBIZ-0115 | P0 | active | AI Model Platform | ai | VFBIZ-0104, VFBIZ-0114, VFBIZ-0126 | — | [Bind release-grounding authority to Model Mesh](docs/work/items/VFBIZ-0115.md) |
+| VFBIZ-0122 | P0 | active | Agent Platform | root | — | — | [Enforce shell-safe claims and review completion](docs/work/items/VFBIZ-0122.md) |
+| VFBIZ-0123 | P0 | proposed | Customer Engagement | api | VFBIZ-0115 | — | [Release-pinned conversation budget policy](docs/work/items/VFBIZ-0123.md) |
+| VFBIZ-0124 | P0 | proposed | AI Assurance | ai | VFBIZ-0110, VFBIZ-0115 | — | [Calibrate Vietnamese grounding validator](docs/work/items/VFBIZ-0124.md) |
+| VFBIZ-0125 | P0 | active | AI Knowledge Engineering | ai | — | — | [Enforce real PII redaction in knowledge materialization](docs/work/items/VFBIZ-0125.md) |
 | VFBIZ-0036 | P1 | proposed | Product Management | root | VFBIZ-0035 | — | [Verified Vehicle Asset và customer association](docs/work/items/VFBIZ-0036.md) |
 | VFBIZ-0075 | P1 | review | Architecture & Integration | root | — | — | [Bộ báo cáo kiến trúc đích VFBiz](docs/work/items/VFBIZ-0075.md) |
+| VFBIZ-0083 | P1 | proposed | Mobility Platform | customer-portal | VFBIZ-0072, VFBIZ-0082 | — | [Customer EV Journey Planner experience](docs/work/items/VFBIZ-0083.md) |
+| VFBIZ-0084 | P1 | proposed | Mobility Platform | api | VFBIZ-0024, VFBIZ-0038, VFBIZ-0082 | — | [Đăng ký read-only plan_ev_trip tool](docs/work/items/VFBIZ-0084.md) |
+| VFBIZ-0127 | P1 | proposed | API Foundation | api | — | — | [Wire postgres-spec integration tests into a real CI gate](docs/work/items/VFBIZ-0127.md) |
+| VFBIZ-0128 | P1 | active | Agent Platform | root | — | — | [Agent control reconciliation and runtime integrity](docs/work/items/VFBIZ-0128.md) |
+| VFBIZ-0129 | P1 | active | API Foundation | root | — | — | [Remediate Node.js supply-chain advisories](docs/work/items/VFBIZ-0129.md) |
 | VFBIZ-0076 | P2 | review | Agent Platform | root | — | — | [README giới thiệu repository VFBiz](docs/work/items/VFBIZ-0076.md) |

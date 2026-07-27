@@ -3,6 +3,7 @@ import {
   mkdtemp,
   mkdir,
   readFile,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -18,11 +19,13 @@ import {
   heartbeatClaim,
   pathsOverlap,
   recordReviewFinding,
+  reconcileAgentControlState,
   releaseClaim,
   renewLease,
   resetStore,
   validateClaim,
   validatePaths,
+  assertWorkReviewComplete,
 } from "./lib/agent-control.mjs";
 
 const stateRoot = await mkdtemp(path.join(os.tmpdir(), "vfbiz-agent-control-"));
@@ -207,6 +210,48 @@ try {
     renewed.renewalCount === 1 && renewed.fencingToken > lease.fencingToken,
     "lease renewal must rotate fencing and increment renewal count",
   );
+  const multiLeaseRoot = await mkdtemp(
+    path.join(os.tmpdir(), "vfbiz-agent-multi-lease-"),
+  );
+  const multiLeaseStore = new AgentControlStore(multiLeaseRoot);
+  const multiLeaseClaim = await acquireClaim(
+    {
+      ...base,
+      workItemKey: "VFBIZ-0001",
+      runId: "multi-lease-run",
+      allowedPaths: ["docs/product"],
+    },
+    { store: multiLeaseStore },
+  );
+  const olderLease = await acquireLease(
+    multiLeaseClaim.claimId,
+    { resourceClass: "public-contract", resourceKey: "contract-a" },
+    { store: multiLeaseStore },
+  );
+  const newerLease = await acquireLease(
+    multiLeaseClaim.claimId,
+    { resourceClass: "database-migration", resourceKey: "migration-b" },
+    { store: multiLeaseStore },
+  );
+  const renewedOlderLease = await renewLease(
+    multiLeaseClaim.claimId,
+    olderLease.leaseId,
+    newerLease.fencingToken,
+    { store: multiLeaseStore },
+  );
+  const renewedNewerLease = await renewLease(
+    multiLeaseClaim.claimId,
+    newerLease.leaseId,
+    renewedOlderLease.fencingToken,
+    { store: multiLeaseStore },
+  );
+  assert(
+    renewedOlderLease.renewalCount === 1 &&
+      renewedNewerLease.renewalCount === 1 &&
+      renewedNewerLease.fencingToken > renewedOlderLease.fencingToken,
+    "a claim holding multiple leases must renew each lease with current claim fencing",
+  );
+  await resetStore(multiLeaseStore);
   const hookEnvironment = {
     ...process.env,
     VFBIZ_AGENT_STATE_DIR: stateRoot,
@@ -314,6 +359,345 @@ try {
       codexDenied.hookSpecificOutput?.permissionDecision === "deny",
     "Codex hook must use the official structured deny response",
   );
+  const claudeDeniedHook = spawnSync(
+    process.execPath,
+    ["tools/agent-hook.mjs", "pre-write", "claude"],
+    {
+      cwd: process.cwd(),
+      env: hookEnvironment,
+      input: JSON.stringify({
+        tool_input: { file_path: "backend/api/src/main.ts" },
+      }),
+      encoding: "utf8",
+    },
+  );
+  const claudeDenied = hookOutput(claudeDeniedHook, "Claude deny hook");
+  assert(
+    claudeDeniedHook.status === 0 &&
+      claudeDenied.hookSpecificOutput?.permissionDecision === "deny",
+    "Claude hook must use the same official structured deny response as Codex",
+  );
+
+  const hookGitRoot = await mkdtemp(
+    path.join(os.tmpdir(), "vfbiz-agent-shell-hook-"),
+  );
+  spawnSync("git", ["init", "-q"], { cwd: hookGitRoot });
+  spawnSync("git", ["config", "user.email", "agent@example.invalid"], {
+    cwd: hookGitRoot,
+  });
+  spawnSync("git", ["config", "user.name", "Agent Guard Test"], {
+    cwd: hookGitRoot,
+  });
+  await mkdir(path.join(hookGitRoot, "docs/product"), { recursive: true });
+  await mkdir(path.join(hookGitRoot, "backend/api"), { recursive: true });
+  await writeFile(path.join(hookGitRoot, "docs/product/owned.md"), "owned\n");
+  await writeFile(
+    path.join(hookGitRoot, "backend/api/preserved.ts"),
+    "before\n",
+  );
+  spawnSync("git", ["add", "."], { cwd: hookGitRoot });
+  spawnSync("git", ["commit", "-qm", "baseline"], { cwd: hookGitRoot });
+  await writeFile(
+    path.join(hookGitRoot, "backend/api/preserved.ts"),
+    "pre-existing user change\n",
+  );
+  const shellEnvironment = {
+    ...hookEnvironment,
+    VFBIZ_HOOK_REPOSITORY_ROOT: hookGitRoot,
+  };
+  const shellPayload = (invocationId, command) =>
+    JSON.stringify({
+      tool_use_id: invocationId,
+      tool_input: { command },
+    });
+  const shellHook = (phase, payload, environment = shellEnvironment) =>
+    spawnSync(process.execPath, ["tools/agent-hook.mjs", phase, "generic"], {
+      cwd: process.cwd(),
+      env: environment,
+      input: payload,
+      encoding: "utf8",
+    });
+
+  const readOnlyPre = shellHook(
+    "pre-shell",
+    shellPayload("read-only", "git status --short"),
+  );
+  const readOnlyPost = shellHook(
+    "post-shell",
+    shellPayload("read-only", "git status --short"),
+  );
+  assert(
+    readOnlyPre.status === 0 && readOnlyPost.status === 0,
+    "read-only shell command must pass without attributing pre-existing changes",
+  );
+
+  const ownedPre = shellHook(
+    "pre-shell",
+    shellPayload("owned-write", "formatter docs/product/owned.md"),
+  );
+  await writeFile(
+    path.join(hookGitRoot, "docs/product/owned.md"),
+    "formatted\n",
+  );
+  const ownedPost = shellHook(
+    "post-shell",
+    shellPayload("owned-write", "formatter docs/product/owned.md"),
+  );
+  assert(
+    ownedPre.status === 0 && ownedPost.status === 0,
+    "formatter/codegen mutation inside the claim must pass",
+  );
+
+  const outsidePre = shellHook(
+    "pre-shell",
+    shellPayload("outside-write", "codegen"),
+  );
+  await writeFile(path.join(hookGitRoot, "backend/api/generated.ts"), "new\n");
+  const outsidePost = shellHook(
+    "post-shell",
+    shellPayload("outside-write", "codegen"),
+  );
+  assert(
+    outsidePre.status === 0 &&
+      outsidePost.status === 2 &&
+      /backend\/api\/generated\.ts/.test(
+        hookOutput(outsidePost, "outside shell mutation").message ?? "",
+      ),
+    "shell-created path outside the claim must be blocked with path evidence",
+  );
+
+  const renamePre = shellHook(
+    "pre-shell",
+    shellPayload(
+      "rename-write",
+      "mv docs/product/owned.md backend/api/moved.md",
+    ),
+  );
+  await rename(
+    path.join(hookGitRoot, "docs/product/owned.md"),
+    path.join(hookGitRoot, "backend/api/moved.md"),
+  );
+  const renamePost = shellHook(
+    "post-shell",
+    shellPayload(
+      "rename-write",
+      "mv docs/product/owned.md backend/api/moved.md",
+    ),
+  );
+  assert(
+    renamePre.status === 0 &&
+      renamePost.status === 2 &&
+      /backend\/api\/moved\.md/.test(
+        hookOutput(renamePost, "rename shell mutation").message ?? "",
+      ),
+    "shell rename outside the claim must be blocked",
+  );
+
+  const deletePre = shellHook(
+    "pre-shell",
+    shellPayload("delete-write", "delete backend/api/preserved.ts"),
+  );
+  await rm(path.join(hookGitRoot, "backend/api/preserved.ts"));
+  const deletePost = shellHook(
+    "post-shell",
+    shellPayload("delete-write", "delete backend/api/preserved.ts"),
+  );
+  assert(
+    deletePre.status === 0 &&
+      deletePost.status === 2 &&
+      /backend\/api\/preserved\.ts/.test(
+        hookOutput(deletePost, "delete shell mutation").message ?? "",
+      ),
+    "shell deletion outside the claim must be blocked",
+  );
+
+  const unclaimedEnvironment = {
+    ...shellEnvironment,
+    VFBIZ_CLAIM_ID: "",
+    VFBIZ_FENCING_TOKEN: "",
+    VFBIZ_REQUIRE_CLAIM: "0",
+  };
+  const unclaimedPre = shellHook(
+    "pre-shell",
+    shellPayload("unclaimed-write", "generate docs/product/unclaimed.md"),
+    unclaimedEnvironment,
+  );
+  await writeFile(
+    path.join(hookGitRoot, "docs/product/unclaimed.md"),
+    "unclaimed\n",
+  );
+  const unclaimedPost = shellHook(
+    "post-shell",
+    shellPayload("unclaimed-write", "generate docs/product/unclaimed.md"),
+    unclaimedEnvironment,
+  );
+  assert(
+    unclaimedPre.status === 0 &&
+      unclaimedPost.status === 2 &&
+      /requires an active claim/.test(
+        hookOutput(unclaimedPost, "unclaimed shell mutation").message ?? "",
+      ),
+    "shell mutation without a claim must be blocked after delta observation",
+  );
+
+  const destructive = shellHook(
+    "pre-shell",
+    shellPayload("destructive", "git reset --hard HEAD"),
+  );
+  assert(
+    destructive.status === 2 &&
+      /destructive/i.test(
+        hookOutput(destructive, "destructive shell command").message ?? "",
+      ),
+    "broad destructive shell command must be denied before execution",
+  );
+  await rm(hookGitRoot, { recursive: true, force: true });
+
+  const reviewRoot = await mkdtemp(
+    path.join(os.tmpdir(), "vfbiz-agent-review-ledger-"),
+  );
+  const reviewStore = new AgentControlStore(reviewRoot);
+  await rejects(
+    () =>
+      assertWorkReviewComplete(
+        {
+          attributes: {
+            id: "VFBIZ-0001",
+            mode: "controlled",
+            controlled_signals: ["security"],
+          },
+        },
+        { store: reviewStore },
+      ),
+    /review ledger/,
+    "controlled work must not complete without review ledger evidence",
+  );
+  await reviewStore.withLock(async (state) => {
+    state.runs.push({
+      runId: "implementation",
+      workItemKey: "VFBIZ-0001",
+      agentRole: "implementer",
+      runMode: "scoped-write",
+      status: "completed",
+      finishedAt: "2026-07-26T01:00:00.000Z",
+    });
+    state.runs.push({
+      runId: "review-verifier",
+      workItemKey: "VFBIZ-0001",
+      agentRole: "reviewer-verifier",
+      status: "completed",
+      startedAt: "2026-07-26T01:01:00.000Z",
+    });
+  });
+  await rejects(
+    () =>
+      assertWorkReviewComplete(
+        {
+          attributes: {
+            id: "VFBIZ-0001",
+            mode: "controlled",
+            controlled_signals: ["security"],
+          },
+        },
+        { store: reviewStore },
+      ),
+    /risk-reviewer/,
+    "security-controlled work must require risk review",
+  );
+  await reviewStore.withLock(async (state) => {
+    state.runs.push({
+      runId: "review-risk",
+      workItemKey: "VFBIZ-0001",
+      agentRole: "risk-reviewer",
+      status: "completed",
+      startedAt: "2026-07-26T01:02:00.000Z",
+    });
+    state.findings.push({
+      workItemKey: "VFBIZ-0001",
+      fingerprint: "open-gap",
+      evidenceHash: "4".repeat(64),
+      cycle: 1,
+      disposition: "open",
+      recordedAt: new Date().toISOString(),
+    });
+  });
+  await rejects(
+    () =>
+      assertWorkReviewComplete(
+        {
+          attributes: {
+            id: "VFBIZ-0001",
+            mode: "controlled",
+            controlled_signals: ["security"],
+          },
+        },
+        { store: reviewStore },
+      ),
+    /open finding/,
+    "work completion must reject the current open finding disposition",
+  );
+  await reviewStore.withLock(async (state) => {
+    state.findings.push({
+      workItemKey: "VFBIZ-0001",
+      fingerprint: "open-gap",
+      evidenceHash: "5".repeat(64),
+      cycle: 2,
+      disposition: "resolved",
+      recordedAt: new Date(Date.now() + 1_000).toISOString(),
+    });
+    state.runs.push({
+      runId: "implementation-fix",
+      workItemKey: "VFBIZ-0001",
+      agentRole: "implementer",
+      runMode: "scoped-write",
+      status: "completed",
+      finishedAt: "2026-07-26T01:03:00.000Z",
+    });
+  });
+  await rejects(
+    () =>
+      assertWorkReviewComplete(
+        {
+          attributes: {
+            id: "VFBIZ-0001",
+            mode: "controlled",
+            controlled_signals: ["security"],
+          },
+        },
+        { store: reviewStore },
+      ),
+    /current implementation/,
+    "a fix after review must invalidate the older review ledger",
+  );
+  await reviewStore.withLock(async (state) => {
+    state.runs.push(
+      {
+        runId: "review-verifier-after-fix",
+        workItemKey: "VFBIZ-0001",
+        agentRole: "reviewer-verifier",
+        status: "completed",
+        startedAt: "2026-07-26T01:04:00.000Z",
+      },
+      {
+        runId: "review-risk-after-fix",
+        workItemKey: "VFBIZ-0001",
+        agentRole: "risk-reviewer",
+        status: "completed",
+        startedAt: "2026-07-26T01:04:00.000Z",
+      },
+    );
+  });
+  await assertWorkReviewComplete(
+    {
+      attributes: {
+        id: "VFBIZ-0001",
+        mode: "controlled",
+        controlled_signals: ["security"],
+      },
+    },
+    { store: reviewStore },
+  );
+  await resetStore(reviewStore);
   await rejects(
     () =>
       handoffClaim(
@@ -495,6 +879,17 @@ try {
     );
     claim.expiresAt = "2000-01-01T00:00:00.000Z";
   });
+  const reconciliation = await reconcileAgentControlState({ store });
+  assert(
+    reconciliation.expiredClaims === 1 && reconciliation.expiredLeases === 0,
+    "explicit reconciliation must expire an abandoned claim exactly once",
+  );
+  const repeatedReconciliation = await reconcileAgentControlState({ store });
+  assert(
+    repeatedReconciliation.expiredClaims === 0 &&
+      repeatedReconciliation.expiredLeases === 0,
+    "reconciliation must be idempotent after expiry is persisted",
+  );
   await rejects(
     () => validateClaim(second.claimId, { store }),
     /expired/,

@@ -8,10 +8,11 @@ authorization or side effects to the model.
 
 ## Capability boundaries
 
-`access`, `customer` and `product` are currently composed business runtime
-modules. `engagement` and `mobility` contain isolated experimental code but are
-not loaded by `AppModule` until their own implementation/release work is
-approved. Future boundaries remain in product/data docs until code exists.
+`access`, `customer` and `product` are composed public business modules.
+`engagement` currently composes only its private inbox dispatcher in
+`AppModule`; public Chat controllers remain release-gated until contract and
+AI execution work are complete. `mobility` remains isolated and is not loaded.
+Future boundaries remain in product/data docs until code exists.
 
 Do not create a module for a screen, endpoint, vendor or small feature. Extend
 the owning context. Do not scaffold an empty context: materialize it only with
@@ -52,6 +53,7 @@ an approved consumer/use case and tests. A new boundary requires a root ADR.
 - Data/migration safety: `docs/data-model.md`.
 - Identity, profile, consent, session và DSAR: `docs/identity-and-account.md`.
 - Vehicle Catalog, Garage, ownership và VIN: `docs/vehicle-catalog-and-garage.md`.
+- Verified ownership quarantine: `docs/ownership-boundary.md`.
 - Provider adapters, webhooks and reconciliation: `docs/integration-adapters.md`.
 - Conversation, handoff and concurrency: `docs/conversation-runtime.md`.
 - Signed AI gateway, Vision upload and tools: `docs/ai-gateway-and-tools.md`.

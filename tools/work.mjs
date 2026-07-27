@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFrontmatter, renderFrontmatter } from "./lib/frontmatter.mjs";
 import { loadOrganization } from "./lib/governance.mjs";
+import { assertWorkReviewComplete } from "./lib/agent-control.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ITEMS = path.resolve(
@@ -482,6 +483,7 @@ if (command === "check") {
           throw new Error(
             "work item cannot complete without checked evidence for every required check",
           );
+        await assertWorkReviewComplete(item);
       }
       if (target === "blocked" && !args.note)
         throw new Error("blocking condition must be recorded with --note");

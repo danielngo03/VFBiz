@@ -14,6 +14,7 @@ affected_workspaces:
 allowed_paths:
   - backend/api/src/modules/access
   - backend/api/src/modules/customer
+  - backend/api/test/integration/customer
   - backend/api/prisma
   - contracts/authorization
   - contracts/openapi
@@ -90,8 +91,29 @@ thiểu trong phạm vi capability và organizational scope được cấp.
   inventory và subject-wide logout.
 - Customer callback chặn email chưa verify; optional MFA enrollment dùng
   Keycloak `CONFIGURE_TOTP`, không đưa OTP secret vào VFBiz.
-- Exact next action: Security Owner review, Customer Portal opaque BFF token
-  vault và database-backed audit integration test cho customer search.
+- **Database-backed audit integration test — done**:
+  `test/integration/customer/workforce-customer-support.postgres-spec.ts`
+  (4 tests, real PostgreSQL, following the `describeWithDatabase` pattern)
+  seeds a real `CustomerProfile`, calls
+  `PrismaWorkforceCustomerSupportRepository.search()` and asserts exactly
+  one `AuditEvent` row with correct `actorRef`/`correlationId`/`action`,
+  that the raw search term never appears in `metadata`, and that a
+  no-match and an out-of-market-scope search still audit correctly.
+- **Real bug found and fixed while writing that test**: `search()`
+  unconditionally included `{ id: { equals: input.query } }` in its `OR`
+  filter. Since `id` is a native `uuid` Postgres column, any non-UUID
+  search term (i.e. every ordinary name search — the primary use case)
+  made Postgres reject the whole query with "invalid input syntax for type
+  uuid", a 500 for the single most common workforce search. Fixed by only
+  including the exact-ID branch when the query is syntactically a UUID,
+  otherwise matching on `displayName` alone. Covered by both the new
+  no-match test (a non-UUID term) and a new dedicated exact-ID-match test.
+- Exact next action: Security Owner review and Customer Portal opaque BFF
+  cutover remain the only open items (BFF token vault turns out to already
+  be built under `apps/customer-portal`, owned by the Customer Web
+  Experience track per VFBIZ-0070/0071/0073 — worth Engineering Lead
+  confirming this item's `depends_on`/`allowed_paths` should reflect that
+  rather than re-scoping it here).
 
 ## Evidence
 
@@ -101,4 +123,10 @@ thiểu trong phạm vi capability và organizational scope được cấp.
 - [x] Ba OpenAPI contracts lint sạch; 24 capabilities hợp lệ.
 - [x] Local Keycloak Identity Bridge integration smoke đạt.
 - [x] Customer/Workforce auth contracts lint sạch và application builds đạt.
+- [x] Database-backed customer-search audit test — 2026-07-27: 4/4 tests
+  pass against a real, freshly migrated PostgreSQL 17 + PostGIS container;
+  full re-verification after the `search()` fix — `npm run verify:api`
+  (lint, typecheck, 263 unit/integration tests, 63 E2E tests, Prisma
+  validation, build) and all 34 `*.postgres-spec.ts` tests repo-wide — all
+  pass.
 - [ ] Security Owner review và Customer Portal opaque BFF cutover chưa hoàn tất.

@@ -15,6 +15,16 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/tools/agent-hook.mjs\" pre-shell claude",
+            "timeout": 3
+          }
+        ]
+      },
+      {
         "matcher": "^(Edit|Write)$",
         "hooks": [
           {
@@ -26,6 +36,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/tools/agent-hook.mjs\" post-shell claude",
+            "timeout": 3
+          }
+        ]
+      },
       {
         "matcher": "^(Edit|Write)$",
         "hooks": [

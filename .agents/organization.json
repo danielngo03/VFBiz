@@ -116,7 +116,8 @@
       "authority": "advisory",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 18,
-      "trigger": ["discovery", "research", "noisy-analysis"]
+      "trigger": ["discovery", "research", "noisy-analysis"],
+      "modelTier": "light"
     },
     {
       "id": "implementer",
@@ -125,7 +126,8 @@
       "authority": "implementation",
       "capabilities": ["read", "search", "write", "shell"],
       "maxTurns": 30,
-      "trigger": ["fast", "bounded", "controlled", "parallel"]
+      "trigger": ["fast", "bounded", "controlled", "parallel"],
+      "modelTier": "deep"
     },
     {
       "id": "reviewer-verifier",
@@ -134,7 +136,8 @@
       "authority": "evidence",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 20,
-      "trigger": ["behavior-change", "bounded-review", "controlled-review"]
+      "trigger": ["behavior-change", "bounded-review", "controlled-review"],
+      "modelTier": "critical"
     },
     {
       "id": "risk-reviewer",
@@ -143,7 +146,8 @@
       "authority": "advisory",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 20,
-      "trigger": ["controlled"]
+      "trigger": ["controlled"],
+      "modelTier": "critical"
     },
     {
       "id": "integrator",
@@ -152,7 +156,8 @@
       "authority": "integration",
       "capabilities": ["read", "search", "write", "shell"],
       "maxTurns": 24,
-      "trigger": ["parallel", "integration"]
+      "trigger": ["parallel", "integration"],
+      "modelTier": "standard"
     },
     {
       "id": "dataset-source-researcher",
@@ -161,7 +166,8 @@
       "authority": "advisory",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 18,
-      "trigger": ["dataset-source"]
+      "trigger": ["dataset-source"],
+      "modelTier": "standard"
     },
     {
       "id": "synthetic-dataset-builder",
@@ -170,7 +176,8 @@
       "authority": "implementation",
       "capabilities": ["read", "search", "write", "shell"],
       "maxTurns": 30,
-      "trigger": ["synthetic-dataset"]
+      "trigger": ["synthetic-dataset"],
+      "modelTier": "standard"
     },
     {
       "id": "dataset-quality-reviewer",
@@ -179,7 +186,8 @@
       "authority": "evidence",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 24,
-      "trigger": ["dataset-release", "synthetic-dataset-review"]
+      "trigger": ["dataset-release", "synthetic-dataset-review"],
+      "modelTier": "critical"
     }
   ],
   "workspaces": [
@@ -374,6 +382,8 @@
         "tests/governance",
         "contracts/governance",
         "docs/operating-model",
+        "docs/INDEX.md",
+        "docs/INDEX.json",
         "docs/work"
       ],
       "specializations": [
@@ -501,14 +511,32 @@
       "departmentId": "digital-platform",
       "leadHumanRole": "engineering-lead",
       "workspaces": ["api"],
-      "owns": ["mobility", "trip-planning", "maps"],
+      "owns": [
+        "mobility",
+        "trip-planning",
+        "charging-data",
+        "route-providers",
+        "energy-models",
+        "maps"
+      ],
       "paths": [
         "backend/api/src/modules/mobility",
         "backend/api/prisma/models/mobility.prisma",
         "backend/api/.agents/skills/validate-trip-release"
       ],
-      "specializations": ["trip-planning", "energy-model", "maps"],
-      "reviewProfiles": ["provider-resilience", "trip-release"]
+      "specializations": [
+        "trip-planning",
+        "charging-data",
+        "energy-model",
+        "maps",
+        "location-privacy"
+      ],
+      "reviewProfiles": [
+        "trip-correctness",
+        "provider-policy",
+        "location-privacy",
+        "trip-release"
+      ]
     },
     {
       "id": "ai-platform-foundation",
@@ -541,6 +569,7 @@
         "backend/ai/.python-version",
         "backend/ai/tests/architecture",
         "backend/ai/tests/contract",
+        "backend/ai/tests/integration/platform",
         "backend/ai/tests/unit"
       ],
       "specializations": ["fastapi", "security", "migration", "architecture"],
@@ -592,10 +621,17 @@
         "ai-finops"
       ],
       "paths": [
+        "backend/ai/.env.example",
         "backend/ai/app/modules/inference",
         "backend/ai/app/infrastructure",
+        "backend/ai/app/platform/config",
+        "backend/ai/tests/unit/inference",
+        "backend/ai/tests/unit/platform",
+        "backend/ai/tests/integration/inference",
         "backend/ai/docs/architecture.md",
-        "backend/ai/docs/inference-serving.md"
+        "backend/ai/docs/inference-serving.md",
+        "backend/ai/docs/evaluation-and-release.md",
+        "guides/customer-ai"
       ],
       "specializations": [
         "model-routing",
@@ -657,6 +693,7 @@
         "backend/ai/app/modules/governance",
         "backend/ai/.agents/skills/validate-ai-release",
         "backend/ai/tests/evaluation",
+        "backend/ai/tests/integration/governance",
         "backend/ai/tests/security"
       ],
       "specializations": [
@@ -837,6 +874,11 @@
     "local-inference": ["security-owner", "release-owner"],
     "ai-evaluation": ["data-owner"],
     "ai-release": ["data-owner", "security-owner", "release-owner"],
+    "ev-trip-planner": ["architect", "privacy-owner"],
+    "charging-data": ["data-owner"],
+    "route-provider": ["architect", "legal-owner"],
+    "location-privacy": ["privacy-owner"],
+    "trip-correctness": ["architect"],
     "trip-release": ["release-owner"],
     "employee-data": ["data-owner"],
     "license": ["legal-owner"],

@@ -2,4 +2,5 @@
 name = "integrator"
 description = "Integrate sealed disjoint lanes, resolve mechanical conflicts and run cross-lane checks without approving release."
 sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/integrator.md. Follow the canonical authority, budgets, stop conditions and required output."

@@ -20,7 +20,7 @@ tags:
   - langgraph
   - knowledge
   - ingestion
-revision: 1
+revision: 3
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -37,6 +37,7 @@ Trong scope:
 
 - NestJS Conversation Runtime core và persistence.
 - Public/private conversation contracts.
+- Durable HTTP command, SSE cursor/heartbeat/backpressure và offline handoff.
 - LangGraph dependency, protocol verifier và Conversation Graph.
 - Knowledge Release control plane và approved knowledge-source ingestion.
 - API–AI transport, active retriever và staging integration evidence.
@@ -47,6 +48,15 @@ Ngoài scope:
 - Side-effecting business tool.
 - Vision upload, real model provider, production content crawl và SFT.
 - Trip Planner hoặc mobile UI.
+
+## Program priority gate
+
+Customer AI Assistant là program delivery duy nhất được mở sau foundation.
+Các work item EV Journey Planner `VFBIZ-0077`–`VFBIZ-0085` vẫn ở
+`proposed` và không được cấp writer, claim, migration lease hoặc provider
+budget cho tới khi `VFBIZ-0026` có staging evidence và được human Release Owner
+chấp nhận. Tài liệu EV hiện có chỉ là kiến trúc đích để tránh mất quyết định,
+không phải authorization để triển khai song song.
 
 ## Progress
 
@@ -60,6 +70,33 @@ Ngoài scope:
 - [ ] VFBIZ-0024: API–AI Conversation Transport integration.
 - [ ] VFBIZ-0025: active retriever và Knowledge Release đầu tiên.
 - [ ] VFBIZ-0026: staging integration và release evidence.
+
+Checkpoint 24/07/2026:
+
+- `VFBIZ-0030` và `VFBIZ-0032` đã đạt technical gates nhưng vẫn ở `review`;
+  Architect và Privacy Owner chưa ghi approval.
+- Resolver từ chối cấp writer cho `VFBIZ-0018` đúng thiết kế
+  (`needs-decision`, `writerAuthorized: false`).
+- Không có active claim/lease. EV Planner tiếp tục bị defer.
+- Exact next action: Privacy Owner xác nhận `VFBIZ-0032`; sau đó integration
+  owner checkpoint baseline, chuyển `VFBIZ-0018` qua `ready → active`, acquire
+  `database-migration` lease và triển khai Prisma/PostgreSQL persistence.
+
+## Discoveries
+
+- Runtime aggregate đã có OCC, single active claim, fencing, cancellation,
+  budget và public-event cursor với unit evidence; phần thiếu của `0018` là
+  persistence thật, transaction/recovery/purge và PostgreSQL integration.
+- `0018` không cần dependency mới; Prisma/PostgreSQL hiện tại đủ.
+- Private AI endpoint hiện vẫn là synchronous `/answers`; assertion chưa pin
+  replay ID, conversation/version/fencing/budget/revision và LangGraph chưa
+  được cài. Verifier hiện còn chấp nhận profile `employee`, trong khi Customer
+  Assistant baseline chỉ cho `public_customer` và `authenticated_customer`.
+  Các thay đổi này thuộc `0019`–`0021`, không được chen vào `0018`; route vẫn
+  private/fail-closed và không được mở cho client.
+- Knowledge ingestion cần migration, dependency lockfile, worker, messaging và
+  object-storage boundary; allowed paths/exclusive resources của `0023` đã được
+  sửa để phản ánh acceptance thay vì buộc agent vượt scope sau này.
 
 ## Dependency và concurrency
 
@@ -92,8 +129,14 @@ contract, lockfile và knowledge registry luôn cần lease.
 - Durable turn/state authority nằm ở API; LangGraph không sở hữu customer.
 - Public API không stream hidden reasoning. Status event chỉ mô tả hành động hệ
   thống an toàn cho khách hàng.
+- SSE/WebSocket chỉ là delivery projection; inbox/event/final answer đã commit
+  ở API mới là source of truth.
 - Internal protocol freeze trước LangGraph để NestJS/FastAPI không suy đoán.
+- LangGraph checkpoint chỉ là execution state. Node có interrupt phải
+  idempotent vì có thể chạy lại khi resume.
 - Knowledge Release và source ingestion tách nhau; ingestion không tự approve.
+- Handoff là typed graph outcome để API authorize/commit, không nằm trong
+  read-only tool registry.
 - Dataset Factory evaluation/red-team/training là workflow khác runtime
   knowledge ingestion.
 - Foundation kết thúc ở 0023 chưa phải chatbot hoạt động. Transport/retriever/

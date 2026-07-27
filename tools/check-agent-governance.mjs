@@ -47,6 +47,22 @@ function same(actual, expected) {
   );
 }
 
+function renderBootstrap(input) {
+  const args = [
+    "tools/context-resolver.mjs",
+    "--bootstrap",
+    "--format",
+    "markdown",
+  ];
+  if (input.request) args.push("--request", input.request);
+  for (const value of input.paths ?? []) args.push("--path", value);
+  if (input.mode) args.push("--mode", input.mode);
+  if (input.work) args.push("--work", input.work);
+  if (input.stage) args.push("--stage", input.stage);
+  if (input.signals?.length) args.push("--signals", input.signals.join(","));
+  return execFileSync(process.execPath, args, { cwd: ROOT, encoding: "utf8" });
+}
+
 async function walk(directory, predicate = () => true) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -193,6 +209,59 @@ async function validateRolesAndAdapters(organization) {
     )
       fail(`.codex/hooks.json: missing ${event}`);
   }
+  const claude = await json(".claude/settings.json");
+  const shellHookContracts = [
+    {
+      provider: "Codex",
+      before: codexHooks?.hooks?.PreToolUse,
+      after: codexHooks?.hooks?.PostToolUse,
+      matcher: "Bash",
+      prePhase: "pre-shell codex",
+      postPhase: "post-shell codex",
+    },
+    {
+      provider: "Claude",
+      before: claude?.hooks?.PreToolUse,
+      after: claude?.hooks?.PostToolUse,
+      matcher: "Bash",
+      prePhase: "pre-shell claude",
+      postPhase: "post-shell claude",
+    },
+    {
+      provider: "Gemini",
+      before: gemini?.hooks?.BeforeTool,
+      after: gemini?.hooks?.AfterTool,
+      matcher: "run_shell_command",
+      prePhase: "pre-shell gemini",
+      postPhase: "post-shell gemini",
+    },
+  ];
+  for (const contract of shellHookContracts) {
+    const pre = (contract.before ?? []).find(({ matcher }) =>
+      new RegExp(matcher).test(contract.matcher),
+    );
+    const post = (contract.after ?? []).find(({ matcher }) =>
+      new RegExp(matcher).test(contract.matcher),
+    );
+    if (
+      !pre?.hooks?.some(({ command }) =>
+        String(command).includes(contract.prePhase),
+      )
+    )
+      fail(`${contract.provider}: shell PreToolUse guard is missing`);
+    if (
+      !post?.hooks?.some(({ command }) =>
+        String(command).includes(contract.postPhase),
+      )
+    )
+      fail(`${contract.provider}: shell PostToolUse guard is missing`);
+  }
+  const workCli = await readFile(path.join(ROOT, "tools/work.mjs"), "utf8");
+  if (
+    !workCli.includes("await assertWorkReviewComplete(item)") ||
+    !workCli.includes('target === "done"')
+  )
+    fail("tools/work.mjs: controlled completion is not bound to review ledger");
 }
 
 async function validateContextHardening() {
@@ -245,9 +314,7 @@ async function validateContextHardening() {
 
   const auth = await resolveContext({
     request: "Rotate the customer refresh token",
-    paths: [
-      "apps/customer-portal/src/platform/session/redis-token-vault.ts",
-    ],
+    paths: ["apps/customer-portal/src/platform/session/redis-token-vault.ts"],
   });
   if (auth.classification.mode !== "controlled")
     fail("customer token-vault path was not classified controlled");
@@ -257,11 +324,7 @@ async function validateContextHardening() {
     auth.assignment !== null
   )
     fail("controlled task without a work item received a writer assignment");
-  for (const role of [
-    "implementer",
-    "reviewer-verifier",
-    "risk-reviewer",
-  ])
+  for (const role of ["implementer", "reviewer-verifier", "risk-reviewer"])
     if (!auth.recommendedRoles.includes(role))
       fail(`controlled topology is missing ${role}`);
   if (!auth.reviewProfiles.includes("security"))
@@ -281,6 +344,78 @@ async function validateContextHardening() {
     parallel.assignment !== null
   )
     fail("parallel task without a work item received a writer assignment");
+
+  const tripPlanner = await resolveContext({
+    request:
+      "Implement the EV Journey Planner route provider, energy estimator and exact origin/destination handling",
+    paths: ["backend/api/src/modules/mobility"],
+    behaviorChange: true,
+  });
+  if (
+    tripPlanner.classification.mode !== "controlled" ||
+    tripPlanner.ownership.ownerTeam !== "mobility-platform" ||
+    tripPlanner.writerAuthorized ||
+    tripPlanner.executionState !== "needs-decision"
+  )
+    fail("EV Journey Planner change did not fail closed as controlled work");
+  for (const signal of [
+    "ev-trip-planner",
+    "route-provider",
+    "energy-model",
+    "location-privacy",
+  ])
+    if (!tripPlanner.signals.includes(signal))
+      fail(`EV Journey Planner routing is missing ${signal}`);
+  for (const profile of [
+    "trip-correctness",
+    "provider-policy",
+    "location-privacy",
+  ])
+    if (!tripPlanner.reviewProfiles.includes(profile))
+      fail(`EV Journey Planner routing is missing ${profile} review`);
+  if (
+    !same(tripPlanner.requiredSkills, [
+      "evolve-backend-capability",
+      "review-change",
+    ])
+  )
+    fail("EV Journey Planner implementation selected the wrong skills");
+
+  const chargingProjection = await resolveContext({
+    request:
+      "Normalize ChargingLocation, EVSE, Connector and Tariff for no feasible route evaluation",
+    paths: ["backend/api/prisma/models/mobility.prisma"],
+  });
+  if (
+    chargingProjection.classification.mode !== "controlled" ||
+    chargingProjection.ownership.ownerTeam !== "mobility-platform" ||
+    !chargingProjection.signals.includes("charging-data") ||
+    !chargingProjection.signals.includes("trip-correctness") ||
+    !chargingProjection.exclusiveResources.includes("database-migration")
+  )
+    fail("charging-data/trip-correctness change did not route as controlled");
+
+  const tripPurge = await resolveContext({
+    request:
+      "Refactor the expired trip-plan purge helper without behavior change",
+    paths: [
+      "backend/api/src/modules/mobility/application/services/purge-expired-trip-plans.service.ts",
+    ],
+    reversible: true,
+  });
+  if (
+    tripPurge.classification.mode !== "bounded" ||
+    tripPurge.signals.some((signal) =>
+      [
+        "ev-trip-planner",
+        "route-provider",
+        "energy-model",
+        "location-privacy",
+        "trip-correctness",
+      ].includes(signal),
+    )
+  )
+    fail("local trip-plan maintenance was over-classified as controlled");
 
   const controlled = await resolveContext({
     request: "Complete customer account and privacy journeys",
@@ -350,6 +485,81 @@ async function validateContextHardening() {
     resumed.resumeDelta.unchangedSources.length === 0
   )
     fail("resume bootstrap re-emitted unchanged source bodies");
+}
+
+async function validateReleaseContextRouting() {
+  const cases = [
+    [
+      "release-contract",
+      "customer-chatbot-v6-architecture",
+      "## Public event và SSE contract",
+    ],
+    [
+      "release-persistence",
+      "customer-chatbot-v6-architecture",
+      "## Concurrency, interrupt và handoff",
+    ],
+    ["release-repository", "adr-0002-customer-chatbot-v6", "## Decision"],
+    ["release-model-binding", "ai-evaluation-release", "## Release unit"],
+    [
+      "trusted-retrieval-snapshot",
+      "ai-knowledge-release",
+      "## KnowledgeRevisionState",
+    ],
+    ["grounding-runtime", "ai-conversation-graph", "## Runtime ports"],
+    ["graph-execution", "ai-conversation-graph", "## State contract"],
+  ];
+  for (const [signal, documentId, heading] of cases) {
+    const context = await resolveContext({
+      request: `Validate ${signal} release routing`,
+      paths: ["backend/ai/app/modules/governance"],
+      mode: "controlled",
+    });
+    const document = context.documents.find(({ id }) => id === documentId);
+    if (document?.selection.heading !== heading)
+      fail(
+        `${signal}: selected ${document?.selection.heading ?? "nothing"}, expected ${documentId} ${heading}`,
+      );
+    if (context.documents.length < 1 || context.documents.length > 4)
+      fail(`${signal}: release context was not bounded to 1–4 documents`);
+  }
+
+  const combined = await resolveContext({
+    request:
+      "Validate release-contract, release-model-binding, trusted-retrieval-snapshot and graph-execution",
+    paths: ["backend/ai/app/modules/governance"],
+    mode: "controlled",
+  });
+  if (combined.documents.length !== 4)
+    fail(
+      "combined release context did not select exactly four relevant documents",
+    );
+  for (const [documentId, heading] of [
+    ["customer-chatbot-v6-architecture", "## Public event và SSE contract"],
+    ["ai-evaluation-release", "## Release unit"],
+    ["ai-knowledge-release", "## KnowledgeRevisionState"],
+    ["ai-conversation-graph", "## State contract"],
+  ]) {
+    const document = combined.documents.find(({ id }) => id === documentId);
+    if (document?.selection.heading !== heading)
+      fail(
+        `combined release context selected ${document?.selection.heading ?? "nothing"}, expected ${documentId} ${heading}`,
+      );
+  }
+
+  const pointer = await resolveContext({
+    request: "Update release pointer database OCC",
+    paths: ["backend/ai/app/modules/governance"],
+  });
+  if (pointer.signals.includes("session-concurrency"))
+    fail("release pointer OCC inferred session-concurrency");
+
+  const conversation = await resolveContext({
+    request: "Apply OCC to the conversation session inbox turn",
+    paths: ["backend/api/src/modules/engagement"],
+  });
+  if (!conversation.signals.includes("session-concurrency"))
+    fail("conversation/session/inbox OCC did not infer session-concurrency");
 }
 
 async function validateCoordinationLifecycle() {
@@ -618,6 +828,23 @@ async function validateScenarios(scenarios) {
     for (const signal of expected.excludedSignals ?? [])
       if (context.signals.includes(signal))
         fail(`${scenario.id}: excluded signal ${signal} was selected`);
+    const selections = context.documents.flatMap(
+      (document) => document.selections ?? [document.selection],
+    );
+    if (
+      Object.hasOwn(expected, "minHeadings") &&
+      selections.length < expected.minHeadings
+    )
+      fail(
+        `${scenario.id}: selected fewer than ${expected.minHeadings} headings`,
+      );
+    if (
+      Object.hasOwn(expected, "maxHeadings") &&
+      selections.length > expected.maxHeadings
+    )
+      fail(
+        `${scenario.id}: selected more than ${expected.maxHeadings} headings`,
+      );
     const selectedDocumentIds = context.documents.map(({ id }) => id);
     for (const document of expected.documents ?? [])
       if (!selectedDocumentIds.includes(document))
@@ -633,6 +860,44 @@ async function validateScenarios(scenarios) {
         fail(
           `${scenario.id}: ${documentId} selected ${selected?.selection.heading ?? "nothing"}, expected ${heading}`,
         );
+    }
+    for (const { id, heading } of expected.documentSelections ?? []) {
+      const document = context.documents.find(
+        ({ id: documentId }) => documentId === id,
+      );
+      if (
+        !(document?.selections ?? [document?.selection]).some(
+          (selection) => selection?.heading === heading,
+        )
+      )
+        fail(`${scenario.id}: missing ${id} ${heading}`);
+    }
+    if (expected.assignmentDocumentSelections) {
+      if (!context.assignment)
+        fail(`${scenario.id}: missing writer assignment`);
+      else
+        for (const { id, heading } of expected.assignmentDocumentSelections) {
+          const document = context.documents.find(
+            ({ id: documentId }) => documentId === id,
+          );
+          const selection = (
+            document?.selections ?? [document?.selection]
+          ).find((candidate) => candidate?.heading === heading);
+          const requiredContext = selection
+            ? `${document.path}:${selection.startLine}-${selection.endLine}`
+            : null;
+          if (
+            !requiredContext ||
+            !context.assignment.required_context.includes(requiredContext)
+          )
+            fail(`${scenario.id}: assignment omitted ${id} ${heading}`);
+        }
+    }
+    if (expected.bootstrapHeadings) {
+      const bootstrap = renderBootstrap(scenario.input);
+      for (const heading of expected.bootstrapHeadings)
+        if (!bootstrap.includes(heading))
+          fail(`${scenario.id}: bootstrap omitted ${heading}`);
     }
     const selectedInstructions = context.instructions.map(
       ({ path: value }) => value,
@@ -919,6 +1184,21 @@ function validateOrganizationTopology(organization) {
     for (const role of roles)
       if (!authorities.has(role))
         fail(`${signal}: authority routing uses unknown role ${role}`);
+
+  const aiModelPlatform = organization.teams.find(
+    ({ id }) => id === "ai-model-platform",
+  );
+  for (const requiredPath of [
+    "backend/ai/.env.example",
+    "backend/ai/app/platform/config",
+    "backend/ai/tests/unit/inference",
+    "backend/ai/tests/integration/inference",
+    "backend/ai/docs/evaluation-and-release.md",
+  ])
+    if (!(aiModelPlatform?.paths ?? []).includes(requiredPath))
+      fail(
+        `ai-model-platform: missing controlled delivery path ${requiredPath}`,
+      );
 }
 
 const organization = await json(".agents/organization.json");
@@ -928,6 +1208,7 @@ if (organization) {
   await validateInstructions(organization);
   await validateRolesAndAdapters(organization);
   await validateContextHardening();
+  await validateReleaseContextRouting();
   await validateCoordinationLifecycle();
   await validateSkills(organization);
   await validateScenarios(scenarios);

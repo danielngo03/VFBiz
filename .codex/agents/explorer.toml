@@ -2,4 +2,5 @@
 name = "explorer"
 description = "Perform bounded read-heavy repository or documentation research and return a concise evidence summary."
 sandbox_mode = "read-only"
+model_reasoning_effort = "low"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/explorer.md. Follow the canonical authority, budgets, stop conditions and required output."

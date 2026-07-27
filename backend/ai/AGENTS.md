@@ -1,7 +1,7 @@
 # VFBiz AI Platform instructions
 
 ## Mission and authority
-This FastAPI service is private and fail closed. It owns governed knowledge
+This private, fail-closed FastAPI service owns governed knowledge
 ingestion/retrieval, inference orchestration, tool proposals, evaluation and AI
 release policy. API Platform remains identity, authorization and side-effect
 authority. No client calls this service directly.
@@ -12,12 +12,12 @@ Only these directories may exist under `app/modules`:
 - `knowledge`: source lifecycle, chunks, ACL-aware retrieval and tombstones.
 - `inference`: provider-neutral generation/embedding ports and routing policy.
 - `assistant`: answer orchestration and profile-specific behavior.
-- `tooling`: versioned tool proposal registry and schema validation.
 - `evaluation`: offline/security/regression suites and deterministic gates.
 - `governance`: dataset/release manifests, approvals and kill-switch policy.
-
 Provider/model names, `chatbot`, a single screen or a temporary feature never
 become top-level modules. Provider adapters live under `app/infrastructure`.
+`tooling` chỉ được materialize khi có versioned registry, consumer và validation
+thực; tool contracts hiện vẫn thuộc release manifest và API execution boundary.
 
 ## Internal layering
 Use `domain`, `application`, `presentation` and `infrastructure` only when a
@@ -60,10 +60,10 @@ schemas to domain/application types; SQLAlchemy models remain infrastructure.
 
 - Boundary/graph: `docs/architecture.md`, `docs/conversation-graph.md`.
 - Knowledge/dataset/serving: `docs/knowledge-release.md`,
-  `docs/knowledge-ingestion.md`, `docs/dataset-engineering.md`, `docs/inference-serving.md`.
-- Safety/root policy: `docs/safety-and-abuse.md`,
-  `../../docs/governance/security-data-ai.md`.
-
+  `docs/knowledge-ingestion.md`, `docs/knowledge-data-governance.md`,
+  `docs/dataset-engineering.md`, `docs/inference-serving.md`.
+- Evaluation/release: `docs/evaluation-and-release.md`; safety/root policy:
+  `docs/safety-and-abuse.md`, `../../docs/governance/security-data-ai.md`.
 Use the resolver; do not preload release material for a local formatting change.
 
 ## Commands

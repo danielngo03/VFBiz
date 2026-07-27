@@ -1,3 +1,4 @@
 interface:
   display_name: "Validate Trip Release"
-  short_description: "Help with Validate Trip Release tasks"
+  short_description: "Verify EV planning correctness, provider policy and release evidence"
+  default_prompt: "Use $validate-trip-release to verify this EV Journey Planner candidate against its pinned data, algorithm, provider, privacy and release acceptance."

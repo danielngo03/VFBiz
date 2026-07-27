@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0021
 title: LangGraph Conversation Graph state machine
-status: proposed
+status: done
 mode: controlled
 priority: P0
 owner_team: ai-assistant-orchestration
@@ -25,8 +25,9 @@ exclusive_resources: []
 required_checks:
   - npm run verify:ai
   - npm run governance:check
-revision: 1
+revision: 6
 review_date: "2026-08-23"
+updated_at: "2026-07-24T19:17:51.065Z"
 ---
 
 # Outcome
@@ -51,14 +52,21 @@ switch nhưng không tự mở quyền hoặc side effect.
 - Missing tool argument tạo clarification; schema/auth/anomaly failure không
   được model tự sửa thành fact.
 - Retry exhaustion, interrupt, stale checkpoint và stale fencing tests đạt.
+- Node có `interrupt` chỉ thực hiện side effect idempotent vì node được chạy lại
+  từ đầu khi resume; migration không deserialize mù checkpoint schema cũ.
 - Real retrieval/inference/tool execution vẫn là port, không bị nhúng vào graph.
 
 ## Checkpoint
 
-- Exact next action: start bằng typed state/reducer và fake ports; không triển
-  khai Knowledge Release trong lane này.
+- Implementation commit: `6e7f4b0`.
+- Hai lượt review độc lập đã hoàn tất; các finding về final-answer delivery,
+  resume binding, late result, checkpoint privacy, grounding và state bounds
+  đã được xử lý trong cùng lane.
+- Exact next action: đóng work item; Knowledge Release tiếp tục ở VFBIZ-0022.
 
 ## Evidence
 
-- [ ] `npm run verify:ai` — add evidence reference
-- [ ] `npm run governance:check` — add evidence reference
+- [x] `npm run verify:ai` — 59 tests, Ruff, Pyright và Alembic dry-run đạt
+  ngày 2026-07-25.
+- [x] `npm run governance:check` — docs, reports, authorization, work schema,
+  provider-neutral routing và Agent OS gates đạt ngày 2026-07-25.

@@ -14,6 +14,19 @@
   "hooks": {
     "BeforeTool": [
       {
+        "matcher": "^run_shell_command$",
+        "sequential": true,
+        "hooks": [
+          {
+            "name": "vfbiz-pre-shell",
+            "type": "command",
+            "command": "node \"$GEMINI_PROJECT_DIR/tools/agent-hook.mjs\" pre-shell gemini",
+            "timeout": 3000,
+            "description": "Snapshot Git state and enforce the shared claim boundary around shell mutations."
+          }
+        ]
+      },
+      {
         "matcher": "^(write_file|replace)$",
         "sequential": true,
         "hooks": [
@@ -28,6 +41,19 @@
       }
     ],
     "AfterTool": [
+      {
+        "matcher": "^run_shell_command$",
+        "sequential": true,
+        "hooks": [
+          {
+            "name": "vfbiz-post-shell",
+            "type": "command",
+            "command": "node \"$GEMINI_PROJECT_DIR/tools/agent-hook.mjs\" post-shell gemini",
+            "timeout": 3000,
+            "description": "Compare the invocation Git delta and reject paths outside the active claim."
+          }
+        ]
+      },
       {
         "matcher": "^(write_file|replace)$",
         "sequential": true,

@@ -87,3 +87,25 @@ Read-only review completed; one bounded fix cycle resolved subject/capability sc
 ### done — 2026-07-23T07:34:17.256Z
 
 Domain/application core accepted. Persistence remains disabled and is gated by VFBIZ-0032 then VFBIZ-0018.
+
+### post-completion regression note — 2026-07-27
+
+Found while investigating VFBIZ-0127 (postgres-spec tests never wired into
+CI, so this went undetected): `ConversationRuntimeRepository`'s abstract
+interface (`getSnapshot`, `findAcceptedMessage`, `getTurnExecutionContext`,
+`listPublicEvents`, `commit`) had no explicit `now: Date` parameter, so the
+concrete Prisma adapter (VFBIZ-0018) fell back to the real wall clock for
+session-readability checks instead of the caller's injected
+`ConversationRuntimeClock`. Fixed by adding `now`/`ConversationRuntimeCommit.now`
+to the abstract interface and threading `this.clock.now()` through every
+call site in `ConversationRuntimeService`,
+`ConversationTurnDispatcher` and `ExecuteConversationTurnService` (the
+latter two gained a new constructor dependency, already resolvable from the
+existing `ConversationRuntimeClock` provider in
+`engagement-runtime.module.ts`). No behavior change for production (which
+always used the real clock anyway); the actual bug this exposed was a
+fixed-date integration test fixture silently failing once real time passed
+the hardcoded date — a genuine "time bomb," not flakiness. Re-verified:
+`npm test` (263), `npm run test:e2e` (63), all 30 `*.postgres-spec.ts`
+tests against real Postgres, lint, typecheck, `prisma:validate`,
+`test:migrations` — all pass as of 2026-07-27.

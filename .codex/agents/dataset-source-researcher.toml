@@ -2,4 +2,5 @@
 name = "dataset-source-researcher"
 description = "Research dataset and source candidates read-only, record provenance and license evidence, and never download or accept rights."
 sandbox_mode = "read-only"
+model_reasoning_effort = "medium"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/dataset-source-researcher.md. Follow the canonical authority, budgets, stop conditions and required output."

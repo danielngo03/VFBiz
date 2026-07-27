@@ -2,4 +2,5 @@
 name = "implementer"
 description = "Implement one approved outcome inside declared paths and return observed evidence."
 sandbox_mode = "workspace-write"
+model_reasoning_effort = "high"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/implementer.md. Follow the canonical authority, budgets, stop conditions and required output."

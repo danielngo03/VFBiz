@@ -72,5 +72,7 @@ maker-checker và Next.js Workforce Portal trước khi runtime implementation b
 - [x] Capability JSON Schema — 23 key unique và schema-valid.
 - [x] Provider-neutral governance routing — 56 scenarios đạt, gồm portal và
   API dynamic authorization.
-- [ ] Full `npm run governance:check` — chờ cập nhật các work item phụ và sinh
-  lại generated docs index ở integration lane.
+- [x] Full `npm run governance:check` — đạt sạch trên 2026-07-27 (123 work
+  item, provider adapters, skills, work schemas và 72 context scenarios);
+  các work item phụ đã cập nhật và docs index đã sinh lại ở integration lane
+  từ lâu, mục này chỉ chưa được tick lại sau khi điều kiện chờ đã hết.

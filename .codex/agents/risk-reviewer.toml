@@ -2,4 +2,5 @@
 name = "risk-reviewer"
 description = "Review security, privacy, data, AI, contracts, rights and operations without accepting risk."
 sandbox_mode = "read-only"
+model_reasoning_effort = "xhigh"
 developer_instructions = "Read root/nearest AGENTS.md and .agents/roles/risk-reviewer.md. Follow the canonical authority, budgets, stop conditions and required output."

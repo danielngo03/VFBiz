@@ -19,11 +19,22 @@ allowed_paths:
 depends_on:
   - VFBIZ-0024
   - VFBIZ-0025
+  - VFBIZ-0100
   - VFBIZ-0033
   - VFBIZ-0034
   - VFBIZ-0035
   - VFBIZ-0037
   - VFBIZ-0038
+  - VFBIZ-0094
+  - VFBIZ-0095
+  - VFBIZ-0096
+  - VFBIZ-0097
+  - VFBIZ-0098
+  - VFBIZ-0099
+  - VFBIZ-0101
+  - VFBIZ-0102
+  - VFBIZ-0103
+  - VFBIZ-0104
 controlled_signals:
   - ai-assistant
   - ai-retrieval
@@ -36,7 +47,7 @@ required_checks:
   - npm run verify:governance
   - npm run verify:api
   - npm run verify:ai
-revision: 1
+revision: 2
 review_date: "2026-08-23"
 ---
 
@@ -58,6 +69,8 @@ quan sát được; work item chỉ tạo evidence, không tự phát hành prod
 - Contract/E2E bao phủ public và authenticated subject isolation.
 - Citation/refusal, knowledge updating, provider outage, cancel/reconnect và
   offline handoff đạt.
+- SSE cursor/heartbeat/backpressure, contact-center accept/timeout và durable
+  final answer có browser/integration evidence.
 - Load/cost/security suite dùng record/replay theo budget; smoke provider thật
   chỉ chạy khi có explicit approval.
 - Release manifest pin contract, graph, policy, model, embedding, knowledge và

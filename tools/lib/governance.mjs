@@ -41,22 +41,28 @@ const CONTROLLED = new Set([
   "dataset-source",
   "dependency-policy",
   "employee-data",
+  "energy-model",
+  "ev-trip-planner",
   "identity-theme",
   "legal",
   "license",
   "local-inference",
+  "location-privacy",
   "migration",
   "multimodal-injection",
   "payment",
   "pii",
   "production",
   "public-contract",
+  "route-provider",
   "schema",
   "secret",
   "side-effect",
   "support-handoff",
   "synthetic-dataset",
   "trip-release",
+  "trip-correctness",
+  "charging-data",
   "vehicle-ownership",
   "workforce-authorization",
   "knowledge-ingestion",
@@ -89,6 +95,33 @@ const WORKSPACE_CONTEXT_KEYS = {
   infra: ["infra-boundary"],
   root: [],
 };
+const EXACT_RELEASE_CONTEXT_ANCHORS = {
+  "customer-chatbot-v6-architecture": {
+    "release-contract": "## Public event và SSE contract",
+    "release-persistence": "## Concurrency, interrupt và handoff",
+  },
+  "adr-0002-customer-chatbot-v6": {
+    "release-repository": "## Decision",
+  },
+  "ai-evaluation-release": {
+    "release-model-binding": "## Release unit",
+  },
+  "ai-inference-serving": {
+    "embedding-runtime": "## Embedding runtime và quyền chọn provider",
+  },
+  "ai-knowledge-release": {
+    "trusted-retrieval-snapshot": "## KnowledgeRevisionState",
+  },
+  "ai-conversation-graph": {
+    "grounding-runtime": "## Runtime ports",
+    "graph-execution": "## State contract",
+  },
+};
+const RELEASE_CONTEXT_SIGNALS = new Set(
+  Object.values(EXACT_RELEASE_CONTEXT_ANCHORS).flatMap((anchors) =>
+    Object.keys(anchors),
+  ),
+);
 
 export async function loadOrganization() {
   return JSON.parse(
@@ -170,6 +203,12 @@ function teamsForSignals(signals) {
     ["support-handoff", ["customer-engagement"]],
     ["customer-conversation", ["customer-engagement"]],
     ["session-concurrency", ["customer-engagement"]],
+    ["ev-trip-planner", ["mobility-platform"]],
+    ["charging-data", ["mobility-platform"]],
+    ["route-provider", ["mobility-platform"]],
+    ["energy-model", ["mobility-platform"]],
+    ["location-privacy", ["mobility-platform"]],
+    ["trip-correctness", ["mobility-platform"]],
     ["ai-assistant", ["ai-assistant-orchestration"]],
     ["ai-inference", ["ai-model-platform", "reliability-engineering"]],
     [
@@ -199,9 +238,8 @@ function teamsForSignals(signals) {
 }
 
 function inferSignals(input) {
-  const text = [input.request ?? "", ...(input.paths ?? [])]
-    .join(" ")
-    .toLowerCase();
+  const request = (input.request ?? "").toLowerCase();
+  const text = [request, ...(input.paths ?? [])].join(" ").toLowerCase();
   const signals = [];
   const rules = [
     [
@@ -300,7 +338,11 @@ function inferSignals(input) {
     ],
     [
       "ai-inference",
-      /model mesh|model routing|provider-neutral model|model adapter|provider fallback/,
+      /model mesh|model routing|provider-neutral model|model adapter|provider fallback|embedding (?:provider|runtime|routing|cost policy)/,
+    ],
+    [
+      "embedding-runtime",
+      /embedding (?:provider|runtime|routing|cost policy)/,
     ],
     ["ai-retrieval", /\brag\b|retrieval|embedding|citation|groundedness/],
     [
@@ -312,8 +354,60 @@ function inferSignals(input) {
       /ai release(?: manifest)?|promote model|model release|phát hành ai/,
     ],
     [
+      "release-contract",
+      /release contract|contract release|release[- ]?contract/,
+    ],
+    [
+      "release-persistence",
+      /release persistence|persistence release|release[- ]?persistence/,
+    ],
+    [
+      "release-repository",
+      /release repository|repository release|release[- ]?repository/,
+    ],
+    [
+      "release-model-binding",
+      /release model binding|model binding release|release[- ]?model[- ]?binding/,
+    ],
+    [
+      "trusted-retrieval-snapshot",
+      /trusted retrieval snapshot|retrieval snapshot|trusted[- ]?retrieval[- ]?snapshot/,
+    ],
+    [
+      "grounding-runtime",
+      /grounding runtime|runtime grounding|grounding[- ]?runtime/,
+    ],
+    [
+      "graph-execution",
+      /graph execution|execution graph|graph[- ]?execution/,
+    ],
+    [
       "trip-release",
       /trip (?:planner )?(?:staging |production )?release|validate-trip-release|phát hành trip/,
+    ],
+    [
+      "ev-trip-planner",
+      /ev (?:journey|trip|route)(?: and charging)? planner|lập kế hoạch hành trình ev|trip planning (?:engine|algorithm)|constrained (?:trip|route) planner/,
+    ],
+    [
+      "charging-data",
+      /charging (?:location|evse|connector|tariff|availability|reliability)|trạm sạc|biểu giá sạc|\bevse\b|\bocpi\b/,
+    ],
+    [
+      "route-provider",
+      /google (?:routes|places|maps)|route provider|routes adapter|places adapter|field mask|autocomplete session token/,
+    ],
+    [
+      "energy-model",
+      /energy (?:estimator|model|profile)|vehicle energy profile|mô hình (?:năng lượng|tiêu hao)|ước tính (?:năng lượng|soc)|charging curve|reserve soc/,
+    ],
+    [
+      "location-privacy",
+      /location privacy|origin\/destination|exact coordinate|raw coordinate|tọa độ (?:chính xác|điểm đi|điểm đến)|home\/work location/,
+    ],
+    [
+      "trip-correctness",
+      /trip correctness|route optimizer|constrained (?:graph|route)|no feasible route|charging stop|arrival soc|target soc/,
     ],
     [
       "customer-conversation",
@@ -322,10 +416,6 @@ function inferSignals(input) {
     [
       "support-handoff",
       /async(?:hronous)? handoff|support handoff|offline handoff|chuyển (?:cho )?nhân viên|mất websocket/,
-    ],
-    [
-      "session-concurrency",
-      /session concurrency|concurrent message|message race|optimistic concurrency|\bocc\b|spam (?:phím )?enter|session inbox/,
     ],
     [
       "ai-vision",
@@ -354,6 +444,24 @@ function inferSignals(input) {
   ];
   for (const [signal, pattern] of rules)
     if (pattern.test(text)) signals.push(signal);
+  const isReleasePointerOcc = (clause) =>
+    /\b(?:release|pointer)\b[^.\n]{0,80}\bocc\b|\bocc\b[^.\n]{0,80}\b(?:release|pointer)\b/.test(
+      clause,
+    );
+  const hasConversationOcc = request
+    .split(/[.;\n]/)
+    .some(
+      (clause) =>
+        !isReleasePointerOcc(clause) &&
+        /\bocc\b/.test(clause) &&
+        /\b(?:conversation|session|message|turn|inbox)\b/.test(clause),
+    );
+  if (
+    /session concurrency|concurrent message|message race|spam (?:phím )?enter|session inbox/.test(
+      request,
+    ) || hasConversationOcc
+  )
+    signals.push("session-concurrency");
   const portalSecurityPath =
     /apps\/(?:customer|workforce)-portal\/src\/(?:app\/(?:api\/auth|bff)|(?:lib\/server|platform)\/(?:auth|session)|proxy(?:\.ts)?)/;
   if (portalSecurityPath.test(text)) {
@@ -419,6 +527,8 @@ function inferSignals(input) {
     for (let index = signals.length - 1; index >= 0; index -= 1)
       if (signals[index] === "ai-dataset") signals.splice(index, 1);
   }
+  if (signals.some((value) => RELEASE_CONTEXT_SIGNALS.has(value)))
+    signals.push("ai-release");
   return [...new Set(signals)];
 }
 
@@ -479,6 +589,15 @@ function reviewProfiles(signals, behaviorChange) {
     ["customer-privacy", ["privacy"]],
     ["customer-profile", ["privacy", "data"]],
     ["customer-garage", ["privacy", "data"]],
+    [
+      "ev-trip-planner",
+      ["trip-correctness", "provider-policy", "location-privacy"],
+    ],
+    ["charging-data", ["trip-correctness", "data"]],
+    ["route-provider", ["provider-policy"]],
+    ["energy-model", ["trip-correctness", "data"]],
+    ["location-privacy", ["location-privacy", "privacy"]],
+    ["trip-correctness", ["trip-correctness"]],
     ["pii", ["privacy"]],
     ["consent", ["privacy"]],
     ["public-contract", ["contract"]],
@@ -488,6 +607,17 @@ function reviewProfiles(signals, behaviorChange) {
     ["customer-journey", ["experience"]],
     ["accessibility", ["accessibility"]],
     ["ai-assistant", ["ai-safety"]],
+    ["ai-inference", ["cost", "resilience", "security"]],
+    ["model-routing", ["ai-safety", "cost", "resilience", "security"]],
+    ["provider-fallback", ["cost", "resilience", "security"]],
+    ["ai-finops", ["cost"]],
+    ["grounding", ["ai-safety", "security"]],
+    [
+      "embedding-runtime",
+      ["cost", "data", "resilience", "security"],
+    ],
+    ["grounding-runtime", ["ai-safety", "security"]],
+    ["ai-release", ["ai-safety", "release"]],
     ["ai-tool", ["ai-safety", "authorization"]],
     ["ai-vision", ["ai-safety", "privacy"]],
     ["dataset-source", ["data", "legal"]],
@@ -561,6 +691,18 @@ function skills(mode, stage, signals, workspaces) {
     return ["onboard-dataset", "review-change"];
   if (workspaces.includes("ai") && signals.has("ai-tool"))
     return ["register-ai-tool", "review-change"];
+  if (
+    workspaces.includes("api") &&
+    [
+      "ev-trip-planner",
+      "charging-data",
+      "route-provider",
+      "energy-model",
+      "location-privacy",
+      "trip-correctness",
+    ].some((value) => signals.has(value))
+  )
+    return ["evolve-backend-capability", "review-change"];
   if (
     workspaces.includes("api") &&
     ["schema", "migration", "public-contract"].some((value) =>
@@ -806,14 +948,14 @@ async function activeDocuments() {
   );
 }
 
-async function headingSelection(document, keys) {
+async function headingSelection(document, keys, exactAnchors = {}) {
   const parsed = await readFrontmatter(path.join(ROOT, document.path));
   const lines = parsed.body.split(/\r?\n/);
   const headings = lines
     .map((line, index) => ({ line, index }))
     .filter(({ line }) => /^#{1,3}\s+/.test(line));
   const anchor = [...keys]
-    .map((key) => document.context_anchors?.[key])
+    .map((key) => exactAnchors[key] ?? document.context_anchors?.[key])
     .find(Boolean);
   if (anchor) {
     const exact = headings.find(({ line }) => line.trim() === anchor);
@@ -834,7 +976,9 @@ async function headingSelection(document, keys) {
     return {
       heading: exact.line,
       anchorKey: [...keys].find(
-        (key) => document.context_anchors?.[key] === anchor,
+        (key) =>
+          exactAnchors[key] === anchor ||
+          document.context_anchors?.[key] === anchor,
       ),
       startLine: exact.index + 1 + lineOffset,
       endLine: endIndex + lineOffset,
@@ -1044,24 +1188,84 @@ export async function resolveContext(input) {
       const matched = mismatchedSpecialization
         ? []
         : when.filter((value) => keys.has(value));
-      return { document, matched, score: matched.length * 10 };
+      const exactMatched = Object.keys(
+        EXACT_RELEASE_CONTEXT_ANCHORS[document.id] ?? {},
+      ).filter((key) => keys.has(key));
+      return {
+        document,
+        matched,
+        exactMatched,
+        score: matched.length * 10 + exactMatched.length * 100,
+      };
     })
     .filter(
-      ({ matched }) =>
-        matched.length > 0 && route.classification.mode !== "fast",
+      ({ matched, exactMatched }) =>
+        (matched.length > 0 || exactMatched.length > 0) &&
+        route.classification.mode !== "fast",
     )
     .sort(
       (a, b) => b.score - a.score || a.document.id.localeCompare(b.document.id),
     )
-    .slice(0, route.budgets.maxDocs);
+  const exactCandidates = candidates.filter(
+    ({ exactMatched }) => exactMatched.length > 0,
+  );
+  const ordinaryCandidates = candidates.filter(
+    ({ exactMatched }) => exactMatched.length === 0,
+  );
+  const headingLimit = exactCandidates.length
+    ? Math.min(route.budgets.maxDocs, 4)
+    : route.budgets.maxDocs;
+  const selectedCandidates = [];
+  let selectedHeadingCount = 0;
+  for (const candidate of exactCandidates) {
+    if (selectedHeadingCount >= headingLimit) break;
+    const exactMatched = candidate.exactMatched.slice(
+      0,
+      headingLimit - selectedHeadingCount,
+    );
+    selectedCandidates.push({ ...candidate, exactMatched });
+    selectedHeadingCount += exactMatched.length;
+  }
+  // Exact signal-to-heading anchors are an explicit context contract, not a
+  // hint to fill the remaining document budget. Loading ordinary candidates
+  // after an exact match reintroduces context drift and turns a ceiling into a
+  // quota. Only use heuristic candidates when no exact anchor matched.
+  if (exactCandidates.length === 0) {
+    for (const candidate of ordinaryCandidates) {
+      if (selectedHeadingCount >= headingLimit) break;
+      selectedCandidates.push(candidate);
+      selectedHeadingCount += 1;
+    }
+  }
   const documents = await Promise.all(
-    candidates.map(async ({ document, matched }) => ({
-      id: document.id,
-      path: document.path,
-      revision: document.revision,
-      reason: matched,
-      selection: await headingSelection(document, matched),
-    })),
+    selectedCandidates.map(async ({ document, matched, exactMatched }) => {
+      const selectionKeys = exactMatched.length ? exactMatched : matched;
+      const selections = await Promise.all(
+        exactMatched.length
+          ? exactMatched.map((key) =>
+              headingSelection(
+                document,
+                [key],
+                EXACT_RELEASE_CONTEXT_ANCHORS[document.id],
+              ),
+            )
+          : [
+              headingSelection(
+                document,
+                selectionKeys,
+                EXACT_RELEASE_CONTEXT_ANCHORS[document.id],
+              ),
+            ],
+      );
+      return {
+        id: document.id,
+        path: document.path,
+        revision: document.revision,
+        reason: selectionKeys,
+        selection: selections[0],
+        selections,
+      };
+    }),
   );
   const exclusiveResources = [
     ...new Set([
@@ -1154,9 +1358,11 @@ export async function resolveContext(input) {
           exclusive_resources: exclusiveResources,
           required_context: [
             ...instructions,
-            ...documents.map(
-              ({ path: documentPath, selection }) =>
-                `${documentPath}:${selection.startLine}-${selection.endLine}`,
+            ...documents.flatMap(({ path: documentPath, selections, selection }) =>
+              (selections ?? [selection]).map(
+                ({ startLine, endLine }) =>
+                  `${documentPath}:${startLine}-${endLine}`,
+              ),
             ),
           ],
           review_profiles: route.reviewProfiles,

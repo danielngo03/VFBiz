@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0022
 title: Knowledge Release control plane
-status: proposed
+status: done
 mode: controlled
 priority: P0
 owner_team: ai-knowledge-engineering
@@ -30,8 +30,9 @@ exclusive_resources:
 required_checks:
   - npm run verify:ai
   - npm run governance:check
-revision: 1
+revision: 8
 review_date: "2026-08-23"
+updated_at: "2026-07-24T21:25:58.865Z"
 ---
 
 # Outcome
@@ -54,15 +55,29 @@ barrier, nhưng chưa tải hoặc index nguồn thật.
   lane này không sửa source approval/rights metadata.
 - Release pin domain/locale/profile/source/chunking/embedding/policy revision.
 - Candidate activation đổi pointer nguyên tử; rollback/tombstone giữ lineage.
+- `handoff` là structured graph outcome do API authorize/commit, không phải
+  knowledge tool hoặc read-only tool registry entry.
 - Critical-domain `RAG_SYNCING` barrier ngăn đọc revision nửa cũ nửa mới.
 - Migration/repository/domain/security tests và release manifest validation đạt.
 
 ## Checkpoint
 
-- Exact next action: materialize release aggregate bằng synthetic fixture sau
-  VFBIZ-0021; chưa download/crawl/embed business content.
+- Knowledge Release control plane đã hoàn thành với Source Register v2 snapshot,
+  maker-checker, atomic barrier/activation/rollback/tombstone, transactional
+  outbox và concurrent idempotency. Chưa download/crawl/embed business content.
+- Exact next action: mở VFBIZ-0023 cho ingestion pipeline bằng synthetic source.
 
 ## Evidence
 
-- [ ] `npm run verify:ai` — add evidence reference
-- [ ] `npm run governance:check` — add evidence reference
+- [x] `npm run verify:ai` — 108 passed, 1 skipped; Ruff, Pyright và Alembic SQL đạt tại `01a8a60`
+- [x] `npm run governance:check` — đạt sau khi regenerate deterministic indexes/reports
+- [x] PostgreSQL 17 integration — concurrent create/barrier/activation, rollback fencing và candidate/active tombstone đạt
+- [x] Independent architecture/risk review — hai vòng; không còn P0, các finding cuối đã được xử lý và xác minh bằng race tests
+
+### blocked — 2026-07-24T19:39:15.019Z
+
+Blocked after independent audit: VFBIZ-0021 requires checkpoint identity binding, single-consume resume, strict serialization, authoritative grounding and clean dependency direction before Knowledge Release can safely build on it.
+
+### active — 2026-07-24T20:40:20.036Z
+
+VFBIZ-0090 and VFBIZ-0091 are done; resume Knowledge Release control-plane implementation with synthetic fixtures only.

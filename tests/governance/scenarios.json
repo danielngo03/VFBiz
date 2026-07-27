@@ -420,6 +420,7 @@
         "request": "Đăng ký AI tool mới với schema và scope",
         "paths": ["backend/ai/app/modules/tooling/__init__.py"]
       },
+      "futurePaths": ["backend/ai/app/modules/tooling/__init__.py"],
       "expected": {
         "mode": "controlled",
         "workspaces": ["ai"],
@@ -519,7 +520,52 @@
         "skills": ["deliver-change", "review-change"],
         "authorities": ["data-owner", "release-owner", "security-owner"],
         "ownerTeam": "ai-model-platform",
-        "department": "ai-data"
+        "department": "ai-data",
+        "reviewProfiles": ["cost", "resilience", "security"]
+      }
+    },
+    {
+      "id": "embedding-provider-cost-routing",
+      "input": {
+        "request": "Review embedding provider routing and cost policy",
+        "paths": [
+          "backend/ai/app/infrastructure/embedding_providers/__init__.py"
+        ],
+        "mode": "controlled"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-inference",
+          "ai-release",
+          "ai-retrieval",
+          "embedding-runtime"
+        ],
+        "ownerTeam": "ai-model-platform",
+        "department": "ai-data",
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": [
+          "ai-safety",
+          "cost",
+          "data",
+          "release",
+          "resilience",
+          "security"
+        ],
+        "documents": ["ai-inference-serving"],
+        "documentSelections": [
+          {
+            "id": "ai-inference-serving",
+            "heading": "## Embedding runtime và quyền chọn provider"
+          }
+        ],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
       }
     },
     {
@@ -561,7 +607,8 @@
         "resources": [],
         "authorities": ["data-owner", "release-owner", "security-owner"],
         "ownerTeam": "ai-assurance",
-        "department": "ai-data"
+        "department": "ai-data",
+        "reviewProfiles": ["ai-safety", "release"]
       }
     },
     {
@@ -808,7 +855,7 @@
       "input": {
         "request": "Cập nhật LangGraph Supervisor cho Customer Chatbot",
         "paths": [
-          "backend/ai/app/modules/assistant/application/answer_service.py"
+          "backend/ai/app/modules/assistant/graph/builder.py"
         ]
       },
       "expected": {
@@ -978,7 +1025,7 @@
           "license",
           "pii"
         ],
-        "resources": [],
+        "resources": ["database-migration", "dependency-lockfile"],
         "authorities": ["data-owner", "legal-owner", "privacy-owner"],
         "ownerTeam": "ai-knowledge-engineering",
         "department": "ai-data",
@@ -1068,7 +1115,7 @@
           "license",
           "pii"
         ],
-        "resources": ["ai-knowledge-release-registry"],
+        "resources": ["ai-knowledge-release-registry", "database-migration"],
         "authorities": [
           "data-owner",
           "legal-owner",
@@ -1375,7 +1422,7 @@
       "input": {
         "request": "Quarantine ownership schema cũ để không thể cấp verified ownership",
         "work": "VFBIZ-0035",
-        "paths": ["backend/api/src/modules/ownership"]
+        "paths": ["backend/api/test/architecture/ownership-quarantine.spec.ts"]
       },
       "expected": {
         "mode": "controlled",
@@ -1688,6 +1735,365 @@
         "executionState": "needs-decision",
         "writerAuthorized": false,
         "stopped": true
+      }
+    },
+    {
+      "id": "ai-platform-integration-owner",
+      "input": {
+        "request": "Run platform integration coverage",
+        "paths": ["backend/ai/tests/integration/platform"]
+      },
+      "futurePaths": ["backend/ai/tests/integration/platform"],
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["ai"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "ai-platform-foundation",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "ai-assurance-integration-owner",
+      "input": {
+        "request": "Run governed release integration coverage",
+        "paths": ["backend/ai/tests/integration/governance"]
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "bounded",
+        "workspaces": ["ai"],
+        "claimRequired": false,
+        "maxDocs": 3,
+        "skills": ["deliver-change"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data"
+      }
+    },
+    {
+      "id": "ai-migration-canonical-lease",
+      "input": {
+        "request": "Apply database migration for an AI release pointer",
+        "paths": [
+          "backend/ai/migrations/versions/20260725_0003_knowledge_release_control_plane.py"
+        ]
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "resources": ["database-migration"],
+        "authorities": [
+          "architect",
+          "data-owner",
+          "release-owner",
+          "security-owner"
+        ],
+        "ownerTeam": "ai-platform-foundation",
+        "department": "ai-data",
+        "reviewProfiles": ["ai-safety", "migration", "release"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-contract-persistence-headings",
+      "input": {
+        "request": "Validate release contract and release persistence",
+        "paths": ["backend/ai/tests/integration/governance"],
+        "mode": "controlled"
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "minHeadings": 2,
+        "maxHeadings": 2,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["ai-release", "release-contract", "release-persistence"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": [],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "documents": ["customer-chatbot-v6-architecture"],
+        "excludedDocuments": ["security-data-ai"],
+        "documentSelections": [
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Public event và SSE contract"
+          },
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Concurrency, interrupt và handoff"
+          }
+        ],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-repository-model-binding-headings",
+      "input": {
+        "request": "Validate release repository and release model binding",
+        "paths": ["backend/ai/tests/integration/governance"],
+        "mode": "controlled"
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "minHeadings": 2,
+        "maxHeadings": 4,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-release",
+          "release-model-binding",
+          "release-repository"
+        ],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": [],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "documents": ["adr-0002-customer-chatbot-v6", "ai-evaluation-release"],
+        "documentSelections": [
+          { "id": "adr-0002-customer-chatbot-v6", "heading": "## Decision" },
+          { "id": "ai-evaluation-release", "heading": "## Release unit" }
+        ],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-snapshot-grounding-graph-headings",
+      "input": {
+        "request": "Validate trusted retrieval snapshot, grounding runtime and graph execution",
+        "paths": ["backend/ai/tests/integration/governance"],
+        "mode": "controlled"
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "minHeadings": 3,
+        "maxHeadings": 3,
+        "skills": ["deliver-change", "review-change"],
+        "signals": [
+          "ai-release",
+          "graph-execution",
+          "grounding-runtime",
+          "trusted-retrieval-snapshot"
+        ],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-knowledge-engineering"],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release", "security"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "documents": ["ai-conversation-graph", "ai-knowledge-release"],
+        "documentSelections": [
+          { "id": "ai-conversation-graph", "heading": "## Runtime ports" },
+          { "id": "ai-conversation-graph", "heading": "## State contract" },
+          {
+            "id": "ai-knowledge-release",
+            "heading": "## KnowledgeRevisionState"
+          }
+        ],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-pointer-occ-excludes-session-concurrency",
+      "input": {
+        "request": "Update release pointer database OCC",
+        "paths": [
+          "backend/ai/tests/integration/governance/conversation-session-release-pointer.py"
+        ],
+        "mode": "controlled",
+        "signals": ["ai-release"]
+      },
+      "futurePaths": [
+        "backend/ai/tests/integration/governance/conversation-session-release-pointer.py"
+      ],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["ai-release"],
+        "excludedSignals": ["session-concurrency"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": [],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-exact-headings-cap-at-four",
+      "input": {
+        "request": "Validate release contract, release persistence, release repository, release model binding, trusted retrieval snapshot, grounding runtime and graph execution",
+        "paths": ["backend/ai/tests/integration/governance"],
+        "mode": "controlled"
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "minHeadings": 4,
+        "maxHeadings": 4,
+        "skills": ["deliver-change", "review-change"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-knowledge-engineering"],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release", "security"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "documents": [
+          "ai-conversation-graph",
+          "customer-chatbot-v6-architecture"
+        ],
+        "excludedDocuments": [
+          "adr-0002-customer-chatbot-v6",
+          "ai-evaluation-release",
+          "ai-knowledge-release"
+        ],
+        "documentSelections": [
+          { "id": "ai-conversation-graph", "heading": "## Runtime ports" },
+          { "id": "ai-conversation-graph", "heading": "## State contract" },
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Public event và SSE contract"
+          },
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Concurrency, interrupt và handoff"
+          }
+        ],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-database-conversation-occ-is-session-concurrency",
+      "input": {
+        "request": "Use database OCC for the conversation session inbox; OCC: conversation session",
+        "paths": ["backend/ai/tests/integration/governance"],
+        "mode": "controlled",
+        "signals": ["ai-release"]
+      },
+      "futurePaths": ["backend/ai/tests/integration/governance"],
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["deliver-change", "review-change"],
+        "signals": ["ai-release", "session-concurrency"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": ["customer-engagement"],
+        "authorities": [
+          "data-owner",
+          "engineering-lead",
+          "privacy-owner",
+          "release-owner",
+          "security-owner"
+        ],
+        "reviewProfiles": ["ai-safety", "release"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "executionState": "needs-decision",
+        "writerAuthorized": false,
+        "stopped": true
+      }
+    },
+    {
+      "id": "ai-release-bootstrap-assignment-delivers-all-headings",
+      "input": {
+        "request": "Validate release contract and release persistence",
+        "paths": ["tests/governance/scenarios.json"],
+        "mode": "controlled",
+        "work": "VFBIZ-0122"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["root"],
+        "claimRequired": true,
+        "maxDocs": 4,
+        "minHeadings": 2,
+        "maxHeadings": 4,
+        "skills": ["deliver-change", "review-change"],
+        "ownerTeam": "agent-platform",
+        "department": "engineering-enablement",
+        "coordinationTeams": ["ai-assurance"],
+        "authorities": ["data-owner", "release-owner", "security-owner"],
+        "reviewProfiles": ["ai-safety", "release"],
+        "reviewers": ["reviewer-verifier", "risk-reviewer"],
+        "documentSelections": [
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Public event và SSE contract"
+          },
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Concurrency, interrupt và handoff"
+          }
+        ],
+        "assignmentDocumentSelections": [
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Public event và SSE contract"
+          },
+          {
+            "id": "customer-chatbot-v6-architecture",
+            "heading": "## Concurrency, interrupt và handoff"
+          }
+        ],
+        "bootstrapHeadings": [
+          "## Public event và SSE contract",
+          "## Concurrency, interrupt và handoff"
+        ],
+        "executionState": "ready",
+        "writerAuthorized": true,
+        "stopped": false
       }
     }
   ]

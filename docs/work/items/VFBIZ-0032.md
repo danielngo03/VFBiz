@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0032
 title: DSAR intake, target snapshot và customer status
-status: review
+status: done
 mode: controlled
 priority: P0
 owner_team: customer-product
@@ -39,9 +39,9 @@ required_checks:
   - npm run test:migrations --workspace @vfbiz/api
   - npm run contracts:lint
   - npm run governance:check
-revision: 6
+revision: 7
 review_date: "2026-08-23"
-updated_at: "2026-07-23T16:47:36.949Z"
+updated_at: "2026-07-24T17:18:01.645Z"
 ---
 
 # Outcome
@@ -71,8 +71,9 @@ provider error nội bộ.
 
 ## Checkpoint
 
-- Exact next action: Privacy Owner review foundation; VFBIZ-0049 chỉ được ready
-  sau khi retention, deadline, recent-auth và legal-hold authority được duyệt.
+- Human authority đã duyệt DSAR foundation ngày 25/07/2026. External execution
+  adapters vẫn thuộc `VFBIZ-0049` và phải giữ retention, deadline, recent-auth,
+  legal-hold authority cùng fail-closed target semantics.
 
 ## Evidence
 
@@ -85,6 +86,8 @@ provider error nội bộ.
   TypeScript SDK đã regenerate ngày 2026-07-23.
 - [x] `npm run governance:check` — 46 WorkItemV2 và 55 provider-neutral context
   scenarios đạt ngày 2026-07-23.
+- [x] Privacy Owner approval — người dùng phê duyệt rõ `VFBIZ-0032` ngày
+  25/07/2026.
 
 ### ready — 2026-07-23T16:30:00.492Z
 

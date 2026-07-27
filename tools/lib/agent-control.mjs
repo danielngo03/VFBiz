@@ -40,7 +40,12 @@ function assertProvider(provider) {
 }
 async function assertCachedContext(contextKey) {
   const common = git(ROOT, ["rev-parse", "--git-common-dir"]);
-  const file = path.resolve(ROOT, common, "vfbiz-context", `${contextKey}.json`);
+  const file = path.resolve(
+    ROOT,
+    common,
+    "vfbiz-context",
+    `${contextKey}.json`,
+  );
   let cached;
   try {
     cached = JSON.parse(await readFile(file, "utf8"));
@@ -173,8 +178,8 @@ export class AgentControlStore {
         JSON.stringify({ pid: process.pid, acquiredAt: nowIso() }),
       );
       const state = await this.read();
-      expireState(state);
-      const result = await operation(state);
+      const expiry = expireState(state);
+      const result = await operation(state, expiry);
       const temp = `${this.stateFile}.${process.pid}.tmp`;
       await writeFile(temp, `${JSON.stringify(state, null, 2)}\n`, {
         mode: 0o600,
@@ -204,12 +209,29 @@ function processAlive(pid) {
 
 function expireState(state) {
   const now = Date.now();
+  const expired = { claims: 0, leases: 0 };
   for (const record of [...(state.claims ?? []), ...(state.leases ?? [])]) {
-    if (record.state === "active" && Date.parse(record.expiresAt) <= now)
+    if (record.state === "active" && Date.parse(record.expiresAt) <= now) {
       record.state = "expired";
+      if (state.claims?.includes(record)) expired.claims += 1;
+      else expired.leases += 1;
+    }
   }
   state.findings ??= [];
   state.coordinationRequests ??= [];
+  return expired;
+}
+
+/**
+ * Persist expiry transitions without acquiring/releasing a claim. This is the
+ * safe recovery action for a shared Git-common-directory control store.
+ */
+export async function reconcileAgentControlState(options = {}) {
+  const store = options.store ?? new AgentControlStore();
+  return store.withLock(async (_state, expired) => ({
+    expiredClaims: expired.claims,
+    expiredLeases: expired.leases,
+  }));
 }
 
 function assertTeam(organization, teamId, label) {
@@ -559,6 +581,7 @@ export async function acquireClaim(envelope, options = {}) {
       workItemKey: claim.workItemKey,
       claimId: claim.claimId,
       agentRole: claim.agentRole,
+      runMode: claim.runMode,
       provider: claim.provider,
       attemptNumber: envelope.attemptNumber ?? 1,
       causeFingerprint: envelope.causeFingerprint ?? undefined,
@@ -670,10 +693,7 @@ export async function renewLease(claimId, leaseId, fencingToken, options = {}) {
       (x) => x.leaseId === leaseId && x.holderClaimId === claimId && active(x),
     );
     if (!lease) throw new Error(`active lease not found: ${leaseId}`);
-    if (
-      lease.fencingToken !== Number(fencingToken) ||
-      claim.fencingToken !== Number(fencingToken)
-    )
+    if (claim.fencingToken !== Number(fencingToken))
       throw new Error("stale fencing token");
     if (lease.renewalCount >= organization.runtime.maxLeaseRenewals)
       throw new Error("maximum lease renewals reached");
@@ -685,6 +705,85 @@ export async function renewLease(claimId, leaseId, fencingToken, options = {}) {
     claim.fencingToken = state.fencingCounter;
     return lease;
   });
+}
+
+function requiresRiskReviewForSignal(signal) {
+  return /(?:^|[-_])(ai|auth|authentication|authorization|contract|data|dependency|legal|migration|payment|pii|privacy|production|release|security)(?:$|[-_])/.test(
+    String(signal).toLowerCase(),
+  );
+}
+
+function currentFindingDispositions(findings, workItemKey) {
+  const current = new Map();
+  for (const finding of findings
+    .filter((record) => record.workItemKey === workItemKey)
+    .sort(
+      (left, right) =>
+        Number(left.cycle ?? 0) - Number(right.cycle ?? 0) ||
+        Date.parse(left.recordedAt ?? 0) - Date.parse(right.recordedAt ?? 0),
+    ))
+    current.set(finding.fingerprint, finding);
+  return [...current.values()];
+}
+
+export async function assertWorkReviewComplete(item, options = {}) {
+  const mode = item?.attributes?.mode;
+  if (!["controlled", "parallel"].includes(mode)) return { required: false };
+  const workItemKey = item.attributes.id;
+  const store = options.store ?? new AgentControlStore();
+  const state = await store.read();
+  const latestWriter = state.runs
+    .filter(
+      (run) =>
+        run.workItemKey === workItemKey &&
+        run.status === "completed" &&
+        (run.runMode === "scoped-write" ||
+          ["implementer", "integrator", "synthetic-dataset-builder"].includes(
+            run.agentRole,
+          )),
+    )
+    .sort(
+      (left, right) =>
+        Date.parse(right.finishedAt ?? 0) - Date.parse(left.finishedAt ?? 0),
+    )[0];
+  if (!latestWriter?.finishedAt)
+    throw new Error(
+      `work item cannot complete: review ledger is missing completed implementation evidence for ${workItemKey}`,
+    );
+  const completedReviews = state.runs.filter(
+    (run) =>
+      run.workItemKey === workItemKey &&
+      run.status === "completed" &&
+      ["reviewer-verifier", "risk-reviewer"].includes(run.agentRole) &&
+      Date.parse(run.startedAt ?? 0) >= Date.parse(latestWriter.finishedAt),
+  );
+  const completedRoles = new Set(completedReviews.map((run) => run.agentRole));
+  if (!completedRoles.has("reviewer-verifier"))
+    throw new Error(
+      `work item cannot complete: review ledger is missing reviewer-verifier evidence for the current implementation of ${workItemKey}`,
+    );
+  const requiresRiskReview = (item.attributes.controlled_signals ?? []).some(
+    requiresRiskReviewForSignal,
+  );
+  if (requiresRiskReview && !completedRoles.has("risk-reviewer"))
+    throw new Error(
+      `work item cannot complete: risk-reviewer evidence is required for ${workItemKey}`,
+    );
+  const open = currentFindingDispositions(
+    state.findings ?? [],
+    workItemKey,
+  ).filter((finding) => finding.disposition === "open");
+  if (open.length)
+    throw new Error(
+      `work item cannot complete with open finding(s): ${open
+        .map(({ fingerprint }) => fingerprint)
+        .join(", ")}`,
+    );
+  return {
+    required: true,
+    completedRoles: [...completedRoles].sort(),
+    requiresRiskReview,
+  };
 }
 
 export async function validatePaths(claimId, paths, options = {}) {
@@ -868,6 +967,7 @@ export async function handoffClaim(claimId, capsule, successor, options = {}) {
       workItemKey: claim.workItemKey,
       claimId,
       agentRole: claim.agentRole,
+      runMode: claim.runMode,
       provider: successor.provider,
       attemptNumber: successor.attemptNumber ?? 1,
       causeFingerprint: successor.causeFingerprint ?? undefined,
@@ -900,6 +1000,12 @@ export async function recordReviewFinding(runId, finding, options = {}) {
     throw new Error("finding cycle must be a positive integer");
   if (cycle > organization.runtime.maxReviewFixCycles)
     throw new Error("review/fix cycle limit reached");
+  if (
+    !["open", "resolved", "false-positive", "superseded"].includes(
+      finding.disposition ?? "open",
+    )
+  )
+    throw new Error("invalid finding disposition");
   return store.withLock(async (state) => {
     const run = state.runs.find((record) => record.runId === runId);
     if (!run) throw new Error(`provider run not found: ${runId}`);

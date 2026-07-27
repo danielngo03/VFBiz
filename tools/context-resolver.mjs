@@ -292,14 +292,16 @@ function renderMarkdown(context) {
   if (context.documents.length) {
     lines.push("## Selected documentation", "");
     for (const document of context.documents) {
-      lines.push(
-        `### ${document.path}:${document.selection.startLine}-${document.selection.endLine}`,
-        "",
-        `Source SHA-256: \`${document.selection.sourceHash}\``,
-        "",
-        document.selection.excerpt,
-        "",
-      );
+      for (const selection of document.selections ?? [document.selection]) {
+        lines.push(
+          `### ${document.path}:${selection.startLine}-${selection.endLine}`,
+          "",
+          `Source SHA-256: \`${selection.sourceHash}\``,
+          "",
+          selection.excerpt,
+          "",
+        );
+      }
     }
   }
   if (context.skills.length) {

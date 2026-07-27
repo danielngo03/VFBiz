@@ -6,6 +6,14 @@
   bounded reflection, interrupt và checkpoint migration.
 - Không authorize customer, execute business tool hoặc truy cập API PostgreSQL.
 
+## Layering
+
+Module này có `graph/` bên cạnh 4 layer chuẩn: đây là layer framework-binding
+riêng cho LangGraph (state, nodes, builder, runtime, migrations,
+serialization), tách khỏi `infrastructure/` (Postgres adapter cho application
+port). `domain`/`application` không được import `graph` hoặc `infrastructure`
+— `tests/unit/assistant/test_architecture_boundaries.py` enforce việc này.
+
 ## Invariants
 
 - Global Entities và Active Task State tách biệt; chỉ confirmed entity được promote.
