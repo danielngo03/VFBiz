@@ -39,6 +39,7 @@ describe('OidcTokenVerifier', () => {
 
     const sign = (overrides: {
       audience?: string;
+      authTime?: number;
       authorizedParty?: string;
       issuer?: string;
       realmRoles?: readonly string[];
@@ -47,6 +48,7 @@ describe('OidcTokenVerifier', () => {
       new SignJWT({
         acr: 'urn:vfbiz:loa:2',
         amr: ['pwd', 'otp'],
+        auth_time: overrides.authTime,
         azp: overrides.authorizedParty ?? 'vfbiz-customer-bff',
         realm_access:
           overrides.realmRoles === undefined
@@ -74,8 +76,7 @@ describe('OidcTokenVerifier', () => {
     const { sign, verifier } = await fixture();
 
     const result = await verifier.verify(await sign({}));
-    const { authenticatedAt, expiresAt, issuedAt, ...principal } = result;
-    expect(authenticatedAt).toBeInstanceOf(Date);
+    const { expiresAt, issuedAt, ...principal } = result;
     expect(expiresAt).toBeInstanceOf(Date);
     expect(issuedAt).toBeInstanceOf(Date);
     expect(principal).toEqual({
@@ -90,6 +91,27 @@ describe('OidcTokenVerifier', () => {
       sessionId: 'session-123',
       subject: 'customer-123',
     });
+  });
+
+  it('surfaces authenticatedAt from a present auth_time claim', async () => {
+    const { sign, verifier } = await fixture();
+    const authTime = Math.floor(Date.now() / 1000) - 30;
+
+    const result = await verifier.verify(await sign({ authTime }));
+
+    expect(result.authenticatedAt).toEqual(new Date(authTime * 1000));
+  });
+
+  it('does not fabricate authenticatedAt from iat when auth_time is absent', async () => {
+    // Regression test: a silently refreshed access token has a fresh `iat`
+    // on every refresh even though the user authenticated long ago. Treating
+    // a missing auth_time as "authenticated now" would let that refresh
+    // permanently satisfy a step-up-MFA freshness check.
+    const { sign, verifier } = await fixture();
+
+    const result = await verifier.verify(await sign({}));
+
+    expect(result.authenticatedAt).toBeUndefined();
   });
 
   it('keeps workforce identity separate from customer identity', async () => {

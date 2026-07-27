@@ -1,6 +1,6 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": "../../..",
+  "rootDir": "..",
   "testEnvironment": "node",
   "testRegex": "test/integration/.*\\.postgres-spec\\.ts$",
   "moduleNameMapper": {

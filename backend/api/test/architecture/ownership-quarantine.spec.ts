@@ -2,9 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import ts from 'typescript';
 
-const ownershipRoot = resolve(__dirname);
-const sourceRoot = resolve(ownershipRoot, '../..');
-const allowedEntries = ['AGENTS.md', 'ownership-quarantine.spec.ts'] as const;
+const sourceRoot = resolve(__dirname, '../../src');
+const ownershipRoot = resolve(sourceRoot, 'modules/ownership');
 const legacyIdentifiers = new Set([
   'OwnerVehicleAssociation',
   'ServiceAppointmentProjection',
@@ -32,10 +31,7 @@ function runtimeTypescriptFiles(directory: string): string[] {
     const path = join(directory, entry.name);
     const relativePath = normalizedPath(relative(sourceRoot, path));
 
-    if (
-      entry.isDirectory() &&
-      (relativePath === 'generated' || relativePath === 'modules/ownership')
-    ) {
+    if (entry.isDirectory() && relativePath === 'generated') {
       return [];
     }
     if (entry.isDirectory()) return runtimeTypescriptFiles(path);
@@ -185,12 +181,8 @@ function analyzeLegacyOwnershipUsage(
 }
 
 describe('legacy ownership quarantine', () => {
-  it('contains policy and guardrail only, with no runtime entrypoint', () => {
-    const entries = readdirSync(ownershipRoot).sort();
-
-    expect(entries).toEqual([...allowedEntries].sort());
-    expect(entries).not.toContain('index.ts');
-    expect(entries).not.toContain('ownership.module.ts');
+  it('does not materialize a source module without an approved runtime', () => {
+    expect(() => readdirSync(ownershipRoot)).toThrow();
   });
 
   it('is not composed into the NestJS application', () => {

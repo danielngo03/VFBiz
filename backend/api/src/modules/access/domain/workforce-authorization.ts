@@ -1,5 +1,3 @@
-import type { AccessPrincipal } from '../../../platform/security/access-principal';
-
 export const WORKFORCE_SCOPE_TYPES = [
   'global',
   'market',
@@ -118,7 +116,10 @@ export interface WorkforceAuditEventView {
   readonly occurredAt: Date;
 }
 
-export function principalReference(principal: AccessPrincipal): string {
+export function principalReference(principal: {
+  readonly issuer: string;
+  readonly subject: string;
+}): string {
   return `${principal.issuer}|${principal.subject}`;
 }
 

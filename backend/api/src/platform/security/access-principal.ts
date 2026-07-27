@@ -28,7 +28,6 @@ export interface AccessPrincipal {
 }
 
 export interface VerifiedAccessPrincipal extends AccessPrincipal {
-  readonly authenticatedAt: Date;
   readonly issuedAt: Date;
   readonly expiresAt: Date;
 }

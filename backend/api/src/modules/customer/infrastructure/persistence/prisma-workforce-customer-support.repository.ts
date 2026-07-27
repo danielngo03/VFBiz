@@ -5,6 +5,9 @@ import {
   type SearchWorkforceCustomersInput,
 } from '../../application/ports/workforce-customer-support.repository';
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 @Injectable()
 export class PrismaWorkforceCustomerSupportRepository extends WorkforceCustomerSupportRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -15,6 +18,11 @@ export class PrismaWorkforceCustomerSupportRepository extends WorkforceCustomerS
     if (input.allowedMarkets !== null && input.allowedMarkets.length === 0) {
       return [];
     }
+    // `id` is a native uuid column: Postgres rejects the query outright if a
+    // non-UUID search term is bound against it, so the exact-ID branch is
+    // only included when the term is actually UUID-shaped. Every other
+    // query (the common case: searching by name) matches on displayName
+    // alone.
     const records = await this.prisma.$transaction(async (transaction) => {
       const customers = await transaction.customerProfile.findMany({
         orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
@@ -32,10 +40,9 @@ export class PrismaWorkforceCustomerSupportRepository extends WorkforceCustomerS
           ...(input.allowedMarkets === null
             ? {}
             : { market: { in: [...input.allowedMarkets] } }),
-          OR: [
-            { id: { equals: input.query } },
-            { displayName: { contains: input.query, mode: 'insensitive' } },
-          ],
+          OR: UUID_PATTERN.test(input.query)
+            ? [{ id: { equals: input.query } }]
+            : [{ displayName: { contains: input.query, mode: 'insensitive' } }],
         },
       });
       await transaction.auditEvent.create({

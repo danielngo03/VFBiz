@@ -64,12 +64,18 @@ export class OidcTokenVerifier {
     }
     const issuedAt = new Date(payload.iat * 1000);
     const expiresAt = new Date(payload.exp * 1000);
+    // auth_time reflects the end-user's original authentication moment and
+    // must NOT fall back to iat: iat advances on every silent refresh, which
+    // would let a stale login satisfy a step-up-MFA freshness check forever.
+    // Callers that need a recency signal must treat an absent auth_time as
+    // absent, not as "authenticated now".
     const authenticatedAt =
       typeof payload.auth_time === 'number'
         ? new Date(payload.auth_time * 1000)
-        : issuedAt;
+        : undefined;
     if (
-      authenticatedAt.getTime() > issuedAt.getTime() ||
+      (authenticatedAt !== undefined &&
+        authenticatedAt.getTime() > issuedAt.getTime()) ||
       issuedAt.getTime() >= expiresAt.getTime()
     ) {
       throw new Error('Access token temporal claims are inconsistent');
@@ -93,7 +99,7 @@ export class OidcTokenVerifier {
       throw new Error('Access token email_verified claim is invalid');
     }
     return Object.freeze({
-      authenticatedAt,
+      ...(authenticatedAt !== undefined ? { authenticatedAt } : {}),
       authenticationContext:
         typeof payload.acr === 'string' ? payload.acr : null,
       authenticationMethods,

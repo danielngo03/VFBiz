@@ -1,13 +1,42 @@
 import {
-  DataClassification,
-  SourceApprovalState,
-  VehicleFactGroup,
-  VehicleFactSubjectType,
-} from '../../../generated/prisma/enums';
-import {
   assertSourceRevisionEligible,
   type SourceRevisionEvidence,
 } from '../../../platform/provenance/source-revision-policy';
+
+export const DataClassification = {
+  PUBLIC: 'PUBLIC',
+  INTERNAL: 'INTERNAL',
+  CONFIDENTIAL: 'CONFIDENTIAL',
+  RESTRICTED: 'RESTRICTED',
+} as const;
+export type DataClassification =
+  (typeof DataClassification)[keyof typeof DataClassification];
+
+export const SourceApprovalState = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  RETIRED: 'RETIRED',
+} as const;
+export type SourceApprovalState =
+  (typeof SourceApprovalState)[keyof typeof SourceApprovalState];
+
+export const VehicleFactSubjectType = {
+  RELEASE: 'RELEASE',
+  MODEL: 'MODEL',
+  VARIANT: 'VARIANT',
+} as const;
+export type VehicleFactSubjectType =
+  (typeof VehicleFactSubjectType)[keyof typeof VehicleFactSubjectType];
+
+export const VehicleFactGroup = {
+  IDENTITY_COMMERCIAL: 'IDENTITY_COMMERCIAL',
+  TECHNICAL_HOMOLOGATION: 'TECHNICAL_HOMOLOGATION',
+  BATTERY_RANGE_CHARGING: 'BATTERY_RANGE_CHARGING',
+  OPTIONS_COMPATIBILITY: 'OPTIONS_COMPATIBILITY',
+} as const;
+export type VehicleFactGroup =
+  (typeof VehicleFactGroup)[keyof typeof VehicleFactGroup];
 
 export interface CatalogPublicationSource {
   readonly approvalEvidenceRef: string | null;

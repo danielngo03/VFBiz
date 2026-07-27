@@ -81,7 +81,11 @@ export class AccessSessionService {
     }
     return this.reconcile(
       {
-        authenticatedAt: principal.authenticatedAt,
+        // Session bookkeeping needs some timestamp for temporal-consistency
+        // checks; unlike the workforce step-up decision, it is not a
+        // security freshness gate, so issuedAt is an acceptable fallback
+        // when the issuer omitted auth_time.
+        authenticatedAt: principal.authenticatedAt ?? principal.issuedAt,
         authorizedParty: principal.authorizedParty,
         deviceLabel: client.deviceLabel,
         emailVerified: principal.emailVerified ?? null,

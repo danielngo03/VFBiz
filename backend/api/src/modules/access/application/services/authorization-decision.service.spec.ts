@@ -123,4 +123,37 @@ describe('AuthorizationDecisionService', () => {
       ),
     ).resolves.toMatchObject({ allowed: true, code: 'ALLOWED' });
   });
+
+  it('still requires step-up when authenticatedAt is unknown, even with an MFA method on record', async () => {
+    // Regression test for a silently refreshed token: authenticationMethods
+    // can legitimately still list otp/webauthn from the original login, but
+    // without a verified authenticatedAt there is no proof MFA was recent.
+    const repository = {
+      resolveEntitlements: jest.fn().mockResolvedValue({
+        identitySubjectId: 'bd409c14-299f-46cd-9ff4-d8b271842cd9',
+        revision: '6',
+        capabilities: [
+          {
+            key: 'authorization.approval.approve',
+            riskTier: 'privileged',
+            scopes: [{ type: 'global', ref: 'global' }],
+          },
+        ],
+      }),
+    } as unknown as WorkforceAuthorizationRepository;
+    const service = new AuthorizationDecisionService(repository);
+
+    await expect(
+      service.decide(
+        {
+          ...principal,
+          authenticationMethods: ['pwd', 'otp'],
+        },
+        {
+          mode: 'all-of',
+          capabilities: ['authorization.approval.approve'],
+        },
+      ),
+    ).resolves.toMatchObject({ code: 'STEP_UP_AUTHENTICATION_REQUIRED' });
+  });
 });
