@@ -13,13 +13,16 @@ tags:
   - adr
   - chatbot
   - ai
-revision: 2
+revision: 4
 review_date: 2026-08-23
 supersedes:
   - adr-0001-staging-account-chat-trip
 ---
 
 # ADR 0002 — Customer Chatbot V6
+
+Revision 4 là amendment V7 của cùng quyết định; ADR ID được giữ ổn định để tránh
+phân mảnh nguồn sự thật.
 
 ## Status
 
@@ -40,12 +43,15 @@ Dataset Factory riêng, nhưng không được trao business authority cho model
    Trip Planner vẫn ở roadmap.
 2. NestJS sở hữu public contract, identity/object authorization, conversation
    inbox/state projection, quota, handoff, tool execution và system integration.
-3. FastAPI sở hữu private LangGraph State Machine, policy, retrieval, Vision
-   observation, model routing, evaluation và tool proposal.
+3. FastAPI sở hữu private LangGraph State Machine, policy, retrieval, model
+   routing, evaluation và tool proposal. Vision là extension sau text baseline
+   và cần release evidence riêng.
 4. LangGraph dùng Global Entities + Active Task State, bounded self-correction
    và versioned checkpoint; không dùng linear pipeline hoặc unbounded agent loop.
-5. Tool V6 là read-only. Live fact/calculation đến từ authorized tool/source,
-   không đến từ model memory.
+5. Tool baseline là read-only. Live fact/calculation đến từ authorized
+   tool/source, không đến từ model memory. Handoff không phải tool:
+   FastAPI chỉ đề xuất `HandoffRecommendation`; NestJS kiểm policy và sở hữu
+   durable support-case lifecycle.
 6. Local inference baseline là vLLM; TensorRT-LLM là optional deployment profile
    sau benchmark. Provider/model name không trở thành top-level domain module.
 7. Critical knowledge publish dùng revision candidate và atomic activation;
@@ -54,6 +60,28 @@ Dataset Factory riêng, nhưng không được trao business authority cho model
    golden, red-team, shadow, canary, rollback và kill switch.
 9. Dataset Factory ưu tiên evaluation/red-team. Không download source thiếu
    approved rights và chưa tạo SFT release trong đợt đầu.
+10. API PostgreSQL là authority cho conversation transcript, public event,
+    handoff và final answer. LangGraph checkpoint chỉ là versioned execution
+    state và phải có migration/rebuild path.
+11. Public stream dùng durable HTTP command + SSE projection với resumable
+    cursor; WebSocket không phải source of truth.
+12. Conversation contract v1 dùng `contracts/openapi/public-v1.yaml` cho client,
+    `contracts/openapi/internal-v1.yaml` cho API–AI và JSON Schema dưới
+    `contracts/ai/`. Public message command trả `202`; AI assertion là JWS sống
+    ngắn, single-use, operation-bound bằng `action` + canonical request hash và
+    pin authorization, budget, revision cùng fencing token. Handoff là API
+    outcome; AI chỉ được trả `HandoffRecommendation`.
+13. Durable event dùng vocabulary đã persist:
+    `message.accepted`, `turn.processing`, `turn.completed`,
+    `handoff.requested`, `turn.cancelled`. Progress như retrieval và tool là
+    transient SSE frame, không có durable sequence/cursor. Baseline không stream
+    model answer delta trước final output validation.
+    Factual `answered` bắt buộc có citation; non-factual conversation dùng
+    outcome `conversational`.
+14. Conversation OpenAPI v1 nằm trong
+    `customer-conversation-candidate-v1.yaml`, tách khỏi released
+    `public-v1.yaml` và customer SDK cho tới khi NestJS runtime cùng cookie
+    capability được cut over với parity evidence.
 
 ## Consequences
 

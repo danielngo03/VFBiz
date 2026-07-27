@@ -12,7 +12,7 @@ tags:
   - evaluation
   - release
   - ai-safety
-revision: 2026-07-23.2
+revision: 2026-07-25.2
 review_date: 2026-08-23
 supersedes:
   - ai-security-profiles-release
@@ -34,6 +34,11 @@ review/approve candidate của chính nó.
 embedding, retriever, dataset, tool registry và evaluation-suite revision. Mỗi
 candidate có author, base release, change reason, expiry/review date, rollback
 target và kill switch.
+
+Prompt là code versioned. Runtime request phải ghi nhận `prompt_revision`,
+`model_revision` và `policy_profile`; không dùng mutable dashboard prompt như
+nguồn chuẩn. Provider adapter không tự promote model hoặc đổi prompt khi API
+fallback. Thay một trong ba revision tạo candidate release mới.
 
 Evaluation evidence phải pin:
 
@@ -90,6 +95,21 @@ registry phải tạo candidate release và chạy:
 4. LLM-as-a-Judge với rubric/evaluator revision đã pin;
 5. human stratified review, gồm 100% high-risk case;
 6. shadow 1–5% với privacy/cost cap trước canary khi áp dụng.
+
+Provider contract suite còn bắt buộc kiểm:
+
+- `store=false` và retention policy/ZDR/MAM approval evidence được kiểm riêng;
+- structured output strict, schema drift và unknown citation bị từ chối;
+- exact returned model snapshot, prompt content hash và immutable deployment
+  descriptor;
+- timeout/cancellation thực sự hủy network work trong khả năng transport;
+- response byte/output limits, bulkhead, request/session cost budget và usage
+  mapping;
+- same-policy fallback, all-provider outage và disabled mode;
+- claim-support/entailment gate độc lập; citation membership không đủ để đạt
+  groundedness;
+- safety identifier đã băm, telemetry không chứa credential/raw prompt/raw
+  provider body.
 
 Mục tiêu tổng 98% chỉ có ý nghĩa khi metric và sample được phê duyệt. Hard gate
 ACL/PII/tool authorization/citation validity luôn zero failure, không được bù

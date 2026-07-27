@@ -41,11 +41,11 @@
         "state-machine",
         "assistant"
       ],
-      "revision": 1,
+      "revision": 3,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/conversation-graph.md",
-      "source_hash": "c247da52f99e506f5fb229b3d9c767961161ed2db7049ce3e2ed5bb1fc20866f"
+      "source_hash": "da5e3f0be0bbd971d474167916e87fa82ddfe4a4747738f0bc2636c6e932ac5f"
     },
     {
       "id": "ai-dataset-engineering",
@@ -86,13 +86,13 @@
         "release",
         "ai-safety"
       ],
-      "revision": "2026-07-23.2",
+      "revision": "2026-07-25.2",
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [
         "ai-security-profiles-release"
       ],
       "path": "backend/ai/docs/evaluation-and-release.md",
-      "source_hash": "f8212f895491ebfb23382aa5793b890a82b5ca6b7c456669d76d575639e89d0b"
+      "source_hash": "81603a504740fa41563b3a9438355f301ccaa846352cb2790cc4e954e5137cd6"
     },
     {
       "id": "ai-inference-serving",
@@ -112,11 +112,11 @@
         "finops",
         "resilience"
       ],
-      "revision": 1,
+      "revision": 6,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/inference-serving.md",
-      "source_hash": "47bc625635de84f9be14885f80b9638335a1a9fb14bb8007d3fd6de0e01100ca"
+      "source_hash": "ebea4db1fb6f308c323a3bfe9ac2bbd1504708ccfaace20ed667aac59b0d2fb4"
     },
     {
       "id": "ai-knowledge-data-governance",
@@ -140,7 +140,7 @@
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/knowledge-data-governance.md",
-      "source_hash": "262fdd20eae2d220973646c3b5f3b23db5d7e1b048259e008c6a81178c80f77c"
+      "source_hash": "a6843d86673c2aea317cd0921b391fc9382d157a980cf2d3567e4456a45ab8de"
     },
     {
       "id": "ai-knowledge-ingestion",
@@ -159,11 +159,11 @@
         "retrieval",
         "data-governance"
       ],
-      "revision": 1,
+      "revision": 4,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/knowledge-ingestion.md",
-      "source_hash": "8392c3ba3e18da5c5bd631f5c48ee4ebd79fd2453d33cb30425110aee0e531f0"
+      "source_hash": "ed9e21e98f02b433ff5f9ff84cfcc8767a97965639fb1b49f7d4bd06e9d480b7"
     },
     {
       "id": "ai-knowledge-release",
@@ -182,11 +182,11 @@
         "revision",
         "release"
       ],
-      "revision": 1,
+      "revision": 4,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/knowledge-release.md",
-      "source_hash": "99b41a02aa71382309562537aee1605257959fc3b71f225e717efa004c2eaeb4"
+      "source_hash": "d6469173656a701ad071887d8f62237a423f88a4412d98edb1abb53c2f8d5ca6"
     },
     {
       "id": "ai-safety-abuse",
@@ -255,11 +255,11 @@
         "security",
         "resilience"
       ],
-      "revision": 1,
+      "revision": 3,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/ai-gateway-and-tools.md",
-      "source_hash": "96ffd1a9337f4e012d6c2ee4efaa2a0f8332b743b2d1f90818e84ee125b6da3e"
+      "source_hash": "e97b540282fd2bccb4d1a8b74af837d9f8bb342caaca55600a26bdb6f1d54add"
     },
     {
       "id": "api-architecture",
@@ -277,11 +277,11 @@
         "nestjs",
         "architecture"
       ],
-      "revision": "2026-07-23.5",
+      "revision": "2026-07-27.2",
       "review_date": "2026-08-22T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/architecture.md",
-      "source_hash": "43990a322aef9ec233989cded568d28fd153dd44137d5ac49f9557919671480f"
+      "source_hash": "e52c4b1511f2405cd082059f3db6c17ba01d1c8407e94aed26ce5a0749eb5aa6"
     },
     {
       "id": "api-conversation-runtime",
@@ -300,11 +300,11 @@
         "concurrency",
         "privacy"
       ],
-      "revision": 1,
+      "revision": 3,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/conversation-runtime.md",
-      "source_hash": "3e68469140ecc61353bf2ff5b741d12064d8c4cb047d8564a2799a7d3ad60fa9"
+      "source_hash": "579618f01fb924dfdcb86c9c1a043e355677f15712114398a77bade11fdab42d"
     },
     {
       "id": "api-data-model",
@@ -323,11 +323,11 @@
         "postgresql",
         "data"
       ],
-      "revision": "2026-07-24.1",
+      "revision": "2026-07-24.2",
       "review_date": "2026-08-22T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/data-model.md",
-      "source_hash": "f039cd18cffbaa8cd38ca132547e6ac760f8bb84da2786ce697b668e8360dc21"
+      "source_hash": "9abf592b942df5055b06598c6872b886b63003d0f04c0caf0c3201b3f69c2b9d"
     },
     {
       "id": "api-identity-and-account",
@@ -377,6 +377,62 @@
       "supersedes": [],
       "path": "backend/api/docs/integration-adapters.md",
       "source_hash": "8e97798346fd8949ad6fbb7fb14f41d99799856908765b7b683441a9af6aab58"
+    },
+    {
+      "id": "api-ownership-boundary",
+      "title": "Ranh giới quyền sở hữu phương tiện",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "vehicle-ownership",
+        "verified-vehicle",
+        "vin"
+      ],
+      "tags": [
+        "ownership",
+        "privacy",
+        "quarantine"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-27T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/ownership-boundary.md",
+      "source_hash": "7bd08c5eb19309f5d354294c121a640df180ef21c630fa9686678585a8ea9b04"
+    },
+    {
+      "id": "api-trip-engine",
+      "title": "Trip Engine của API Platform",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "api",
+      "when_to_read": [
+        "ev-trip-planner",
+        "charging-data",
+        "route-provider",
+        "energy-model",
+        "location-privacy",
+        "trip-correctness"
+      ],
+      "context_anchors": {
+        "ev-trip-planner": "## Public contract",
+        "charging-data": "## Canonical charging model",
+        "route-provider": "## Provider adapter",
+        "energy-model": "## Planner components",
+        "location-privacy": "## Privacy và persistence",
+        "trip-correctness": "## Kiểm thử bắt buộc"
+      },
+      "tags": [
+        "mobility",
+        "trip-planner",
+        "postgis",
+        "privacy"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "backend/api/docs/trip-engine.md",
+      "source_hash": "5c2f46556ebb5b04bfde5da36409f1f922cb1e6c544054cf30f56f3ce00a265c"
     },
     {
       "id": "api-vehicle-catalog-and-garage",
@@ -523,13 +579,13 @@
         "chatbot",
         "ai"
       ],
-      "revision": 2,
+      "revision": 4,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [
         "adr-0001-staging-account-chat-trip"
       ],
       "path": "docs/decisions/0002-customer-chatbot-v6.md",
-      "source_hash": "1f4476c6840513db94e2c65c619a8f665c46e633750494b43aaa6990b4e4ca13"
+      "source_hash": "83b21e0cf94a7bb5d2c65a0fcf0024d53d96c556fbfd0b1d5087f9590821f9a9"
     },
     {
       "id": "adr-0003-account-vehicle-before-chatbot-runtime",
@@ -616,21 +672,38 @@
       "when_to_read": [
         "ev-trip-planner",
         "charging-station",
+        "charging-data",
         "maps-provider",
+        "route-provider",
+        "energy-model",
+        "location-privacy",
+        "trip-correctness",
         "mobility",
         "architecture"
       ],
+      "context_anchors": {
+        "ev-trip-planner": "## Decision",
+        "charging-station": "## Decision",
+        "charging-data": "## Consequences",
+        "maps-provider": "## Decision",
+        "route-provider": "## Decision",
+        "energy-model": "## Decision",
+        "location-privacy": "## Decision",
+        "trip-correctness": "## Verification",
+        "mobility": "## Decision",
+        "architecture": "## Decision"
+      },
       "tags": [
         "adr",
         "mobility",
         "trip-planner",
         "maps"
       ],
-      "revision": 1,
+      "revision": 2,
       "review_date": "2026-10-24T00:00:00.000Z",
       "supersedes": [],
       "path": "docs/decisions/0007-ev-route-and-charging-planner.md",
-      "source_hash": "a0d6333b36acb8f3d3906b6fc0ce3fe0e4280c4fafc980b93b66e6ca30ae6904"
+      "source_hash": "1a830faecd9a0ab1c8d6e373920ce79af10e48804cf3584b74720d7b870556ee"
     },
     {
       "id": "archived-staging-mvp-2026-07-20",
@@ -679,6 +752,31 @@
       "source_hash": "b0ae894a638b1612a079073ad0f46f9061caaed3291111862661b4762eb66305"
     },
     {
+      "id": "customer-ai-ev-threat-model",
+      "title": "Threat model cho Customer AI Assistant và EV Journey Planner",
+      "status": "active",
+      "owner_role": "security-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "customer-chatbot",
+        "ev-trip-planner",
+        "security",
+        "privacy",
+        "threat-model"
+      ],
+      "tags": [
+        "threat-model",
+        "ai",
+        "mobility",
+        "security"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/governance/customer-ai-ev-threat-model.md",
+      "source_hash": "40efc29d08add3ad872f574fbe5d6298deea5f4c27672a9adc857b5fb9579c66"
+    },
+    {
       "id": "customer-chatbot-product",
       "title": "Customer Chatbot V6",
       "status": "active",
@@ -695,13 +793,13 @@
         "chatbot",
         "customer-support"
       ],
-      "revision": 1,
+      "revision": 2,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [
         "staging-mvp"
       ],
       "path": "docs/product/customer-chatbot.md",
-      "source_hash": "9595aaff0bbaa8e7e7819c274f242c4be9506b3fca9cc127544da938e1ef2e02"
+      "source_hash": "f66a49d76dbd91aeb34cac3374d431123748c31743f92bb2d1b7643104eb59b4"
     },
     {
       "id": "customer-chatbot-v6-architecture",
@@ -725,14 +823,14 @@
         "ai",
         "resilience"
       ],
-      "revision": 1,
+      "revision": 3,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [
         "staging-mvp-boundaries",
         "backend-platform-rebuild"
       ],
       "path": "docs/architecture/customer-chatbot-v6.md",
-      "source_hash": "9eaa19d10f93baedca1d7cea2ba368fc99b24a9d7d612c9ae518920eb06745dd"
+      "source_hash": "742a6b70f44ef93e698901cea530508f97ed259099b9a126514aa208ad005d6e"
     },
     {
       "id": "customer-portal-product",
@@ -758,6 +856,74 @@
       "supersedes": [],
       "path": "docs/product/customer-portal.md",
       "source_hash": "df3ce16ddc810ab01527024cf12d1b4d125b0b71aa8e7dfbf9cf6889cd0029e8"
+    },
+    {
+      "id": "ev-journey-planner-architecture",
+      "title": "Kiến trúc EV Journey Planner",
+      "status": "active",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "ev-trip-planner",
+        "charging-data",
+        "route-provider",
+        "energy-model",
+        "location-privacy",
+        "trip-correctness",
+        "cross-system"
+      ],
+      "context_anchors": {
+        "ev-trip-planner": "## Boundary và authority",
+        "charging-data": "## Data model và interoperability",
+        "route-provider": "## Provider và cache governance",
+        "energy-model": "## Deterministic planner",
+        "location-privacy": "## Location privacy và retention",
+        "trip-correctness": "## Verification matrix",
+        "cross-system": "## Boundary và authority"
+      },
+      "tags": [
+        "architecture",
+        "mobility",
+        "postgis",
+        "provider-governance"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/ev-journey-planner.md",
+      "source_hash": "db11634d72d82902d25525db3e3623f54550132460d29630cfde1624c32a0e82"
+    },
+    {
+      "id": "ev-journey-planner-product",
+      "title": "Lập kế hoạch hành trình EV",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "ev-trip-planner",
+        "charging-station",
+        "charging-data",
+        "customer-journey",
+        "mobility"
+      ],
+      "context_anchors": {
+        "ev-trip-planner": "## Bài toán sản phẩm",
+        "charging-station": "## Capability baseline",
+        "charging-data": "## Output và cách trình bày",
+        "customer-journey": "## Audience và hành trình chính",
+        "mobility": "## Bài toán sản phẩm"
+      },
+      "tags": [
+        "product",
+        "mobility",
+        "charging",
+        "trip-planner"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/product/ev-journey-planner.md",
+      "source_hash": "7738e93351a4c8f05706cb5288cab9b806629dc5ee7ceda1e58053ce2218d68e"
     },
     {
       "id": "GOV-WORKFORCE-AUTHZ-THREAT-MODEL",
@@ -892,11 +1058,11 @@
         "knowledge",
         "ingestion"
       ],
-      "revision": 1,
+      "revision": 3,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "docs/work/plans/customer-chatbot-runtime-sequence.md",
-      "source_hash": "533707e7398206a9242a967ba4a9d751ee56b304ef5904ee17e6c80750d323d4"
+      "source_hash": "6a8ce1f8c1146627a4fbc6350c6da836814eced65b431d03fdeabcceaa5731b7"
     },
     {
       "id": "plan-vfbiz-0011",
@@ -1038,6 +1204,42 @@
       "supersedes": [],
       "path": "docs/work/plans/VFBIZ-0074.md",
       "source_hash": "a58a8a7e6373c676a78bb9c2f2ec129daf0356a29d2fcde688a40f7fabb58817"
+    },
+    {
+      "id": "VFBIZ-0077-plan",
+      "title": "ExecPlan EV Journey Planner",
+      "status": "proposed",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0077",
+        "VFBIZ-0078",
+        "VFBIZ-0079",
+        "VFBIZ-0080",
+        "VFBIZ-0081",
+        "VFBIZ-0082",
+        "VFBIZ-0083",
+        "VFBIZ-0084",
+        "VFBIZ-0085",
+        "ev-trip-planner",
+        "trip-release"
+      ],
+      "context_anchors": {
+        "VFBIZ-0077": "## Progress",
+        "ev-trip-planner": "## Implementation phases and allowed paths",
+        "trip-release": "## Validation and observed evidence"
+      },
+      "tags": [
+        "ev-trip-planner",
+        "charging-data",
+        "route-provider",
+        "location-privacy"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0077.md",
+      "source_hash": "af0438d3838782ab204394b6124206ed2d37ac5af280fb6117fe30399d92fdf9"
     },
     {
       "id": "customer-portal-architecture",
@@ -1314,11 +1516,10 @@
         "task-routing",
         "roles-authority",
         "department-team-topology",
-        "product-lifecycle",
-        "work-management"
+        "product-lifecycle"
       ],
       "path": "docs/operating-model/delivery-and-authority.md",
-      "source_hash": "a7eeaa95cb00c95d8513b323cff67615401828d339c8541ff85518105e29b660"
+      "source_hash": "657a31ca1e4c709b1c91038a19d5e93efcc8f9c7c46e3c839e482487b5ba2429"
     },
     {
       "id": "documentation-router",
@@ -1450,7 +1651,7 @@
         "enterprise-portfolio"
       ],
       "path": "docs/product/roadmap.md",
-      "source_hash": "0ab4389a70f695d9e026983e306f9794073c2ec8cf110e290f14f584bb092734"
+      "source_hash": "dedcc93d0fc4bac3715c16812b9d2aa273e84bb49edcc6df10558b374f53d811"
     },
     {
       "id": "product-vision",
@@ -1530,11 +1731,11 @@
         "architecture",
         "boundaries"
       ],
-      "revision": 6,
+      "revision": 7,
       "review_date": "2026-10-01T00:00:00.000Z",
       "supersedes": [],
       "path": "docs/architecture/system-context.md",
-      "source_hash": "76684b70e01fec15064a94fb4b3719212db3e6d5155d0b8fb32d89864b556c9f"
+      "source_hash": "cf1ee40b14d76cca7be159860708d1f81936c352b312f12aed9eeeaad5e239a6"
     },
     {
       "id": "work-management",

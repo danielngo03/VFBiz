@@ -15,7 +15,7 @@ tags:
   - tools
   - security
   - resilience
-revision: 1
+revision: 3
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -35,6 +35,24 @@ API gửi FastAPI một assertion ngắn hạn, chống replay và pin:
 FastAPI không tin header từ client. Assertion không mang raw customer profile,
 VIN, cookie, bearer token hoặc quyền rộng hơn request hiện tại.
 
+Transport nội bộ dùng contract `internal-v1` và chỉ chấp nhận EdDSA hoặc ES256.
+Mỗi retry tạo `jti` và chữ ký mới vì replay store của AI tiêu thụ assertion
+theo đúng một lần. Request hash bind method, exact path và canonical JSON;
+response vượt 128 KiB, sai schema, factual answer không có citation hoặc tool
+ngoài signed allowlist đều bị từ chối trước business commit.
+
+Public key được API phát tại `/api/v1/internal/ai/jwks`; endpoint không nằm
+trong customer/workforce OpenAPI và production ingress chỉ cho AI workload truy
+cập. Private key luôn ở secret-mounted absolute path. Khi trust bị tắt, signer,
+JWKS và transport đều fail closed nhưng baseline API vẫn khởi động được.
+
+Trust/JWKS và execution dispatch dùng hai cờ riêng. Trust có thể được bật để
+kiểm key rotation; dispatcher chỉ claim inbox khi graph handler, retrieval
+snapshot và response-revision contract đã đạt staging gate. Mọi response phải
+trả exact graph, policy và knowledge revision bundle khớp assertion. Citation
+phải khai knowledge revision đã dùng; mismatch bị coi là stale execution và
+không được commit.
+
 ## Semantic gateway
 
 Edge thực hiện cheap validation trước AI: size/rate, locale, known abuse,
@@ -46,10 +64,11 @@ evidence và câu nào phải deflect.
 Threshold, model revision và latency được benchmark. Nếu classifier unavailable,
 request không tự bypass security; API dùng safe policy route hoặc handoff.
 
-## Vision upload
+## Vision upload sau baseline
 
-Endpoint yêu cầu `authenticated_customer`, object authorization và
-`has_vehicle=true`. Ngoài RBAC, file phải qua allowlisted MIME/signature, size,
+Vision không thuộc text baseline. Khi capability được mở bằng release riêng,
+endpoint yêu cầu `authenticated_customer`, object authorization và verified
+vehicle association. Ngoài RBAC, file phải qua allowlisted MIME/signature, size,
 pixel/decompression limit, checksum, malware scan, metadata stripping và
 quarantine. Derived OCR text vẫn là untrusted input và được gửi lại semantic
 injection scan trước AI graph.
@@ -65,8 +84,11 @@ AI chỉ trả `ToolProposal` theo registry/version và JSON Schema. API:
 5. chạy Tool Anomaly Gateway;
 6. trả typed result với source revision/freshness.
 
-V6 chỉ có read-only tools. Proposal side effect bị từ chối kể cả model/provider
-đã sinh đúng JSON.
+Baseline chỉ có read-only tools. Proposal side effect bị từ chối kể cả
+model/provider đã sinh đúng JSON. `HandoffRecommendation` là một AI outcome,
+không phải `ToolProposal`: API kiểm customer scope, policy, consent và queue
+state rồi mới tạo durable support handoff. Model không được phát sự kiện
+`handoff.connected` hoặc tuyên bố đã chuyển nhân viên.
 
 ## Anomaly và micro-cache
 
@@ -84,6 +106,12 @@ Timeout/5xx đi qua circuit breaker; retry chỉ cho operation an toàn. AI prov
 fallback nằm ở Model Mesh, không ở API controller. Nếu AI unavailable, API phát
 customer-safe Static Handoff. Internal error được map sang stable reason code;
 không lộ stack, prompt, provider secret hoặc raw tool payload.
+
+Retry budget tối đa hai lần và mỗi attempt vẫn phải nằm trong signed deadline.
+Cancellation dùng endpoint riêng của turn và AbortSignal chỉ là best-effort;
+conversation version cùng fencing token mới là hàng rào cuối cùng chống output
+đến muộn. Circuit breaker hiện là per API replica; deployment phải kết hợp
+upstream health/routing thay vì coi Redis là authority của breaker.
 
 Telemetry được enqueue non-blocking. Queue đầy áp sampling/drop policy đã duyệt
 và metrics cảnh báo; không làm request chính thất bại.

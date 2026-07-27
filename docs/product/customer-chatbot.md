@@ -13,13 +13,16 @@ tags:
   - product
   - chatbot
   - customer-support
-revision: 1
+revision: 2
 review_date: 2026-08-23
 supersedes:
   - staging-mvp
 ---
 
 # Customer Chatbot V6
+
+Revision 2 là baseline sản phẩm V7 được áp dụng trên document ID ổn định này;
+không tạo PRD song song chỉ để đổi tên phiên bản.
 
 ## Bài toán sản phẩm
 
@@ -37,23 +40,30 @@ API thực thi authorization; human authority quyết định risk và release.
 | Profile | Khả năng | Ranh giới |
 | --- | --- | --- |
 | `public_customer` | Hỏi thông tin public đã duyệt, tìm sản phẩm/chính sách/trạm và yêu cầu hỗ trợ | Không đọc customer data, không upload ảnh, không side effect |
-| `authenticated_customer` | Khả năng public cộng dữ liệu của chính subject, garage đã được scope, async handoff và Vision khi `has_vehicle=true` | Không đọc customer khác; tool trong V6 là read-only |
+| `authenticated_customer` | Khả năng public cộng dữ liệu của chính subject, garage đã được scope và async handoff | Không đọc customer khác; tool trong baseline là read-only |
 
 Owner assistant và employee/CRM assistant không thuộc V6. Chúng cần profile,
 evaluation và release riêng; không kế thừa quyền chỉ bằng cách đổi prompt.
 
-## Capability trong V6
+## Capability trong baseline hiện tại
 
 - Conversation session bền vững, stream trạng thái tác vụ và resume khi mất mạng.
 - Hiểu intent, chuyển chủ đề và quay lại thực thể đã xác nhận trong session.
 - RAG từ approved public knowledge với citation, revision và freshness.
 - Read-only tools cho vehicle profile, location và customer-scoped information.
 - Clarification, bounded self-correction, refusal và handoff tới CSKH.
-- Upload ảnh chỉ cho khách đã đăng nhập và có xe; OCR text phải qua injection
-  firewall như user input không tin cậy.
 - Quota/token budget cấp session, model fallback và failure state rõ ràng.
-- Proactive prompt chỉ khi có consent, policy và frequency cap; không suy diễn
-  nhạy cảm hoặc thao túng khách hàng.
+
+Handoff là một customer-service outcome do API Platform tạo và quản lý; nó
+không phải AI tool. AI chỉ trả `HandoffRecommendation` có reason code và evidence
+tối thiểu. API kiểm customer scope, policy, consent, queue availability và tạo
+support case bền vững.
+
+Vision và proactive CDP là capability mở rộng sau text baseline. Vision chỉ
+được mở khi authenticated customer có verified vehicle association và toàn bộ
+OCR observation qua lại input firewall. Proactive message chỉ được mở sau
+consent, frequency cap, fairness review và shadow evidence; không suy diễn thuộc
+tính nhạy cảm hoặc thao túng khách hàng.
 
 ## Ngoài phạm vi
 
@@ -64,6 +74,7 @@ evaluation và release riêng; không kế thừa quyền chỉ bằng cách đ�
 - Không fine-tune factual knowledge, giá, promotion, policy hoặc authorization.
 - Không hiển thị private chain-of-thought. UI chỉ hiển thị status event đã định
   nghĩa như `Đang kiểm tra nguồn` hoặc `Đang kết nối nhân viên`.
+- Không đưa Vision upload hoặc proactive selling vào text baseline.
 
 ## Nguyên tắc câu trả lời
 
@@ -75,6 +86,8 @@ evaluation và release riêng; không kế thừa quyền chỉ bằng cách đ�
 4. Câu trả lời phải rõ ràng về giới hạn, không giả vờ là người thật và không tạo
    bằng chứng về hành động chưa xảy ra.
 5. Handoff lưu được trạng thái dù client offline và cho phép khách quay lại.
+6. Support case chỉ được coi là đã tạo khi API Platform persist thành công; lời
+   đề xuất của model không phải bằng chứng rằng handoff đã xảy ra.
 
 ## Product acceptance
 

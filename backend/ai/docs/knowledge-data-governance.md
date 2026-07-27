@@ -76,6 +76,22 @@ metadata, redacted chunks, ACL, embeddings và release/evaluation references.
 Không ghi secret, raw PII, customer conversation, provider payload hoặc private
 binary vào Git, logs, prompts hay analytics.
 
+"Redacted chunks" là một transform thật, không phải field name aspirational:
+`CandidateMaterializationService` chạy `TextRedactor`
+(`PatternBasedTextRedactor`) trên mọi chunk text trước khi ghi `redacted_text`,
+phát hiện và mask email (đa domain-label), số điện thoại di động Việt Nam, VIN
+và địa chỉ (từ khóa đường/phố tiếng Việt lẫn street/road tiếng Anh, nhánh
+admin-unit yêu cầu từ theo sau viết hoa để tránh redact nhầm cụm từ thường như
+"thành phố thông minh"). Tên người: họ Việt Nam phổ biến (case-insensitive,
+bắt được cả bản ALL-CAPS) hoặc honorific tiếng Anh (Mr/Mrs/Ms/Miss/Dr) + từ
+viết hoa theo sau — tên tiếng Anh KHÔNG có honorific chưa được bắt, đây là gap
+đã biết chứ không phải "tiếng Việt/Anh" đầy đủ. Rule-based heuristic có
+false-negative đã biết (họ hiếm không nằm trong danh sách, tên tiếng Anh trần
+trụi, địa chỉ viết không theo mẫu, số điện thoại cố định 02x chưa bắt), thiên
+về over-redact hơn là bỏ sót — chưa phải compliance-certified scrubber; Privacy
+Owner review độ đầy đủ category (đặc biệt coverage tiếng Anh) trước khi bật
+nguồn ingestion thật.
+
 ## Handoff và decision
 
 Implementer tạo immutable candidate/evidence rồi chuyển cho đúng human owner.

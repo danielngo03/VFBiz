@@ -10,7 +10,7 @@ when_to_read:
 tags:
   - architecture
   - boundaries
-revision: 6
+revision: 7
 review_date: 2026-10-01
 supersedes: []
 ---
@@ -47,6 +47,21 @@ Khách hàng / nhân sự
 
 Trust boundary, data flow và runtime choice cần accepted ADR trước implementation.
 Sơ đồ này không phải deployment design.
+
+## Bốn plane của Customer AI và EV Mobility
+
+- **Experience:** Drupal, Customer Portal, Mobile và Workforce Portal.
+- **Application & Integration:** NestJS giữ identity/object authorization,
+  conversation, handoff, tool enforcement, Mobility và enterprise adapters.
+- **AI Runtime:** FastAPI giữ LangGraph execution, governed retrieval, Model
+  Mesh và evaluation runtime; không trở thành business authority.
+- **Control & Assurance:** Knowledge Release, PromptOps, dataset, security,
+  privacy, audit, FinOps và release evidence.
+
+PostgreSQL/PostGIS, AI PostgreSQL/pgvector, object storage, Redis và Pub/Sub
+được gắn với authority/retention cụ thể; chúng không tạo một “data layer” chung
+cho phép API và AI đọc chéo tùy ý. Security, privacy, availability và cost là
+control xuyên mọi plane, không phải bước kiểm tra cuối.
 
 Current implementation order và Identity/Vehicle system-of-record được chốt tại
 ADR 0003. CIAM sở hữu credential/MFA; PIM/ERP sở hữu catalog facts; DMS/CRM sở

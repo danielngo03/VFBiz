@@ -13,7 +13,7 @@ tags:
   - prisma
   - postgresql
   - data
-revision: 2026-07-24.1
+revision: 2026-07-24.2
 review_date: 2026-08-22
 supersedes: []
 ---
@@ -40,7 +40,7 @@ embedding, prompt đầy đủ, file binary hoặc unredacted PII trong database
 | `access` | `IdentitySubject`, `SessionProjection` | opaque subject; session reference được hash; revoke/expiry rõ ràng |
 | `customer` | `CustomerProfile`, `ConsentEvent`, `CustomerDataRequest`, `CustomerGarageEntry` | profile dùng typed preferences + OCC; consent append-only/idempotent; DSAR có lifecycle; garage là self-reported, không phải ownership |
 | `product` | `VehicleCatalogRelease`, stable `VehicleModel`/`VehicleVariant`, immutable revisions, `PriceProjection` | source, market, effective time, freshness và atomic release bắt buộc |
-| `mobility` | `VehicleEnergyProfile`, `ChargingStation`, `ChargingConnector`, `ChargingTariff`, `TripPlanProjection` | PostGIS location; thuật toán, route hash, cache policy và freshness được pin |
+| `mobility` | `VehicleEnergyProfileRevision`, `ChargingLocation`, `ChargingEVSE`, `ChargingConnector`, availability/reliability observation, tariff revision/components và `TripPlan` | PostGIS location; thuật toán, route hash, source/cache policy và freshness được pin |
 | `engagement` | `ConversationSession`, `ConversationInboxItem`, `ConversationEvent`, `ConversationCitation`, `SupportHandoff`, `TokenBudgetLedger`, `DeletionJob` | sequence/OCC/fencing; citation chuẩn hóa; retention và customer scope rõ |
 | `operations` | `ReleaseOperation`, `ReleaseDecisionEvent`, `ReconciliationJob` | người yêu cầu không tự duyệt; evidence/correlation bắt buộc |
 | `platform` | `SourceRevision`, `IdempotencyRecord`, `OutboxEvent`, `AuditEvent` | fail-closed khi provenance/approval thiếu; outbox cùng transaction nghiệp vụ |
@@ -80,6 +80,13 @@ public workflow khi chưa có acceptance, authorization và adapter được ph�
 
 ## Trip data minimization và retention
 
+- Charging projection chuẩn hóa theo `Location → EVSE → Connector`; không dùng
+  một connector record cùng `unitCount` để đại diện nhiều EVSE vật lý.
+- Availability là observation theo thời điểm, không ghi đè identity/configuration
+  của EVSE hoặc connector. Tariff dùng immutable revision, element, price
+  component, timezone và effective window.
+- OCPI là interoperability reference cho location/EVSE/connector/tariff; OCPP
+  nằm sau CSMS/V-GREEN adapter và không phải customer-facing contract.
 - Mọi đường ghi trip projection phải pseudonymize provider place identifier
   bằng một key tách biệt; raw address, coordinate, polyline, geocoded
   waypoint và provider response không được ghi vào projection.
@@ -89,6 +96,9 @@ public workflow khi chưa có acceptance, authorization và adapter được ph�
   retention. Purge chạy theo batch có giới hạn để tránh lock dài và loop vô hạn.
 - Pseudonymization key đến từ secret manager. Thay key cần migration/retention
   plan vì hash cũ không thể đối chiếu với hash mới.
+- Exact origin/destination chỉ được giữ trong thời gian xử lý hoặc retention đã
+  duyệt; log/analytics không được suy diễn hay gắn nhãn home/work nếu thiếu
+  purpose và consent.
 
 ## Domain model không đồng nghĩa Prisma model
 

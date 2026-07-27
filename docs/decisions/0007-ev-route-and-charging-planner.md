@@ -7,15 +7,31 @@ scope: cross-system
 when_to_read:
   - ev-trip-planner
   - charging-station
+  - charging-data
   - maps-provider
+  - route-provider
+  - energy-model
+  - location-privacy
+  - trip-correctness
   - mobility
   - architecture
+context_anchors:
+  ev-trip-planner: "## Decision"
+  charging-station: "## Decision"
+  charging-data: "## Consequences"
+  maps-provider: "## Decision"
+  route-provider: "## Decision"
+  energy-model: "## Decision"
+  location-privacy: "## Decision"
+  trip-correctness: "## Verification"
+  mobility: "## Decision"
+  architecture: "## Decision"
 tags:
   - adr
   - mobility
   - trip-planner
   - maps
-revision: 1
+revision: 2
 review_date: 2026-10-24
 supersedes: []
 ---
@@ -64,6 +80,20 @@ boundary quá rộng cho giai đoạn đầu.
 8. GCP-first nhưng provider nằm sau port/adapter. Kafka, custom Go router,
    TensorFlow.js edge predictor, local voice SLM và Federated Learning không
    thuộc baseline nếu chưa có benchmark, owner và consumer thực tế.
+9. Public plan contract là asynchronous job. `POST /api/v1/trip/plans` trả
+   `202 Accepted`; client theo dõi/cancel bằng plan ID. Job dùng idempotency,
+   OCC, lease và fencing để không commit hai result hoặc result đến muộn.
+10. Charging data chuẩn hóa theo `Location → EVSE → Connector`; OCPI là
+    interoperability reference cho location, EVSE, connector và tariff.
+    OCPP chỉ nằm sau V-GREEN/CSMS để giao tiếp với charger, không xuất hiện ở
+    Customer API.
+11. Origin, destination, waypoint và route là location data nhạy cảm. Raw
+    address, coordinate, polyline và provider response không vào log/audit;
+    persistence chỉ dùng projection allowlist đã pseudonymize với TTL,
+    retention, DSAR lineage và purpose rõ ràng.
+12. Google route/place content chỉ được lưu hoặc cache khi provider policy và
+    Legal/Data Owner cho phép. Field mask, Autocomplete session token, key
+    restriction, attribution, quota và budget evidence là release gate.
 
 ## Alternatives
 
@@ -81,6 +111,9 @@ boundary quá rộng cho giai đoạn đầu.
 
 - Cần data model chuẩn Location → EVSE → Connector, versioned energy profile,
   tariff component và availability observation.
+- Schema hiện có dùng station/connector `unitCount` là transitional. Migration
+  phải dùng expand → backfill → contract, không sửa migration đã áp dụng và
+  không giả lập EVSE khi source không đủ dữ liệu.
 - Google/V-GREEN contracts, attribution, retention và caching policy cần
   Legal/Data Owner phê duyệt trước production.
 - Accuracy được đánh giá bằng SOC error, underprediction quantile, calibration,
@@ -93,6 +126,10 @@ boundary quá rộng cho giai đoạn đầu.
 - Unit/property tests cho consumption, reserve, charging curve và tariff.
 - Scenario tests: không cần sạc, một trạm, nhiều trạm, connector không tương
   thích, stale data, provider outage và không có tuyến khả thi.
+- Contract tests cho asynchronous state transition, duplicate command,
+  cancellation, stale lease/fencing token và result đến muộn.
+- Privacy tests xác nhận raw location/provider payload không vào persistence,
+  log, analytics hoặc error.
 - Mọi result pin algorithm, route provider, vehicle profile, station/tariff
   revision cùng freshness.
 - Load benchmark khóa capacity/SLO trước production; không dùng con số giả định.

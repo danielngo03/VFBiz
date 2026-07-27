@@ -52,7 +52,13 @@ criteria, human owner và vendor dependency được phê duyệt.
 
 - Owner assistant và employee assistant có profile/ACL tách biệt.
 - Side-effecting tools chỉ mở sau authorization, confirmation và audit.
-- Trip Planner, 3D/360 và recommendation chỉ mở khi data/SLA được phê duyệt.
+- 3D/360 và recommendation chưa có ADR, doc kiến trúc hay work item nào; chỉ
+  mở khi data/SLA được phê duyệt và có kiến trúc riêng.
+- EV Trip Planner đã có kiến trúc đích được chấp thuận
+  (`docs/decisions/0007-ev-route-and-charging-planner.md`) và work item con
+  (VFBIZ-0077 đến VFBIZ-0085, hiện đều `proposed`) — khác 3D/360/recommendation
+  ở chỗ đã sẵn sàng để Product Owner xếp lịch sequencing, chỉ chưa được giao
+  triển khai.
 
 Implementation status lấy từ active `docs/work/items/`, không lấy từ roadmap.
 Roadmap item chưa cam kết cho tới khi Product Owner phê duyệt và có current work item.

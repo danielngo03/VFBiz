@@ -12,7 +12,7 @@ when_to_read:
 tags:
   - nestjs
   - architecture
-revision: 2026-07-23.5
+revision: 2026-07-27.2
 review_date: 2026-08-22
 supersedes: []
 ---
@@ -40,14 +40,26 @@ versioned contract hoặc outbox event. Không dùng `common/models` hay
 Danh sách bounded context đã duyệt và quy tắc đặt code nằm trong
 `backend/api/AGENTS.md`. Bounded context cấp cao mới là thay đổi ranh giới
 repository và cần root ADR; một feature, endpoint hoặc provider thì không.
-Composition root hiện chỉ nạp `access`, `customer` và `product`.
+Composition root hiện nạp public `access`, `customer`, `product` và private
+`engagement` inbox dispatcher. Public Chat controller vẫn bị release gate và
+`mobility` chưa được nạp.
 `/api/v1/health/live` chỉ kiểm tra process; `/api/v1/health/ready` thực hiện
 PostgreSQL probe tối thiểu và trả `503` mà không lộ database error khi dependency
 không sẵn sàng.
+
+IP do client tự khai không phải security authority. Fastify mặc định không tin
+proxy và bỏ qua `X-Forwarded-For`. Môi trường có reverse proxy/load balancer chỉ
+được cấu hình `VFBIZ_API_TRUSTED_PROXY_CIDRS` bằng allowlist CIDR chính xác của
+proxy do Platform SRE quản lý; wildcard và mạng `/0` bị từ chối khi khởi động.
+Rate-limit dùng `request.ip` đã được Fastify suy ra qua trust boundary này,
+không tự đọc chuỗi forwarded header. Proxy được tin cậy phải overwrite/sanitize
+forwarded header từ client, và network policy phải chặn truy cập trực tiếp vào
+API origin để CIDR allowlist không bị bypass.
 `customer` sở hữu Profile/Consent/DSAR; `product` sở hữu public read model của
-một active Vehicle Catalog release. Source code thử nghiệm của `engagement` và
-`mobility` không đồng nghĩa capability đang active: chúng không được nạp, yêu
-cầu secret hoặc xuất hiện trong public contract cho tới work item riêng.
+một active Vehicle Catalog release. Private `engagement` dispatcher được nạp
+nhưng không xuất public route. Source code của `mobility` không đồng nghĩa
+capability đang active: module này không được nạp, yêu cầu secret hoặc xuất hiện
+trong public contract cho tới work item riêng.
 Boundary tương lai không được biểu diễn bằng `@Module({})` rỗng.
 
 ## Contract boundary

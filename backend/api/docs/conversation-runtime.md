@@ -13,7 +13,7 @@ tags:
   - handoff
   - concurrency
   - privacy
-revision: 1
+revision: 3
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -45,14 +45,29 @@ Chỉ một turn được commit trên một conversation version. Message đế
 OCC conflict retry tối đa theo policy và không phát lại provider/tool side effect.
 Kết quả từ lease cũ bị loại dù provider trả về thành công.
 
+Runtime worker poll PostgreSQL inbox bằng batch hữu hạn. Mỗi process chỉ chạy tối
+đa ba session song song và không chạy đồng thời hai turn của cùng một session;
+OCC, lease và fencing trong PostgreSQL mới là authority xuyên process. Khi
+internal AI bị tắt, worker không claim turn và public contract chưa được mở.
+
 ## Cancellation
 
-Client interrupt hoặc disconnect phát cancellation token qua internal AI client.
-Abort là best-effort: nếu provider không dừng kịp, output muộn vẫn bị fencing.
-Disconnect không được tự đóng session hoặc hủy support handoff đã tạo. Event
-`turn.cancelled` phân biệt user interrupt, timeout, budget và system shutdown.
+Explicit client cancel, timeout, budget hoặc system shutdown phát cancellation
+token qua internal AI client. SSE disconnect không mặc nhiên hủy turn vì client
+có thể reconnect. Abort là best-effort: nếu provider không dừng kịp, output muộn
+vẫn bị fencing. Disconnect không được tự đóng session hoặc hủy support handoff
+đã tạo. Event `turn.cancelled` phân biệt user interrupt, timeout, budget và
+system shutdown.
 
-## Async handoff
+Cancellation của turn đã claim được commit atomically với một outbox event.
+Dispatcher claim outbox bằng lease, retry hữu hạn và chuyển terminal failure sang
+trạng thái cần vận hành xử lý. Payload chỉ chứa identifier, version, fencing token
+và reason; access scope được dựng lại từ dữ liệu session thay vì chép raw identity
+vào event. Cancellation dùng lane polling riêng, tối đa ba delivery song song và
+vẫn chạy khi cả ba slot turn execution đang bận. Lease luôn dài hơn request
+timeout để instance khác không reclaim khi delivery đầu còn in-flight.
+
+## Async handoff và contact center
 
 Handoff là durable aggregate, không phải WebSocket state. Nó lưu:
 
@@ -61,7 +76,26 @@ Handoff là durable aggregate, không phải WebSocket state. Nó lưu:
 - queue/owner reference, status và timestamps;
 - last customer-visible event;
 - consented notification channels;
-- AI checkpoint revision cần cho transcript, không chứa hidden reasoning.
+- graph/checkpoint revision dùng để correlate execution, không chứa hidden
+  reasoning hoặc thay thế transcript.
+
+AI trả `HandoffRecommendation`; recommendation không tạo case và không được ghi
+như một tool đã thực thi. Application service của API kiểm object scope, policy,
+consent, reason, queue availability và idempotency trước khi tạo handoff.
+
+Lifecycle tối thiểu là:
+
+```text
+requested -> queued -> assigned -> connected -> resolved
+                    \-> expired | cancelled
+connected -> transferred
+```
+
+Contact-center adapter nhận outbox event và reconciliation job đối chiếu case
+chưa xác nhận. Provider timeout không rollback message/turn đã commit. Callback
+từ provider phải xác minh signature, replay key, expected version và transition
+hợp lệ; event đến sai thứ tự được giữ để reconciliation hoặc đưa vào operator
+queue, không tự sửa aggregate.
 
 Reconnect đọc event history và current handoff state. Agent response khi khách
 offline được lưu rồi thông báo qua channel đã consent. Không gửi PII trong push
@@ -76,12 +110,66 @@ chỉ khi AI policy xác nhận đáp ứng safety/quality; hết budget mà kh�
 tier thì refuse hoặc handoff. Mở session mới không mặc nhiên xóa subject-level
 abuse/cost window.
 
-## Event và streaming contract
+## Event và SSE contract
 
-Durable event chứa public status/answer, không chứa chain-of-thought hoặc raw
-tool/provider payload. WebSocket/SSE là transport projection của event stream;
-reconnect dùng cursor và không nhân đôi event. Event schema pin version để client
-không đoán trạng thái.
+Durable public event chứa:
+
+```text
+eventId, schemaVersion, sessionId, turnId, sequence,
+type, occurredAt, correlationId, data
+```
+
+Event không chứa chain-of-thought, prompt, policy reasoning hoặc raw
+tool/provider payload. SSE là projection, không phải source of truth:
+
+- client gửi `Last-Event-ID`; API replay từ durable retention window;
+- mobile reconnect trước hết đọc Redis replay buffer tối đa 50 durable event
+  gần nhất, TTL 5 phút; cache miss/lỗi Redis quay về PostgreSQL;
+- duplicate cursor không nhân đôi semantic event;
+- heartbeat chỉ giữ transport sống và không được lưu như conversation message;
+- mỗi session có tối đa ba SSE connection trên toàn cluster; admission lease
+  nằm trong Redis và connection tự đóng sau 5 phút để client reconnect có kiểm soát;
+- buffer theo connection có hard limit; slow consumer nhận typed reconnect
+  instruction rồi connection được đóng;
+- event quá retention trả typed resync requirement để client fetch message và
+  handoff snapshot;
+- final answer được persist atomically với outbox trước `answer.completed`.
+
+Public event type tối thiểu gồm `turn.accepted`, `retrieval.started`,
+`tool.started`, `answer.delta`, `answer.completed`, `handoff.pending`,
+`handoff.connected` và `turn.failed`. Schema version được validate độc lập với
+application release để client không phải đoán trạng thái.
+
+Hai control event của transport không được persist vào conversation history:
+
+- `stream.reconnect_required` với `reason=slow_consumer`, `lastEventId` và
+  `retryAfterMs`; server đóng stream khi socket buffer vượt 64 KiB;
+- `stream.resync_required` với reason `cursor_expired`,
+  `cursor_out_of_range` hoặc `retention_expired`, cửa sổ cursor còn khả dụng và recovery action
+  `fetch_session_messages_and_handoff_snapshot`.
+
+Cursor nằm đúng trước event cũ nhất còn lưu vẫn hợp lệ. Cursor cũ hơn cửa sổ,
+cursor nằm trước một khoảng đã purge hoặc cursor đi trước durable log đều không
+được âm thầm coi là “không có event”. Redis chỉ trả replay khi chứng minh cursor
+nằm trong buffer 50 event/5 phút; mọi cache miss quay về PostgreSQL để đưa ra
+quyết định retention/resync.
+
+## Retry và dead-letter handling
+
+Inbox, AI dispatch, notification và contact-center delivery có retry hữu hạn
+theo typed failure. Validation, authorization, stale fencing và permanent policy
+failure không retry. Khi vượt attempt limit, record chuyển DLQ với opaque payload
+reference, reason, source revision, attempt history và retention. Replay cần
+operator capability, expected version và audit; không replay turn đã supersede
+hoặc cancelled.
+
+Turn dispatcher hiện lưu `dispatchAttempts`, `dispatchAvailableAt` và failure
+code ngay trên durable turn. Lỗi transport transient được exponential backoff
+tối đa ba lần; lỗi stale/cancelled bị fencing bỏ qua; policy denial kết thúc bằng
+safe refusal. Lỗi hạ tầng không phân loại hoặc transient đã cạn budget tạo audit
+`conversation.turn.dispatch.dead-lettered` trước khi commit safe refusal. Chưa
+có operator replay API cho dead letter, vì vậy public Chat API vẫn giữ release
+gate.
 
 ## Data retention và DSAR
 
@@ -104,5 +192,8 @@ authority, purpose và expiry riêng.
 - Client disconnect/cancel cùng provider response muộn.
 - Public capability replay và cross-customer conversation denial.
 - Offline handoff, reconnect, notification consent và queue outage.
+- SSE Redis replay 5 phút/50 event, cluster quota, maximum lifetime, heartbeat,
+  retention expiry, slow consumer và final-answer commit.
+- Contact-center callback replay/out-of-order, reconciliation và DLQ replay.
 - Session/subject quota, oversized input và budget exhaustion.
 - DSAR partial failure, retry, legal hold và derived-data deletion.
