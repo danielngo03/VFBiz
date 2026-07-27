@@ -1,4 +1,5 @@
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -9,8 +10,16 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import Response
 
 from app.api.internal_v1 import internal_v1_router
+from app.bootstrap.conversation_graph import (
+    ConversationRuntimeDependencies,
+    build_conversation_runtime_dependencies,
+)
+from app.platform.cancellation import PostgresExecutionCancellationAdapter
+from app.platform.checkpoints.execution_fence import PostgresExecutionFenceStore
 from app.platform.config import Settings
+from app.platform.database import DatabaseRuntime, create_database_runtime
 from app.platform.health import public_health_router
+from app.platform.security.execution_assertion import build_execution_assertion_verifier
 
 
 def create_application(settings: Settings | None = None) -> FastAPI:
@@ -19,6 +28,7 @@ def create_application(settings: Settings | None = None) -> FastAPI:
         title="VFBiz AI Platform",
         version="0.1.0",
         description="Private AI capabilities for the VFBiz API Platform.",
+        lifespan=application_lifespan,
         docs_url="/docs" if configuration.expose_docs else None,
         redoc_url="/redoc" if configuration.expose_docs else None,
         openapi_url="/openapi.json" if configuration.expose_docs else None,
@@ -35,6 +45,38 @@ def create_application(settings: Settings | None = None) -> FastAPI:
     application.include_router(public_health_router)
     application.include_router(internal_v1_router)
     return application
+
+
+@asynccontextmanager
+async def application_lifespan(application: FastAPI) -> AsyncGenerator[None]:
+    configuration = cast(Settings, application.state.settings)
+    async with AsyncExitStack() as stack:
+        database_runtime: DatabaseRuntime | None = None
+        if configuration.database_url is not None:
+            database_runtime = create_database_runtime(configuration.database_url)
+            stack.push_async_callback(database_runtime.close)
+        application.state.database_runtime = database_runtime
+        application.state.execution_cancellation_port = (
+            PostgresExecutionCancellationAdapter(
+                PostgresExecutionFenceStore(database_runtime.sessions)
+            )
+            if database_runtime is not None
+            else None
+        )
+        conversation_dependencies: ConversationRuntimeDependencies | None = None
+        if database_runtime is not None:
+            conversation_dependencies = await build_conversation_runtime_dependencies(
+                configuration, database_runtime.sessions
+            )
+            stack.push_async_callback(conversation_dependencies.close)
+        application.state.conversation_dependencies = conversation_dependencies
+        assertion_verifier, assertion_redis_client = build_execution_assertion_verifier(
+            configuration
+        )
+        if assertion_redis_client is not None:
+            stack.push_async_callback(assertion_redis_client.aclose)
+        application.state.execution_assertion_verifier = assertion_verifier
+        yield
 
 
 async def secure_response_middleware(
@@ -82,6 +124,7 @@ async def unexpected_exception_handler(request: Request, _exception: Exception) 
 
 
 def problem_response(request: Request, status_code: int, code: str, detail: str) -> JSONResponse:
+    retryable = status_code in {429, 503}
     return JSONResponse(
         status_code=status_code,
         media_type="application/problem+json",
@@ -92,6 +135,7 @@ def problem_response(request: Request, status_code: int, code: str, detail: str)
             "detail": detail,
             "instance": request.url.path,
             "code": code,
+            "retryable": retryable,
             "correlationId": getattr(request.state, "correlation_id", str(uuid4())),
         },
     )

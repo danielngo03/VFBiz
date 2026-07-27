@@ -9,9 +9,23 @@ def test_ai_metadata_contains_only_ai_owned_foundation_tables() -> None:
     table_names = set(Base.metadata.tables)
     assert table_names == {
         "ai_audit_event",
+        "ai_conversation_execution_fence",
+        "ai_conversation_resume_gate",
         "ai_dataset_release",
+        "ai_embedding_index_generation",
         "ai_evaluation_run",
         "ai_knowledge_chunk",
+        "ai_knowledge_ingestion_artifact",
+        "ai_knowledge_ingestion_control_command",
+        "ai_knowledge_ingestion_job",
+        "ai_knowledge_ingestion_outbox",
+        "ai_knowledge_ingestion_stage_attempt",
+        "ai_knowledge_release",
+        "ai_knowledge_release_decision",
+        "ai_knowledge_release_outbox",
+        "ai_knowledge_release_source",
+        "ai_knowledge_release_transition",
+        "ai_knowledge_revision_pointer",
         "ai_knowledge_source",
         "ai_release",
     }

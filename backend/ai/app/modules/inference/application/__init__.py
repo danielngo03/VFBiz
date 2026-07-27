@@ -1,3 +1,56 @@
-from app.modules.inference.application.ports import InferenceProvider
+from app.modules.inference.application.grounding import (
+    FailClosedClaimSupportValidator,
+    normalized_evidence_digest,
+)
+from app.modules.inference.application.model_mesh import DeploymentRoute, ModelMesh
+from app.modules.inference.application.ports import (
+    CancellationSignal,
+    Citation,
+    ClaimSupportDecision,
+    ClaimSupportValidator,
+    DeploymentPolicyDescriptor,
+    Evidence,
+    GenerationOutcome,
+    GenerationRequest,
+    GenerationResult,
+    InferenceAttempt,
+    InferenceAttemptDisposition,
+    InferenceBudget,
+    InferenceFailure,
+    InferenceFailureCode,
+    InferenceUsage,
+    ModelDeployment,
+    RetentionPolicy,
+)
+from app.modules.inference.application.prompt_contract import (
+    GroundedAnswerPrompt,
+    canonical_dynamic_input,
+    dynamic_input_sha256,
+)
 
-__all__ = ["InferenceProvider"]
+__all__ = [
+    "CancellationSignal",
+    "Citation",
+    "ClaimSupportDecision",
+    "ClaimSupportValidator",
+    "canonical_dynamic_input",
+    "DeploymentPolicyDescriptor",
+    "DeploymentRoute",
+    "FailClosedClaimSupportValidator",
+    "GenerationRequest",
+    "GenerationOutcome",
+    "GenerationResult",
+    "Evidence",
+    "GroundedAnswerPrompt",
+    "dynamic_input_sha256",
+    "InferenceBudget",
+    "InferenceAttempt",
+    "InferenceAttemptDisposition",
+    "InferenceFailure",
+    "InferenceFailureCode",
+    "InferenceUsage",
+    "ModelDeployment",
+    "ModelMesh",
+    "RetentionPolicy",
+    "normalized_evidence_digest",
+]

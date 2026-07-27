@@ -1,3 +1,23 @@
-from app.modules.assistant.application.answer_service import AnswerService
+from app.modules.assistant.application.ports import (
+    EntityRevalidationPort,
+    EvidenceAuthorityPort,
+    ExecutionControlPort,
+    ResumeClaim,
+    ResumeClaimPort,
+    RouteDecision,
+    SupervisorPort,
+    TaskWorkerPort,
+    WorkerResult,
+)
 
-__all__ = ["AnswerService"]
+__all__ = [
+    "EntityRevalidationPort",
+    "EvidenceAuthorityPort",
+    "ExecutionControlPort",
+    "ResumeClaimPort",
+    "ResumeClaim",
+    "RouteDecision",
+    "SupervisorPort",
+    "TaskWorkerPort",
+    "WorkerResult",
+]

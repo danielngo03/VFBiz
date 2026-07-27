@@ -9,7 +9,6 @@ APPROVED_MODULES = {
     "governance",
     "inference",
     "knowledge",
-    "tooling",
 }
 
 
@@ -36,4 +35,29 @@ def test_domain_packages_do_not_import_framework_or_orm() -> None:
             for name in names:
                 if name.split(".")[0] in forbidden:
                     violations.append(f"{file.relative_to(APP_ROOT)} imports {name}")
+    assert violations == []
+
+
+def test_knowledge_and_inference_do_not_depend_on_assistant() -> None:
+    violations: list[str] = []
+    for owner in ("knowledge", "inference"):
+        for file in (MODULE_ROOT / owner).glob("**/*.py"):
+            if "__pycache__" in file.parts:
+                continue
+            tree = ast.parse(file.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.ImportFrom)
+                    and node.module
+                    and node.module.startswith("app.modules.assistant")
+                ):
+                    violations.append(
+                        f"{file.relative_to(APP_ROOT)} imports {node.module}"
+                    )
+                elif isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name.startswith("app.modules.assistant"):
+                            violations.append(
+                                f"{file.relative_to(APP_ROOT)} imports {alias.name}"
+                            )
     assert violations == []
