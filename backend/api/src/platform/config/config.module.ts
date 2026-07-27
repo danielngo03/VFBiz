@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnvironment } from './env.schema';
+import { loadApiBootstrapEnvironment } from './trusted-proxy.config';
+
+loadApiBootstrapEnvironment();
 
 @Module({
   imports: [

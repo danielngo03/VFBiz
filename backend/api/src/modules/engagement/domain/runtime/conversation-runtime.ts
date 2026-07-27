@@ -1,9 +1,17 @@
 export const MAX_CONVERSATION_INPUT_CHARACTERS = 12_000;
+export const MAX_CONVERSATION_OUTPUT_CHARACTERS = 12_000;
+export const MAX_CONVERSATION_CITATIONS = 20;
+export const MAX_CITATION_IDENTIFIER_CHARACTERS = 160;
+export const MAX_CITATION_TITLE_CHARACTERS = 255;
+export const MAX_CITATION_URI_CHARACTERS = 1_024;
+export const MAX_PUBLIC_EVENT_PAYLOAD_BYTES = 60_000;
 export const MAX_TURN_MODEL_TOKENS = 32_000;
 export const MAX_TURN_COST_MICROS = 10_000_000;
 
 export type ConversationCancellationReason =
   'budget_exhausted' | 'system_shutdown' | 'timeout' | 'user_interrupt';
+export type ConversationCancellationAuthority =
+  'customer' | 'system' | 'worker';
 
 export type ConversationHandoffReason =
   | 'customer_requested'
@@ -46,9 +54,29 @@ export interface ConversationTurnClaim {
   readonly workerId: string;
 }
 
+export interface ConversationReleaseCommitReceipt {
+  readonly activationEnvelopeSha256: string;
+  readonly activationId: string;
+  readonly candidateSha256: string;
+  readonly conversationVersion: number;
+  readonly expiresAt: Date;
+  readonly fencingToken: number;
+  readonly issuedAt: Date;
+  readonly leaseId: string;
+  readonly pointerRevision: number;
+  readonly requestId: string;
+  readonly sessionId: string;
+  readonly turnId: string;
+}
+
 export interface ConversationTurn {
+  readonly assistantReleaseRevision: string | null;
+  readonly assistantReleaseReceipt: ConversationReleaseCommitReceipt | null;
   readonly budget: TurnBudgetReservation;
   readonly claim: ConversationTurnClaim | null;
+  readonly cancellationAuthority: ConversationCancellationAuthority | null;
+  readonly cancellationReason: ConversationCancellationReason | null;
+  readonly cancelledAt: Date | null;
   readonly clientMessageId: string;
   readonly content: string;
   readonly id: string;
@@ -56,6 +84,7 @@ export interface ConversationTurn {
   readonly requestFingerprint: string;
   readonly status:
     'accepted' | 'cancelled' | 'claimed' | 'completed' | 'handed_off';
+  readonly usage: TurnBudgetUsage | null;
 }
 
 export interface ConversationRuntimeSnapshot {
@@ -65,7 +94,7 @@ export interface ConversationRuntimeSnapshot {
   readonly id: string;
   readonly lastPublicEventSequence: number;
   readonly lastReceivedSequence: number;
-  readonly status: 'handoff' | 'open';
+  readonly status: 'closed' | 'handoff' | 'open';
   readonly turns: readonly ConversationTurn[];
   readonly version: number;
 }
@@ -122,6 +151,16 @@ export interface TurnRefusedPublicEvent extends ConversationPublicEventBase {
   readonly type: 'turn.completed';
 }
 
+export interface TurnClarificationPublicEvent extends ConversationPublicEventBase {
+  readonly payload: {
+    readonly message: string;
+    readonly outcome: 'clarification_required';
+    readonly pendingSlots: readonly string[];
+    readonly turnId: string;
+  };
+  readonly type: 'turn.completed';
+}
+
 export interface TurnCancelledPublicEvent extends ConversationPublicEventBase {
   readonly payload: {
     readonly reason: ConversationCancellationReason;
@@ -136,9 +175,17 @@ export interface HandoffRequestedPublicEvent extends ConversationPublicEventBase
     readonly handoffId: string;
     readonly reason: ConversationHandoffReason;
     readonly status: 'queued';
-    readonly turnId: string;
+    // Absent for a customer-initiated handoff requested directly on the
+    // session (requestHandoff below) rather than as a turn's outcome
+    // (completeTurn's handoff branch, which always supplies it).
+    readonly turnId?: string;
   };
   readonly type: 'handoff.requested';
+}
+
+export interface SessionClosedPublicEvent extends ConversationPublicEventBase {
+  readonly payload: Record<string, never>;
+  readonly type: 'session.closed';
 }
 
 /**
@@ -149,12 +196,19 @@ export interface HandoffRequestedPublicEvent extends ConversationPublicEventBase
 export type ConversationPublicEvent =
   | HandoffRequestedPublicEvent
   | MessageAcceptedPublicEvent
+  | SessionClosedPublicEvent
   | TurnAnsweredPublicEvent
   | TurnCancelledPublicEvent
+  | TurnClarificationPublicEvent
   | TurnProcessingPublicEvent
   | TurnRefusedPublicEvent;
 
 export type CustomerSafeTurnOutcome =
+  | {
+      readonly kind: 'clarification';
+      readonly message: string;
+      readonly pendingSlots: readonly string[];
+    }
   | {
       readonly citations: readonly ConversationCitation[];
       readonly kind: 'answer';
@@ -195,7 +249,8 @@ export interface ClaimedTurn {
 export interface CompletedTurn {
   readonly conversationVersion: number;
   readonly eventCursor: string;
-  readonly outcome: 'answered' | 'handed_off' | 'refused';
+  readonly outcome:
+    'answered' | 'clarification_required' | 'handed_off' | 'refused';
   readonly turnId: string;
 }
 
@@ -204,6 +259,17 @@ export interface CancelledTurn {
   readonly eventCursor: string;
   readonly reason: ConversationCancellationReason;
   readonly turnId: string;
+}
+
+export interface ClosedSession {
+  readonly conversationVersion: number;
+  readonly eventCursor: string;
+}
+
+export interface RequestedHandoff {
+  readonly conversationVersion: number;
+  readonly eventCursor: string;
+  readonly handoffId: string;
 }
 
 export class ConversationInputValidationError extends Error {
@@ -319,10 +385,42 @@ export class ConversationRuntimeAggregate {
 
   static restore(snapshot: ConversationRuntimeSnapshot) {
     validateAccessScope(snapshot.accessScope);
+    validateIdentifier(snapshot.id, 'Stored conversation ID');
+    validateNonNegativeSafeInteger(snapshot.version, 'Stored version');
+    validateNonNegativeSafeInteger(
+      snapshot.lastReceivedSequence,
+      'Stored received sequence',
+    );
+    validateNonNegativeSafeInteger(
+      snapshot.lastPublicEventSequence,
+      'Stored public event sequence',
+    );
+    validateNonNegativeSafeInteger(
+      snapshot.fencingTokenHighWatermark,
+      'Stored fencing token high watermark',
+    );
+    validateNonNegativeSafeInteger(
+      snapshot.budget.remainingModelTokens,
+      'Stored remaining model tokens',
+    );
+    validateNonNegativeSafeInteger(
+      snapshot.budget.remainingCostMicros,
+      'Stored remaining cost',
+    );
     snapshot.turns.forEach((turn) => {
+      validateIdentifier(turn.id, 'Stored turn ID');
+      validateIdentifier(turn.clientMessageId, 'Stored client message ID');
+      validateFingerprint(turn.requestFingerprint);
+      validatePositiveSafeInteger(
+        turn.receivedSequence,
+        'Stored received sequence',
+      );
+      validateReservation(turn.budget);
+      validateCancellationState(turn);
       if (turn.claim !== null) {
         validateDate(turn.claim.leaseExpiresAt, 'Stored turn lease expiry');
       }
+      if (turn.usage !== null) validateUsage(turn.usage, turn.budget);
     });
     return new ConversationRuntimeAggregate(copySnapshot(snapshot));
   }
@@ -375,7 +473,12 @@ export class ConversationRuntimeAggregate {
       type: 'message.accepted',
     };
     const accepted: ConversationTurn = {
+      assistantReleaseRevision: null,
+      assistantReleaseReceipt: null,
       budget: { ...input.budget },
+      cancellationAuthority: null,
+      cancellationReason: null,
+      cancelledAt: null,
       claim: null,
       clientMessageId: input.clientMessageId,
       content,
@@ -383,6 +486,7 @@ export class ConversationRuntimeAggregate {
       receivedSequence,
       requestFingerprint: input.requestFingerprint,
       status: 'accepted',
+      usage: null,
     };
 
     this.state = {
@@ -523,6 +627,8 @@ export class ConversationRuntimeAggregate {
     outcome: CustomerSafeTurnOutcome;
     turnId: string;
     usage: TurnBudgetUsage;
+    assistantReleaseRevision?: string;
+    assistantReleaseReceipt?: ConversationReleaseCommitReceipt;
   }): ConversationTransition<CompletedTurn> {
     this.assertVersion(input.expectedVersion);
     validateDate(input.now, 'Turn completion time');
@@ -535,6 +641,35 @@ export class ConversationRuntimeAggregate {
       );
     }
     validateUsage(input.usage, turn.budget);
+    if (
+      input.assistantReleaseRevision !== undefined &&
+      (input.assistantReleaseRevision.length < 1 ||
+        input.assistantReleaseRevision.length > 160)
+    ) {
+      throw new ConversationInvalidTransitionError(
+        'Assistant release revision must be non-empty and bounded.',
+      );
+    }
+    if (
+      (input.assistantReleaseRevision === undefined) !==
+      (input.assistantReleaseReceipt === undefined)
+    ) {
+      throw new ConversationInvalidTransitionError(
+        'Assistant release revision and receipt must be provided together.',
+      );
+    }
+    const assistantReleaseReceipt =
+      input.assistantReleaseReceipt === undefined
+        ? turn.assistantReleaseReceipt
+        : validateReleaseCommitReceipt(
+            input.assistantReleaseReceipt,
+            input.assistantReleaseRevision,
+            input.now,
+            this.state.id,
+            input.turnId,
+            input.expectedVersion,
+            input.fencingToken,
+          );
 
     const eventSequence = this.state.lastPublicEventSequence + 1;
     const nextVersion = this.state.version + 1;
@@ -549,9 +684,11 @@ export class ConversationRuntimeAggregate {
     const outcome =
       input.outcome.kind === 'answer'
         ? 'answered'
-        : input.outcome.kind === 'refusal'
-          ? 'refused'
-          : 'handed_off';
+        : input.outcome.kind === 'clarification'
+          ? 'clarification_required'
+          : input.outcome.kind === 'refusal'
+            ? 'refused'
+            : 'handed_off';
 
     this.state = {
       ...this.state,
@@ -560,7 +697,12 @@ export class ConversationRuntimeAggregate {
       status: input.outcome.kind === 'handoff' ? 'handoff' : this.state.status,
       turns: replaceTurn(this.state.turns, {
         ...turn,
+        assistantReleaseRevision:
+          input.assistantReleaseRevision ?? turn.assistantReleaseRevision,
+        assistantReleaseReceipt,
+        claim: null,
         status: input.outcome.kind === 'handoff' ? 'handed_off' : 'completed',
+        usage: { ...input.usage },
       }),
       version: nextVersion,
     };
@@ -578,6 +720,7 @@ export class ConversationRuntimeAggregate {
   }
 
   cancelTurn(input: {
+    authority: ConversationCancellationAuthority;
     eventId: string;
     expectedVersion: number;
     fencingToken?: number;
@@ -589,25 +732,33 @@ export class ConversationRuntimeAggregate {
     this.assertVersion(input.expectedVersion);
     validateDate(input.now, 'Turn cancellation time');
     validateIdentifier(input.eventId, 'Event ID');
+    validateCancellationAuthorityReason(input.authority, input.reason);
     const turn = this.findTurn(input.turnId);
-    if (turn.status === 'claimed') {
-      if (input.fencingToken === undefined) {
-        throw new ConversationStaleFencingTokenError();
-      }
-      this.assertCurrentClaim(turn, input.fencingToken, input.now);
-    } else if (turn.status !== 'accepted') {
-      if (
-        turn.claim !== null &&
-        input.fencingToken !== undefined &&
-        input.fencingToken !== turn.claim.fencingToken
-      ) {
-        throw new ConversationStaleFencingTokenError();
-      }
+    if (turn.status !== 'accepted' && turn.status !== 'claimed') {
       throw new ConversationInvalidTransitionError(
         `Cannot cancel a turn in ${turn.status} state.`,
       );
     }
-    const usage = input.usage ?? { costMicros: 0, modelTokens: 0 };
+    let usage: TurnBudgetUsage;
+    if (input.authority === 'worker') {
+      if (turn.status !== 'claimed' || input.fencingToken === undefined) {
+        throw new ConversationStaleFencingTokenError();
+      }
+      this.assertCurrentClaim(turn, input.fencingToken, input.now);
+      if (input.usage === undefined) {
+        throw new ConversationInputValidationError(
+          'Worker cancellation usage is required.',
+        );
+      }
+      usage = input.usage;
+    } else if (turn.status === 'accepted') {
+      usage = { costMicros: 0, modelTokens: 0 };
+    } else {
+      usage = {
+        costMicros: turn.budget.maxCostMicros,
+        modelTokens: turn.budget.maxModelTokens,
+      };
+    }
     validateUsage(usage, turn.budget);
 
     const eventSequence = this.state.lastPublicEventSequence + 1;
@@ -628,7 +779,12 @@ export class ConversationRuntimeAggregate {
       lastPublicEventSequence: eventSequence,
       turns: replaceTurn(this.state.turns, {
         ...turn,
+        cancellationAuthority: input.authority,
+        cancellationReason: input.reason,
+        cancelledAt: new Date(input.now.getTime()),
+        claim: null,
         status: 'cancelled',
+        usage: { ...usage },
       }),
       version: nextVersion,
     };
@@ -640,6 +796,98 @@ export class ConversationRuntimeAggregate {
         eventCursor: event.cursor,
         reason: input.reason,
         turnId: turn.id,
+      },
+      state: this.snapshot(),
+    };
+  }
+
+  closeSession(input: {
+    eventId: string;
+    expectedVersion: number;
+    now: Date;
+  }): ConversationTransition<ClosedSession> {
+    this.assertVersion(input.expectedVersion);
+    validateDate(input.now, 'Session close time');
+    validateIdentifier(input.eventId, 'Event ID');
+    if (this.state.status === 'closed') {
+      throw new ConversationInvalidTransitionError(
+        'Conversation is already closed.',
+      );
+    }
+
+    const eventSequence = this.state.lastPublicEventSequence + 1;
+    const nextVersion = this.state.version + 1;
+    const event: SessionClosedPublicEvent = {
+      cursor: encodePublicEventCursor(eventSequence),
+      eventId: input.eventId,
+      occurredAt: new Date(input.now.getTime()),
+      payload: {},
+      schemaVersion: 1,
+      sequence: eventSequence,
+      sessionId: this.state.id,
+      type: 'session.closed',
+    };
+    this.state = {
+      ...this.state,
+      lastPublicEventSequence: eventSequence,
+      status: 'closed',
+      version: nextVersion,
+    };
+
+    return {
+      events: [event],
+      result: {
+        conversationVersion: nextVersion,
+        eventCursor: event.cursor,
+      },
+      state: this.snapshot(),
+    };
+  }
+
+  requestHandoff(input: {
+    customerMessage: string;
+    eventId: string;
+    expectedVersion: number;
+    handoffId: string;
+    now: Date;
+  }): ConversationTransition<RequestedHandoff> {
+    this.assertVersion(input.expectedVersion);
+    this.assertOpen();
+    validateDate(input.now, 'Handoff request time');
+    validateIdentifier(input.eventId, 'Event ID');
+    validateIdentifier(input.handoffId, 'Handoff ID');
+    const customerMessage = validateCustomerOutput(input.customerMessage);
+
+    const eventSequence = this.state.lastPublicEventSequence + 1;
+    const nextVersion = this.state.version + 1;
+    const event: HandoffRequestedPublicEvent = {
+      cursor: encodePublicEventCursor(eventSequence),
+      eventId: input.eventId,
+      occurredAt: new Date(input.now.getTime()),
+      payload: {
+        customerMessage,
+        handoffId: input.handoffId,
+        reason: 'customer_requested',
+        status: 'queued',
+      },
+      schemaVersion: 1,
+      sequence: eventSequence,
+      sessionId: this.state.id,
+      type: 'handoff.requested',
+    };
+    this.state = {
+      ...this.state,
+      lastPublicEventSequence: eventSequence,
+      status: 'handoff',
+      version: nextVersion,
+    };
+
+    return {
+      events: [event],
+      result: {
+        conversationVersion: nextVersion,
+        eventCursor: event.cursor,
+        handoffId: input.handoffId,
       },
       state: this.snapshot(),
     };
@@ -699,6 +947,7 @@ const createCompletionEvent = (input: {
 }):
   | HandoffRequestedPublicEvent
   | TurnAnsweredPublicEvent
+  | TurnClarificationPublicEvent
   | TurnRefusedPublicEvent => {
   validateDate(input.now, 'Public event time');
   const base = {
@@ -728,13 +977,41 @@ const createCompletionEvent = (input: {
   }
   const message = validateCustomerOutput(input.outcome.message);
   if (input.outcome.kind === 'answer') {
+    if (input.outcome.citations.length > MAX_CONVERSATION_CITATIONS) {
+      throw new ConversationInvalidTransitionError(
+        `A customer answer cannot contain more than ${MAX_CONVERSATION_CITATIONS} citations.`,
+      );
+    }
     const citations = input.outcome.citations.map(validateCitation);
-    return {
+    const event = {
       ...base,
       payload: {
         citations,
         message,
         outcome: 'answered',
+        turnId: input.turnId,
+      },
+      type: 'turn.completed',
+    } satisfies TurnAnsweredPublicEvent;
+    validatePublicEventPayloadSize(event.payload);
+    return event;
+  }
+  if (input.outcome.kind === 'clarification') {
+    if (
+      input.outcome.pendingSlots.length > 16 ||
+      new Set(input.outcome.pendingSlots).size !==
+        input.outcome.pendingSlots.length
+    ) {
+      throw new ConversationInvalidTransitionError(
+        'Clarification pending slots must be unique and bounded.',
+      );
+    }
+    return {
+      ...base,
+      payload: {
+        message,
+        outcome: 'clarification_required',
+        pendingSlots: [...input.outcome.pendingSlots],
         turnId: input.turnId,
       },
       type: 'turn.completed',
@@ -767,8 +1044,70 @@ const copySnapshot = (
             ...turn.claim,
             leaseExpiresAt: new Date(turn.claim.leaseExpiresAt.getTime()),
           },
+    cancelledAt:
+      turn.cancelledAt === null ? null : new Date(turn.cancelledAt.getTime()),
+    usage: turn.usage === null ? null : { ...turn.usage },
+    assistantReleaseReceipt:
+      turn.assistantReleaseReceipt === null
+        ? null
+        : {
+            ...turn.assistantReleaseReceipt,
+            expiresAt: new Date(
+              turn.assistantReleaseReceipt.expiresAt.getTime(),
+            ),
+            issuedAt: new Date(turn.assistantReleaseReceipt.issuedAt.getTime()),
+          },
   })),
 });
+
+const validateReleaseCommitReceipt = (
+  receipt: ConversationReleaseCommitReceipt,
+  releaseRevision: string | undefined,
+  now: Date,
+  sessionId: string,
+  turnId: string,
+  conversationVersion: number,
+  fencingToken: number,
+): ConversationReleaseCommitReceipt => {
+  if (
+    releaseRevision === undefined ||
+    receipt.activationId !== releaseRevision ||
+    receipt.sessionId !== sessionId ||
+    receipt.turnId !== turnId ||
+    receipt.conversationVersion !== conversationVersion ||
+    receipt.fencingToken !== fencingToken ||
+    !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+      receipt.leaseId,
+    ) ||
+    !/^[a-f0-9]{64}$/.test(receipt.candidateSha256) ||
+    !/^[a-f0-9]{64}$/.test(receipt.activationEnvelopeSha256) ||
+    !Number.isSafeInteger(receipt.pointerRevision) ||
+    receipt.pointerRevision < 1
+  ) {
+    throw new ConversationInvalidTransitionError(
+      'Assistant release commit receipt is invalid.',
+    );
+  }
+  validateDate(receipt.issuedAt, 'Release receipt issue time');
+  validateDate(receipt.expiresAt, 'Release receipt expiry time');
+  validateIdentifier(receipt.requestId, 'Release receipt request ID');
+  if (
+    receipt.issuedAt.getTime() > now.getTime() + 5_000 ||
+    receipt.issuedAt.getTime() < now.getTime() - 30_000 ||
+    receipt.expiresAt.getTime() <= now.getTime() ||
+    receipt.expiresAt.getTime() <= receipt.issuedAt.getTime() ||
+    receipt.expiresAt.getTime() - receipt.issuedAt.getTime() > 30_000
+  ) {
+    throw new ConversationInvalidTransitionError(
+      'Assistant release commit receipt is stale.',
+    );
+  }
+  return {
+    ...receipt,
+    expiresAt: new Date(receipt.expiresAt.getTime()),
+    issuedAt: new Date(receipt.issuedAt.getTime()),
+  };
+};
 
 export const copyConversationPublicEvent = (
   event: ConversationPublicEvent,
@@ -835,9 +1174,12 @@ const validateMessageContent = (content: string): string => {
 
 const validateCustomerOutput = (message: string): string => {
   const normalized = message.trim();
-  if (normalized.length === 0) {
+  if (
+    normalized.length === 0 ||
+    Array.from(normalized).length > MAX_CONVERSATION_OUTPUT_CHARACTERS
+  ) {
     throw new ConversationInvalidTransitionError(
-      'Customer-visible output must not be empty.',
+      'Customer-visible output is invalid.',
     );
   }
   return normalized;
@@ -866,11 +1208,18 @@ const validateCitation = (
   validateIdentifier(citation.sourceId, 'Citation source ID');
   validateIdentifier(citation.revision, 'Citation revision');
   const title = citation.title.trim();
-  if (title.length === 0 || title.length > 300) {
+  if (
+    title.length === 0 ||
+    Array.from(title).length > MAX_CITATION_TITLE_CHARACTERS
+  ) {
     throw new ConversationInvalidTransitionError('Citation title is invalid.');
   }
   validateDate(citation.retrievedAt, 'Citation retrieval time');
-  validateSafeHttpUri(citation.uri, 'Citation URI');
+  validateSafeHttpUri(
+    citation.uri,
+    'Citation URI',
+    MAX_CITATION_URI_CHARACTERS,
+  );
   return {
     ...citation,
     retrievedAt: new Date(citation.retrievedAt.getTime()),
@@ -878,14 +1227,74 @@ const validateCitation = (
   };
 };
 
+const validateCancellationAuthorityReason = (
+  authority: ConversationCancellationAuthority,
+  reason: ConversationCancellationReason,
+): void => {
+  if (
+    (authority === 'customer' && reason !== 'user_interrupt') ||
+    (authority !== 'customer' && reason === 'user_interrupt')
+  ) {
+    throw new ConversationInputValidationError(
+      'Cancellation authority and reason are incompatible.',
+    );
+  }
+};
+
+const validatePublicEventPayloadSize = (
+  payload: ConversationPublicEvent['payload'],
+): void => {
+  if (
+    Buffer.byteLength(JSON.stringify(payload), 'utf8') >
+    MAX_PUBLIC_EVENT_PAYLOAD_BYTES
+  ) {
+    throw new ConversationInvalidTransitionError(
+      'Customer-visible event payload is too large.',
+    );
+  }
+};
+
 const validateDate = (value: Date, name: string): void => {
-  if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {
+  let timestamp = Number.NaN;
+  try {
+    timestamp = Date.prototype.getTime.call(value);
+  } catch {
+    // Cross-realm and driver-created values must still carry the native Date
+    // internal slot. Strings and date-like objects are intentionally rejected.
+  }
+  if (!Number.isFinite(timestamp)) {
     throw new ConversationInputValidationError(`${name} is invalid.`);
   }
 };
 
-const validateSafeHttpUri = (value: string, name: string): void => {
-  if (value.length > 2_048) {
+const validateCancellationState = (turn: ConversationTurn): void => {
+  const values = [
+    turn.cancellationAuthority,
+    turn.cancellationReason,
+    turn.cancelledAt,
+  ];
+  if (turn.status === 'cancelled') {
+    if (values.some((value) => value === null)) {
+      throw new ConversationInputValidationError(
+        'Stored cancellation metadata is incomplete.',
+      );
+    }
+    validateDate(turn.cancelledAt!, 'Stored cancellation time');
+    return;
+  }
+  if (values.some((value) => value !== null)) {
+    throw new ConversationInputValidationError(
+      'Stored cancellation metadata is invalid.',
+    );
+  }
+};
+
+const validateSafeHttpUri = (
+  value: string,
+  name: string,
+  maxCharacters = 2_048,
+): void => {
+  if (Array.from(value).length > maxCharacters) {
     throw new ConversationInputValidationError(`${name} is invalid.`);
   }
   try {
@@ -937,7 +1346,10 @@ const validateUsage = (
 };
 
 const validateIdentifier = (value: string, name: string): void => {
-  if (value.trim().length === 0 || value.length > 160) {
+  if (
+    value.trim().length === 0 ||
+    Array.from(value).length > MAX_CITATION_IDENTIFIER_CHARACTERS
+  ) {
     throw new ConversationInputValidationError(`${name} is invalid.`);
   }
 };

@@ -7,7 +7,6 @@ import {
   ConversationRuntimeClock,
   ConversationRuntimeIdGenerator,
   ConversationRuntimeRepository,
-  DisabledConversationTurnDispatchPort,
   type AcceptedMessageReplay,
   type ConversationRuntimeCommit,
   type ConversationRuntimeCommitResult,
@@ -45,6 +44,26 @@ class InMemoryConversationRuntimeRepository extends ConversationRuntimeRepositor
 
   constructor(public state: ConversationRuntimeSnapshot) {
     super();
+  }
+
+  findDispatchCandidates() {
+    return Promise.resolve([]);
+  }
+
+  claimCancellationDispatches() {
+    return Promise.resolve([]);
+  }
+
+  completeCancellationDispatch() {
+    return Promise.resolve();
+  }
+
+  retryCancellationDispatch() {
+    return Promise.resolve();
+  }
+
+  recordTurnDispatchFailure() {
+    return Promise.resolve(true);
   }
 
   commit(
@@ -104,20 +123,33 @@ class InMemoryConversationRuntimeRepository extends ConversationRuntimeRepositor
     );
   }
 
+  getTurnExecutionContext(): Promise<null> {
+    return Promise.resolve(null);
+  }
+
   listPublicEvents(
     _sessionId: string,
     accessScope: ConversationAccessScope,
     afterSequence: number | null,
     limit: number,
-  ): Promise<readonly ConversationPublicEvent[]> {
+  ): ReturnType<ConversationRuntimeRepository['listPublicEvents']> {
     if (!sameConversationAccessScope(this.state.accessScope, accessScope)) {
-      return Promise.resolve([]);
+      return Promise.resolve({ outcome: 'not-found' });
     }
-    return Promise.resolve(
-      this.events
+    return Promise.resolve({
+      events: this.events
         .filter((event) => event.sequence > (afterSequence ?? 0))
         .slice(0, limit),
-    );
+      outcome: 'events' as const,
+    });
+  }
+
+  purgeCustomerSubject(): Promise<number> {
+    return Promise.resolve(0);
+  }
+
+  purgeExpiredSessions(): Promise<number> {
+    return Promise.resolve(0);
   }
 }
 
@@ -294,6 +326,29 @@ describe('ConversationRuntimeService', () => {
     expect(second.nextCursor).toBe('event-v1:2');
   });
 
+  it('returns a typed recovery requirement when durable replay expired', async () => {
+    const { repository, service } = createHarness();
+    jest.spyOn(repository, 'listPublicEvents').mockResolvedValueOnce({
+      earliestAvailableCursor: 'event-v1:51',
+      latestAvailableCursor: 'event-v1:100',
+      outcome: 'resync-required',
+      reason: 'cursor_expired',
+      retentionUntil: new Date('2026-07-24T09:00:00.000Z'),
+    });
+
+    await expect(
+      service.listPublicEvents({
+        accessScope: publicScope,
+        afterCursor: 'event-v1:1',
+        sessionId: 'conversation-1',
+      }),
+    ).rejects.toMatchObject({
+      earliestAvailableCursor: 'event-v1:51',
+      latestAvailableCursor: 'event-v1:100',
+      reason: 'cursor_expired',
+    });
+  });
+
   it('allocates the durable handoff ID inside the API application boundary', async () => {
     const { service } = createHarness();
     const accepted = await service.acceptMessage(message);
@@ -333,18 +388,98 @@ describe('ConversationRuntimeService', () => {
     });
   });
 
-  it('uses an explicit disabled dispatch port until the private AI protocol exists', async () => {
-    const dispatcher = new DisabledConversationTurnDispatchPort();
+  it('closes an open session and reports it through getRuntimeStatus', async () => {
+    const { service } = createHarness();
+
+    const closed = await service.closeSession({
+      accessScope: publicScope,
+      expectedVersion: 0,
+      sessionId: 'conversation-1',
+    });
+
+    expect(closed.conversationVersion).toBe(1);
+    await expect(
+      service.getRuntimeStatus({
+        accessScope: publicScope,
+        sessionId: 'conversation-1',
+      }),
+    ).resolves.toEqual({ conversationVersion: 1, status: 'closed' });
+  });
+
+  it('does not close another accessor’s conversation', async () => {
+    const { service } = createHarness();
 
     await expect(
-      dispatcher.dispatch({
-        budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
-        cancellationId: 'cancellation-1',
-        content: 'Tư vấn VF 8',
-        fencingToken: 1,
+      service.closeSession({
+        accessScope: wrongPublicScope,
+        expectedVersion: 0,
         sessionId: 'conversation-1',
-        turnId: 'turn-1',
       }),
-    ).resolves.toEqual({ status: 'disabled' });
+    ).rejects.toThrow(ConversationRuntimeNotFoundError);
+  });
+
+  it('rejects closing with a stale expected version', async () => {
+    const { service } = createHarness();
+    await service.acceptMessage(message);
+
+    await expect(
+      service.closeSession({
+        accessScope: publicScope,
+        expectedVersion: 0,
+        sessionId: 'conversation-1',
+      }),
+    ).rejects.toThrow(ConversationVersionConflictError);
+  });
+
+  it('allocates the handoff ID inside the API boundary for an explicit customer request', async () => {
+    const { service } = createHarness();
+
+    const requested = await service.requestHandoff({
+      accessScope: publicScope,
+      expectedVersion: 0,
+      sessionId: 'conversation-1',
+    });
+
+    expect(requested.handoffId).toBe('handoff-1');
+    await expect(
+      service.getRuntimeStatus({
+        accessScope: publicScope,
+        sessionId: 'conversation-1',
+      }),
+    ).resolves.toEqual({ conversationVersion: 1, status: 'handoff' });
+    const page = await service.listPublicEvents({
+      accessScope: publicScope,
+      afterCursor: null,
+      sessionId: 'conversation-1',
+    });
+    expect(page.events[0]).toMatchObject({
+      payload: { handoffId: 'handoff-1', reason: 'customer_requested' },
+      type: 'handoff.requested',
+    });
+  });
+
+  it('does not request handoff for another accessor’s conversation', async () => {
+    const { service } = createHarness();
+
+    await expect(
+      service.requestHandoff({
+        accessScope: wrongPublicScope,
+        expectedVersion: 0,
+        sessionId: 'conversation-1',
+      }),
+    ).rejects.toThrow(ConversationRuntimeNotFoundError);
+  });
+
+  it('rejects requesting handoff with a stale expected version', async () => {
+    const { service } = createHarness();
+    await service.acceptMessage(message);
+
+    await expect(
+      service.requestHandoff({
+        accessScope: publicScope,
+        expectedVersion: 0,
+        sessionId: 'conversation-1',
+      }),
+    ).rejects.toThrow(ConversationVersionConflictError);
   });
 });

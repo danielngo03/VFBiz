@@ -8,18 +8,76 @@ servers:
   - url: https://ai.internal.staging.vfbiz.example
 security: [{serviceIdentity: []}]
 paths:
-  /internal/v1/answers:
+  /internal/v1/conversation/turns:
     post:
-      summary: Produce a governed answer, refusal or read-only tool proposal
-      operationId: createGovernedAnswer
+      summary: Execute a governed conversation turn
+      operationId: executeConversationTurn
+      description: |
+        Executes AI reasoning only. The API Platform remains the authority for
+        authorization, durable state, tool execution, handoff and final commit.
+        X-VFBiz-AI-Assertion is a compact signed JWS whose decoded claims match
+        the AI Execution Assertion schema. Its action must be turn.execute and
+        requestHash must bind the HTTP method, path and canonical body. Request
+        identity, version and fencing fields must match the claims or the
+        request is denied. knowledgeRevision must resolve to one atomically
+        active snapshot; candidate revisions are valid only in separately
+        authorized evaluation/simulator contracts, not this production-turn
+        operation. A tool proposal is valid only when its tool is a member of
+        authorization.allowedTools in the verified assertion; the AI runtime
+        must fail closed with POLICY_DENIED instead of returning any proposal
+        outside that signed set.
+      parameters:
+        - $ref: '#/components/parameters/AIExecutionAssertion'
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/AnswerRequest'}
+            schema: {$ref: '#/components/schemas/ConversationTurnRequest'}
       responses:
-        '200': {description: Governed result, content: {application/json: {schema: {$ref: '#/components/schemas/AnswerResult'}}}}
-        '403': {description: Policy denied}
+        '200':
+          description: Customer-safe result, recommendation or read-only tool proposal
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConversationTurnResult'}
+        '400': {$ref: '#/components/responses/InternalProblem'}
+        '401': {$ref: '#/components/responses/InternalProblem'}
+        '403': {$ref: '#/components/responses/InternalProblem'}
+        '409': {$ref: '#/components/responses/InternalProblem'}
+        '413': {$ref: '#/components/responses/InternalProblem'}
+        '422': {$ref: '#/components/responses/InternalProblem'}
+        '429': {$ref: '#/components/responses/InternalProblem'}
+        '500': {$ref: '#/components/responses/InternalProblem'}
+        '503': {$ref: '#/components/responses/InternalProblem'}
+  /internal/v1/conversation/turns/{turnId}/cancel:
+    post:
+      summary: Cancel AI turn execution
+      operationId: cancelAIConversationTurn
+      description: |
+        Propagates a cancellation from the API Platform. The AI runtime must
+        durably accept cancellation before returning 202, stop provider work
+        when supported and never commit a result after the accepted fence. The
+        assertion action must be turn.cancel and requestHash must bind the
+        method, path and canonical body; turnId is bound through the path and
+        signed claim.
+      parameters:
+        - {name: turnId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/AIExecutionAssertion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AIConversationTurnCancellation'}
+      responses:
+        '202': {description: Cancellation was accepted by the execution cancellation boundary}
+        '400': {$ref: '#/components/responses/InternalProblem'}
+        '401': {$ref: '#/components/responses/InternalProblem'}
+        '403': {$ref: '#/components/responses/InternalProblem'}
+        '404': {$ref: '#/components/responses/InternalProblem'}
+        '409': {$ref: '#/components/responses/InternalProblem'}
+        '413': {$ref: '#/components/responses/InternalProblem'}
+        '422': {$ref: '#/components/responses/InternalProblem'}
+        '500': {$ref: '#/components/responses/InternalProblem'}
+        '503': {$ref: '#/components/responses/InternalProblem'}
   /internal/v1/evaluations/releases/{release_id}:
     get:
       summary: Read immutable evaluation evidence for a release candidate
@@ -29,37 +87,160 @@ paths:
 components:
   securitySchemes:
     serviceIdentity: {type: mutualTLS}
+  parameters:
+    AIExecutionAssertion:
+      name: X-VFBiz-AI-Assertion
+      in: header
+      required: true
+      description: |
+        Compact JWS signed by the API Platform with an approved asymmetric key.
+        Only EdDSA or ES256 is accepted; typ must be vfbiz-ai+jwt and kid must
+        resolve through the approved JWKS allowlist. TTL is at most 60 seconds,
+        clock skew is at most 5 seconds and jti is consumed atomically once
+        across all AI replicas. Verification fails closed when the replay
+        store or approved JWKS is unavailable. action and requestHash bind the
+        assertion to one HTTP operation. Decoded claims conform to
+        contracts/ai/ai-execution-assertion.schema.json.
+      schema:
+        type: string
+        minLength: 64
+        maxLength: 8192
+        pattern: '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
+  responses:
+    InternalProblem:
+      description: Typed internal protocol failure
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/InternalProblemDetails'}
   schemas:
-    AnswerRequest:
+    AIExecutionAssertionClaims:
+      $ref: '../ai/ai-execution-assertion.schema.json'
+    ConversationTurnRequest:
       type: object
-      required: [requestId, profile, locale, message, allowedTools, policyRevision]
+      required:
+        [requestId, correlationId, sessionId, turnId, conversationVersion, fencingToken, locale, message]
       properties:
         requestId: {type: string, format: uuid}
-        profile: {enum: [public_customer, authenticated_customer]}
-        subjectRef: {type: [string, 'null']}
+        correlationId: {type: string, format: uuid}
+        sessionId: {type: string, format: uuid}
+        turnId: {type: string, format: uuid}
+        conversationVersion: {type: integer, minimum: 1, maximum: 9007199254740991}
+        fencingToken: {type: integer, minimum: 1, maximum: 9007199254740991}
         locale: {enum: [vi, en]}
-        message: {type: string, minLength: 1, maxLength: 4000}
-        allowedTools: {type: array, uniqueItems: true, items: {type: string}}
-        policyRevision: {type: string}
+        message: {type: string, minLength: 1, maxLength: 12000}
+        confirmedEntities:
+          type: array
+          maxItems: 16
+          description: |
+            Allowlisted, validated references only. Raw VIN, exact location,
+            free-form customer attributes and unverified model output are
+            forbidden.
+          items: {$ref: '#/components/schemas/ConfirmedEntityReference'}
       additionalProperties: false
-    AnswerResult:
+    ConfirmedEntityReference:
       type: object
-      required: [outcome, content, citations, releaseRevision, auditRef]
+      required: [kind, reference, sourceRevision, classification]
       properties:
-        outcome: {enum: [answered, refused, handoff, tool_proposal]}
-        content: {type: string}
-        citations: {type: array, items: {$ref: '#/components/schemas/Citation'}}
-        toolProposal: {type: [object, 'null']}
-        releaseRevision: {type: string}
-        auditRef: {type: string}
+        kind: {enum: [vehicle_model, vehicle_variant, market, language]}
+        reference: {type: string, minLength: 1, maxLength: 160}
+        sourceRevision: {type: string, minLength: 1, maxLength: 160}
+        classification: {const: non_sensitive}
       additionalProperties: false
-    Citation:
+    ConversationTurnResult:
+      oneOf:
+        - {$ref: '#/components/schemas/AIAnswerResult'}
+        - {$ref: '#/components/schemas/AIConversationalResult'}
+        - {$ref: '#/components/schemas/AIRefusalResult'}
+        - {$ref: '#/components/schemas/HandoffRecommendation'}
+        - {$ref: '#/components/schemas/ReadOnlyToolProposal'}
+      discriminator: {propertyName: outcome}
+    AIAnswerResult:
       type: object
-      required: [sourceId, title, uri, revision, retrievedAt]
+      required: [outcome, message, citations, usage, releaseRevision]
       properties:
-        sourceId: {type: string}
-        title: {type: string}
-        uri: {type: string, format: uri}
-        revision: {type: string}
-        retrievedAt: {type: string, format: date-time}
+        outcome: {const: answered}
+        message: {type: string, minLength: 1, maxLength: 12000}
+        citations:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '../ai/conversation-public-event.schema.json#/$defs/Citation'
+        usage: {$ref: '#/components/schemas/AIUsage'}
+        releaseRevision: {type: string, minLength: 1, maxLength: 160}
+      additionalProperties: false
+    AIConversationalResult:
+      type: object
+      required: [outcome, message, citations, usage, releaseRevision]
+      properties:
+        outcome: {const: conversational}
+        message: {type: string, minLength: 1, maxLength: 12000}
+        citations: {type: array, maxItems: 0}
+        usage: {$ref: '#/components/schemas/AIUsage'}
+        releaseRevision: {type: string, minLength: 1, maxLength: 160}
+      additionalProperties: false
+    AIRefusalResult:
+      type: object
+      required: [outcome, message, citations, usage, releaseRevision]
+      properties:
+        outcome: {const: refused}
+        message: {type: string, minLength: 1, maxLength: 12000}
+        citations: {type: array, maxItems: 0}
+        usage: {$ref: '#/components/schemas/AIUsage'}
+        releaseRevision: {type: string, minLength: 1, maxLength: 160}
+      additionalProperties: false
+    HandoffRecommendation:
+      type: object
+      required: [outcome, reason, customerMessage, usage, releaseRevision]
+      properties:
+        outcome: {const: handoff_recommended}
+        reason:
+          {enum: [insufficient_evidence, policy_required, safety_risk, tool_unavailable]}
+        customerMessage: {type: string, minLength: 1, maxLength: 12000}
+        usage: {$ref: '#/components/schemas/AIUsage'}
+        releaseRevision: {type: string, minLength: 1, maxLength: 160}
+      additionalProperties: false
+    ReadOnlyToolProposal:
+      type: object
+      required:
+        [outcome, tool, schemaVersion, arguments, argumentsHash, usage, releaseRevision]
+      properties:
+        outcome: {const: tool_proposal}
+        tool:
+          {enum: [search_public_knowledge, get_vehicle_profile, get_customer_garage, list_charging_stations]}
+        schemaVersion: {type: string, minLength: 1, maxLength: 80}
+        arguments: {type: object, maxProperties: 32}
+        argumentsHash: {type: string, pattern: '^[a-f0-9]{64}$'}
+        usage: {$ref: '#/components/schemas/AIUsage'}
+        releaseRevision: {type: string, minLength: 1, maxLength: 160}
+      additionalProperties: false
+    AIUsage:
+      type: object
+      required: [modelTokens, costMicros]
+      properties:
+        modelTokens: {type: integer, minimum: 0, maximum: 32000}
+        costMicros: {type: integer, minimum: 0, maximum: 10000000}
+      additionalProperties: false
+    AIConversationTurnCancellation:
+      type: object
+      required: [requestId, conversationVersion, fencingToken, reason]
+      properties:
+        requestId: {type: string, format: uuid}
+        conversationVersion: {type: integer, minimum: 1, maximum: 9007199254740991}
+        fencingToken: {type: integer, minimum: 1, maximum: 9007199254740991}
+        reason: {enum: [budget_exhausted, system_shutdown, timeout, user_interrupt]}
+      additionalProperties: false
+    InternalProblemDetails:
+      type: object
+      required: [type, title, status, code, retryable, correlationId]
+      properties:
+        type: {type: string, format: uri-reference}
+        title: {type: string, minLength: 1, maxLength: 160}
+        status: {type: integer, minimum: 400, maximum: 599}
+        code:
+          {enum: [ASSERTION_INVALID, ASSERTION_EXPIRED, ASSERTION_REPLAYED, ASSERTION_MISMATCH, REQUEST_TOO_LARGE, VALIDATION_FAILED, VERSION_CONFLICT, STALE_FENCING_TOKEN, POLICY_DENIED, BUDGET_EXHAUSTED, PROVIDER_UNAVAILABLE, INTERNAL_FAILURE, INTERNAL_ERROR]}
+        retryable: {type: boolean}
+        correlationId: {type: string, format: uuid}
+        detail: {type: string, minLength: 1, maxLength: 1000}
+        instance: {type: string, format: uri-reference}
       additionalProperties: false

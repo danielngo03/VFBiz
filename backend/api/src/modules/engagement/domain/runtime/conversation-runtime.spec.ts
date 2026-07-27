@@ -274,12 +274,14 @@ describe('ConversationRuntimeAggregate', () => {
 
     expect(() =>
       aggregate.cancelTurn({
+        authority: 'worker',
         eventId: 'event-3',
         expectedVersion: 2,
         fencingToken: 10,
         now: new Date('2026-07-23T09:02:00.000Z'),
         reason: 'timeout',
         turnId: 'turn-1',
+        usage: { costMicros: 0, modelTokens: 0 },
       }),
     ).toThrow(ConversationStaleFencingTokenError);
   });
@@ -475,17 +477,18 @@ describe('ConversationRuntimeAggregate', () => {
     });
 
     const cancelled = aggregate.cancelTurn({
+      authority: 'worker',
       eventId: 'event-3',
       expectedVersion: 2,
       fencingToken: 7,
       now,
-      reason: 'user_interrupt',
+      reason: 'timeout',
       turnId: 'turn-1',
       usage: { costMicros: 20_000, modelTokens: 100 },
     });
 
     expect(cancelled.events[0]).toMatchObject({
-      payload: { reason: 'user_interrupt', turnId: 'turn-1' },
+      payload: { reason: 'timeout', turnId: 'turn-1' },
       type: 'turn.cancelled',
     });
     expect(cancelled.state).toMatchObject({
@@ -496,12 +499,81 @@ describe('ConversationRuntimeAggregate', () => {
     });
     expect(() =>
       aggregate.cancelTurn({
+        authority: 'worker',
         eventId: 'event-4',
         expectedVersion: 3,
         fencingToken: 7,
         now,
         reason: 'timeout',
         turnId: 'turn-1',
+        usage: { costMicros: 0, modelTokens: 0 },
+      }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('persists a bounded release receipt and rejects it after expiry', () => {
+    const aggregate = restore();
+    accept(aggregate);
+    aggregate.claimTurn({
+      eventId: 'event-2',
+      expectedVersion: 1,
+      fencingToken: 7,
+      leaseExpiresAt: new Date('2026-07-23T09:05:00.000Z'),
+      now,
+      turnId: 'turn-1',
+      workerId: 'worker-1',
+    });
+    const receipt = {
+      activationEnvelopeSha256: 'b'.repeat(64),
+      activationId: '00000000-0000-4000-8000-000000000010',
+      candidateSha256: 'a'.repeat(64),
+      conversationVersion: 2,
+      expiresAt: new Date('2026-07-23T09:00:15.000Z'),
+      fencingToken: 7,
+      issuedAt: now,
+      leaseId: '00000000-0000-4000-8000-000000000001',
+      pointerRevision: 3,
+      requestId: 'request-1',
+      sessionId: 'conversation-1',
+      turnId: 'turn-1',
+    };
+
+    const completed = aggregate.completeTurn({
+      assistantReleaseReceipt: receipt,
+      assistantReleaseRevision: '00000000-0000-4000-8000-000000000010',
+      eventId: 'event-3',
+      expectedVersion: 2,
+      fencingToken: 7,
+      now,
+      outcome: { kind: 'refusal', message: 'Không đủ bằng chứng.' },
+      turnId: 'turn-1',
+      usage: { costMicros: 100, modelTokens: 10 },
+    });
+
+    expect(completed.state.turns[0]?.assistantReleaseReceipt).toEqual(receipt);
+
+    const stale = restore();
+    accept(stale);
+    stale.claimTurn({
+      eventId: 'event-2',
+      expectedVersion: 1,
+      fencingToken: 7,
+      leaseExpiresAt: new Date('2026-07-23T09:05:00.000Z'),
+      now,
+      turnId: 'turn-1',
+      workerId: 'worker-1',
+    });
+    expect(() =>
+      stale.completeTurn({
+        assistantReleaseReceipt: receipt,
+        assistantReleaseRevision: '00000000-0000-4000-8000-000000000010',
+        eventId: 'event-3',
+        expectedVersion: 2,
+        fencingToken: 7,
+        now: new Date('2026-07-23T09:00:16.000Z'),
+        outcome: { kind: 'refusal', message: 'Không đủ bằng chứng.' },
+        turnId: 'turn-1',
+        usage: { costMicros: 100, modelTokens: 10 },
       }),
     ).toThrow(ConversationInvalidTransitionError);
   });
@@ -551,5 +623,161 @@ describe('ConversationRuntimeAggregate', () => {
         turnId: 'turn-2',
       }),
     ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('closes an open session, publishes a durable event and blocks further messages', () => {
+    const aggregate = restore();
+
+    const closed = aggregate.closeSession({
+      eventId: 'event-1',
+      expectedVersion: 0,
+      now,
+    });
+
+    expect(closed.state.status).toBe('closed');
+    expect(closed.result.conversationVersion).toBe(1);
+    expect(closed.events[0]).toMatchObject({
+      payload: {},
+      type: 'session.closed',
+    });
+    expect(decodePublicEventCursor(closed.result.eventCursor)).toBe(1);
+    expect(() =>
+      accept(aggregate, { eventId: 'event-2', expectedVersion: 1 }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('closes a session already in handoff status', () => {
+    const aggregate = restore();
+    accept(aggregate);
+    aggregate.claimTurn({
+      eventId: 'event-2',
+      expectedVersion: 1,
+      fencingToken: 4,
+      leaseExpiresAt: new Date('2026-07-23T09:05:00.000Z'),
+      now,
+      turnId: 'turn-1',
+      workerId: 'worker-1',
+    });
+    aggregate.completeTurn({
+      eventId: 'event-3',
+      expectedVersion: 2,
+      fencingToken: 4,
+      now,
+      outcome: {
+        customerMessage: 'Em đang chuyển anh/chị tới nhân viên hỗ trợ.',
+        handoffId: 'handoff-1',
+        kind: 'handoff',
+        reason: 'customer_requested',
+      },
+      turnId: 'turn-1',
+      usage: { costMicros: 5_000, modelTokens: 50 },
+    });
+
+    const closed = aggregate.closeSession({
+      eventId: 'event-4',
+      expectedVersion: 3,
+      now,
+    });
+
+    expect(closed.state.status).toBe('closed');
+  });
+
+  it('rejects closing an already-closed session', () => {
+    const aggregate = restore();
+    aggregate.closeSession({ eventId: 'event-1', expectedVersion: 0, now });
+
+    expect(() =>
+      aggregate.closeSession({ eventId: 'event-2', expectedVersion: 1, now }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('rejects closing with a stale expected version before changing state', () => {
+    const aggregate = restore();
+    accept(aggregate);
+
+    expect(() =>
+      aggregate.closeSession({ eventId: 'event-2', expectedVersion: 0, now }),
+    ).toThrow(ConversationVersionConflictError);
+    expect(aggregate.snapshot().status).toBe('open');
+  });
+
+  it('requests a customer-initiated handoff with no owning turn', () => {
+    const aggregate = restore();
+
+    const handoff = aggregate.requestHandoff({
+      customerMessage: 'Tôi muốn nói chuyện với nhân viên hỗ trợ.',
+      eventId: 'event-1',
+      expectedVersion: 0,
+      handoffId: 'handoff-1',
+      now,
+    });
+
+    expect(handoff.state.status).toBe('handoff');
+    expect(handoff.result.handoffId).toBe('handoff-1');
+    expect(handoff.events[0]).toMatchObject({
+      payload: {
+        customerMessage: 'Tôi muốn nói chuyện với nhân viên hỗ trợ.',
+        handoffId: 'handoff-1',
+        reason: 'customer_requested',
+        status: 'queued',
+      },
+      type: 'handoff.requested',
+    });
+    expect(handoff.events[0].payload).not.toHaveProperty('turnId');
+    expect(() =>
+      accept(aggregate, { eventId: 'event-2', expectedVersion: 1 }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('rejects a second handoff request once already in handoff status', () => {
+    const aggregate = restore();
+    aggregate.requestHandoff({
+      customerMessage: 'Cần hỗ trợ gấp.',
+      eventId: 'event-1',
+      expectedVersion: 0,
+      handoffId: 'handoff-1',
+      now,
+    });
+
+    expect(() =>
+      aggregate.requestHandoff({
+        customerMessage: 'Cần hỗ trợ gấp lần nữa.',
+        eventId: 'event-2',
+        expectedVersion: 1,
+        handoffId: 'handoff-2',
+        now,
+      }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('rejects requesting handoff on an already-closed session', () => {
+    const aggregate = restore();
+    aggregate.closeSession({ eventId: 'event-1', expectedVersion: 0, now });
+
+    expect(() =>
+      aggregate.requestHandoff({
+        customerMessage: 'Cần hỗ trợ.',
+        eventId: 'event-2',
+        expectedVersion: 1,
+        handoffId: 'handoff-1',
+        now,
+      }),
+    ).toThrow(ConversationInvalidTransitionError);
+  });
+
+  it('rejects requesting handoff with a stale expected version before changing state', () => {
+    const aggregate = restore();
+    accept(aggregate);
+
+    expect(() =>
+      aggregate.requestHandoff({
+        customerMessage: 'Cần hỗ trợ.',
+        eventId: 'event-2',
+        expectedVersion: 0,
+        handoffId: 'handoff-1',
+        now,
+      }),
+    ).toThrow(ConversationVersionConflictError);
+    expect(aggregate.snapshot().status).toBe('open');
   });
 });

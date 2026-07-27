@@ -2,6 +2,7 @@ import { Module, RequestMethod } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { AccessModule } from './modules/access';
 import { CustomerModule } from './modules/customer';
+import { EngagementRuntimeModule } from './modules/engagement/engagement-runtime.module';
 import { ProductModule } from './modules/product';
 import { PlatformConfigModule } from './platform/config/config.module';
 import { PlatformHealthModule } from './platform/health/health.module';
@@ -33,6 +34,7 @@ import { PlatformSecurityModule } from './platform/security/security.module';
     PlatformHealthModule,
     AccessModule,
     CustomerModule,
+    EngagementRuntimeModule,
     ProductModule,
   ],
 })

@@ -31,8 +31,10 @@ export interface CreateConversationSessionRecordInput {
   readonly customerSubject: ConversationCustomerSubject | null;
   readonly expiresAt: Date;
   readonly id: string;
+  readonly initialCostBudgetMicros: number;
+  readonly initialModelTokenBudget: number;
   readonly locale: 'vi' | 'en';
-  readonly policyRevision: string;
+  readonly release: import('./active-assistant-release-projection').AssistantReleaseBinding;
   readonly profile: 'public_customer' | 'authenticated_customer';
   readonly retentionUntil: Date;
 }
@@ -44,6 +46,15 @@ export interface CreatedConversationSessionRecord {
   readonly profile: 'public_customer' | 'authenticated_customer';
 }
 
+export interface ConversationSessionSummary {
+  readonly createdAt: Date;
+  readonly expiresAt: Date;
+  readonly id: string;
+  readonly locale: 'vi' | 'en';
+  readonly profile: 'public_customer' | 'authenticated_customer';
+  readonly retentionUntil: Date;
+}
+
 export abstract class ConversationSessionRepository {
   abstract createSession(
     input: CreateConversationSessionRecordInput,
@@ -53,7 +64,13 @@ export abstract class ConversationSessionRepository {
     sessionId: string,
   ): Promise<ConversationAccessRecord | null>;
 
+  abstract findSessionSummary(
+    sessionId: string,
+  ): Promise<ConversationSessionSummary | null>;
+
   abstract listMessages(
     sessionId: string,
+    accessScope: ConversationAccessScope,
   ): Promise<readonly ConversationMessageView[]>;
 }
+import type { ConversationAccessScope } from '../../domain/runtime/conversation-runtime';

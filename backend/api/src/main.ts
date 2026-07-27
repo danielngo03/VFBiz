@@ -7,13 +7,22 @@ import {
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { configureApplication } from './bootstrap/configure-application';
+import {
+  createFastifyTrustProxy,
+  loadApiBootstrapEnvironment,
+} from './platform/config/trusted-proxy.config';
 import { configureOpenApi } from './platform/openapi/openapi';
 import { configureWorkforceOpenApi } from './platform/openapi/workforce-openapi';
 
 async function bootstrap() {
+  loadApiBootstrapEnvironment();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      trustProxy: createFastifyTrustProxy(
+        process.env.VFBIZ_API_TRUSTED_PROXY_CIDRS,
+      ),
+    }),
     { bufferLogs: true },
   );
   const config = app.get(ConfigService);

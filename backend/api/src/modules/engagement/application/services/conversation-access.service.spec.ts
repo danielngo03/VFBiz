@@ -19,6 +19,10 @@ class StubConversationSessionRepository implements ConversationSessionRepository
     return Promise.reject(new Error('Not used in this test.'));
   }
 
+  findSessionSummary(): Promise<never> {
+    return Promise.reject(new Error('Not used in this test.'));
+  }
+
   listMessages(): Promise<readonly never[]> {
     return Promise.resolve([]);
   }
@@ -47,7 +51,14 @@ describe('ConversationAccessService', () => {
         principal: null,
         sessionId: '8e5aeae2-2f47-48e4-91a2-e9e41f7349fb',
       }),
-    ).resolves.toEqual({ accessMode: 'anonymous-capability' });
+    ).resolves.toEqual({
+      accessMode: 'anonymous-capability',
+      accessScope: {
+        capabilityHash: hash('correct-capability'),
+        kind: 'public_capability',
+        profile: 'public_customer',
+      },
+    });
   });
 
   it.each([null, 'wrong-capability'])(
@@ -123,7 +134,15 @@ describe('ConversationAccessService', () => {
         },
         sessionId: '8e5aeae2-2f47-48e4-91a2-e9e41f7349fb',
       }),
-    ).resolves.toEqual({ accessMode: 'authenticated-subject' });
+    ).resolves.toEqual({
+      accessMode: 'authenticated-subject',
+      accessScope: {
+        issuer: 'https://ciam.example/realms/customer',
+        kind: 'authenticated_customer',
+        profile: 'authenticated_customer',
+        subject: 'customer-123',
+      },
+    });
 
     await expect(
       service.authorize({

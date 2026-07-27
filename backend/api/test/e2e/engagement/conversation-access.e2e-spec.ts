@@ -8,12 +8,14 @@ import { EngagementModule } from '../../../src/modules/engagement';
 import {
   ConversationSessionRepository,
   type ConversationAccessRecord,
+  type ConversationSessionSummary,
   type CreateConversationSessionRecordInput,
   type CreatedConversationSessionRecord,
 } from '../../../src/modules/engagement/application/ports/conversation-session.repository';
 import { configureApplication } from '../../../src/bootstrap/configure-application';
 import { PrismaService } from '../../../src/platform/database/prisma.service';
 import { PlatformConfigModule } from '../../../src/platform/config/config.module';
+import { ActiveAssistantReleaseProjection } from '../../../src/modules/engagement/application/ports/active-assistant-release-projection';
 
 const SESSION_ID = '8e5aeae2-2f47-48e4-91a2-e9e41f7349fb';
 const CAPABILITY = 'anonymous-chat-capability';
@@ -43,6 +45,20 @@ class StubConversationSessionRepository implements ConversationSessionRepository
     });
   }
 
+  findSessionSummary(
+    sessionId: string,
+  ): Promise<ConversationSessionSummary | null> {
+    if (sessionId !== SESSION_ID) return Promise.resolve(null);
+    return Promise.resolve({
+      createdAt: new Date('2026-07-22T12:00:00.000Z'),
+      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+      id: SESSION_ID,
+      locale: 'vi',
+      profile: 'public_customer',
+      retentionUntil: new Date('2099-01-02T00:00:00.000Z'),
+    });
+  }
+
   listMessages(): Promise<readonly never[]> {
     return Promise.resolve([]);
   }
@@ -57,6 +73,21 @@ describe('conversation object authorization (e2e)', () => {
     })
       .overrideProvider(ConversationSessionRepository)
       .useValue(new StubConversationSessionRepository())
+      .overrideProvider(ActiveAssistantReleaseProjection)
+      .useValue({
+        resolve: () =>
+          Promise.resolve({
+            activationEnvelopeSha256: 'b'.repeat(64),
+            activationId: 'test-release-v1',
+            effectiveAt: new Date('2026-07-01T00:00:00.000Z'),
+            expiresAt: new Date('2099-07-01T00:00:00.000Z'),
+            graphRevision: 'test-graph-v1',
+            knowledgeRevision: 'test-knowledge-v1',
+            manifestSha256: 'a'.repeat(64),
+            pointerRevision: 1,
+            policyRevision: 'test-policy-v1',
+          }),
+      })
       .overrideProvider(PrismaService)
       .useValue({})
       .compile();
@@ -138,9 +169,14 @@ describe('conversation object authorization (e2e)', () => {
   });
 
   it('authorizes message submission before exposing the unavailable AI runtime', async () => {
+    const payload = {
+      clientMessageId: '8fd63c50-59a6-493f-995a-dfa953bedf3d',
+      content: 'VF 8 có phạm vi hoạt động bao nhiêu?',
+      expectedVersion: 0,
+    };
     const denied = await app.inject({
       method: 'POST',
-      payload: { content: 'VF 8 có phạm vi hoạt động bao nhiêu?' },
+      payload,
       url: `/api/v1/chat/sessions/${SESSION_ID}/messages`,
     });
     expect(denied.statusCode).toBe(403);
@@ -150,13 +186,55 @@ describe('conversation object authorization (e2e)', () => {
         cookie: `__Host-vfbiz_chat=${SESSION_ID}.${CAPABILITY}`,
       },
       method: 'POST',
-      payload: { content: 'VF 8 có phạm vi hoạt động bao nhiêu?' },
+      payload,
       url: `/api/v1/chat/sessions/${SESSION_ID}/messages`,
     });
     expect(authorized.statusCode).toBe(503);
     expect(authorized.json()).toMatchObject({
       code: 'CHAT_RUNTIME_UNAVAILABLE',
     });
+  });
+
+  it('denies reading session metadata without the session-bound capability', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/chat/sessions/${SESSION_ID}`,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: 'CHAT_SESSION_FORBIDDEN' });
+  });
+
+  it('denies closing a session without the session-bound capability', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      payload: { expectedVersion: 0 },
+      url: `/api/v1/chat/sessions/${SESSION_ID}/close`,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: 'CHAT_SESSION_FORBIDDEN' });
+  });
+
+  it('denies streaming session events without the session-bound capability', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/chat/sessions/${SESSION_ID}/events`,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: 'CHAT_SESSION_FORBIDDEN' });
+  });
+
+  it('denies requesting handoff without the session-bound capability', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      payload: { expectedVersion: 0 },
+      url: `/api/v1/chat/sessions/${SESSION_ID}/handoff`,
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: 'CHAT_SESSION_FORBIDDEN' });
   });
 
   afterAll(async () => app.close());

@@ -1,0 +1,391 @@
+openapi: 3.1.0
+info:
+  title: VFBiz Customer Conversation API Candidate
+  version: 1.0.0-candidate
+  description: |
+    Contract-first candidate for durable Customer AI Assistant sessions.
+    These operations are not active and must not be included in the released
+    customer SDK until runtime parity, security review and cutover evidence pass.
+  license:
+    name: Proprietary - VFBiz internal staging contract
+    identifier: LicenseRef-VFBiz-Proprietary
+servers:
+  - url: https://staging-api.vfbiz.example
+security:
+  - customerAccessToken: []
+tags:
+  - name: Conversation
+    description: Durable customer assistant sessions, turns, messages and events
+paths:
+  /api/v1/chat/sessions:
+    post:
+      tags: [Conversation]
+      summary: Create chat session
+      operationId: createConversationSession
+      x-vfbiz-availability: candidate
+      description: |
+        Creates a durable assistant session. The server derives the assistant
+        profile from verified authentication. Anonymous callers receive a
+        session-bound HttpOnly capability cookie.
+      security:
+        - customerAccessToken: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateConversationSession" }
+      responses:
+        "201":
+          description: Durable session created
+          headers:
+            Set-Cookie:
+              description: Optional opaque public conversation capability
+              schema: { type: string }
+            ETag: { $ref: "#/components/headers/ETag" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationSession" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}:
+    parameters:
+      - { $ref: "#/components/parameters/ConversationSessionId" }
+    get:
+      tags: [Conversation]
+      summary: Get chat session
+      operationId: getConversationSession
+      x-vfbiz-availability: candidate
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      responses:
+        "200":
+          description: Current durable session snapshot
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationSession" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}/close:
+    post:
+      tags: [Conversation]
+      summary: Close chat session
+      operationId: closeConversationSession
+      x-vfbiz-availability: candidate
+      description: Closes the session without deleting its governed retention record.
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      parameters:
+        - { $ref: "#/components/parameters/ConversationSessionId" }
+        - { $ref: "#/components/parameters/ConversationIfMatch" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      responses:
+        "200":
+          description: Closed session snapshot
+          headers: { ETag: { $ref: "#/components/headers/ETag" } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationSession" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}/messages:
+    parameters:
+      - { $ref: "#/components/parameters/ConversationSessionId" }
+    post:
+      tags: [Conversation]
+      summary: Send message
+      operationId: enqueueConversationMessage
+      x-vfbiz-availability: candidate
+      description: |
+        Durably enqueues one customer message. clientMessageId is the canonical
+        idempotency key; reuse with different content is rejected.
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../ai/conversation-turn-protocol.schema.json#/$defs/EnqueueMessageCommand"
+      responses:
+        "202":
+          description: Message accepted into the durable session inbox
+          headers:
+            Location:
+              description: Durable turn resource
+              schema: { type: string, format: uri-reference }
+          content:
+            application/json:
+              schema:
+                $ref: "../ai/conversation-turn-protocol.schema.json#/$defs/MessageAcceptedResult"
+        default: { $ref: "#/components/responses/Problem" }
+    get:
+      tags: [Conversation]
+      summary: List messages
+      operationId: listConversationMessages
+      x-vfbiz-availability: candidate
+      description: Returns persisted customer-visible messages for recovery and resync.
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      parameters:
+        - { $ref: "#/components/parameters/PageCursor" }
+        - { $ref: "#/components/parameters/PageLimit" }
+      responses:
+        "200":
+          description: Persisted customer-visible messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationMessagePage" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}/events:
+    get:
+      tags: [Conversation]
+      summary: Stream chat events
+      operationId: streamConversationEvents
+      x-vfbiz-availability: candidate
+      description: |
+        Replays durable events after Last-Event-ID and may interleave typed
+        connection-local progress frames. Transient frames never advance the
+        durable cursor. Heartbeats are SSE comments every 15 seconds.
+        An expired cursor returns 409 before the stream opens.
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      parameters:
+        - { $ref: "#/components/parameters/ConversationSessionId" }
+        - { $ref: "#/components/parameters/LastEventId" }
+      responses:
+        "200":
+          description: Customer-safe durable and transient SSE frames
+          headers:
+            Cache-Control:
+              schema: { type: string, const: "private, no-store" }
+            X-Accel-Buffering:
+              schema: { type: string, const: "no" }
+          content:
+            text/event-stream:
+              schema: { type: string }
+              x-event-schema:
+                $ref: "../ai/conversation-public-event.schema.json#/$defs/SseFrame"
+        "409":
+          description: Cursor is outside the retained replay window
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetails" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}/turns/{turnId}/cancel:
+    post:
+      tags: [Conversation]
+      summary: Cancel turn
+      operationId: cancelConversationTurn
+      x-vfbiz-availability: candidate
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      parameters:
+        - { $ref: "#/components/parameters/ConversationSessionId" }
+        - { $ref: "#/components/parameters/ConversationTurnId" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../ai/conversation-turn-protocol.schema.json#/$defs/CancelTurnCommand"
+      responses:
+        "202":
+          description: Cancellation intent durably accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationCommandReceipt" }
+        default: { $ref: "#/components/responses/Problem" }
+  /api/v1/chat/sessions/{sessionId}/handoff:
+    post:
+      tags: [Conversation]
+      summary: Request human support
+      operationId: requestConversationHandoff
+      x-vfbiz-availability: candidate
+      description: |
+        Requests a durable support handoff. This is an API business outcome,
+        not an AI tool call.
+      security:
+        - customerAccessToken: []
+        - conversationCapability: []
+      parameters:
+        - { $ref: "#/components/parameters/ConversationSessionId" }
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../ai/conversation-turn-protocol.schema.json#/$defs/HandoffCommand"
+      responses:
+        "202":
+          description: Handoff request durably accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationCommandReceipt" }
+        default: { $ref: "#/components/responses/Problem" }
+components:
+  securitySchemes:
+    customerAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    conversationCapability:
+      type: apiKey
+      in: cookie
+      name: __Host-vfbiz_chat
+      description: |
+        Opaque session-bound capability issued with Secure, HttpOnly,
+        SameSite=Lax, Path=/ and bounded Max-Age.
+  parameters:
+    ConversationSessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ConversationTurnId:
+      name: turnId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ConversationIfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        { type: string, pattern: '^(W/)?"conversation-[1-9][0-9]*"$' }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    LastEventId:
+      name: Last-Event-ID
+      in: header
+      required: false
+      description: Last durable event cursor fully processed by the client
+      schema: { type: string, maxLength: 128 }
+    PageCursor:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string, maxLength: 128 }
+    PageLimit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+  headers:
+    ETag:
+      description: Entity revision validator
+      schema: { type: string }
+  responses:
+    Problem:
+      description: RFC 9457 Problem Details
+      headers:
+        X-Correlation-ID: { schema: { type: string } }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetails" }
+  schemas:
+    CreateConversationSession:
+      type: object
+      required: [locale]
+      properties:
+        locale: { enum: [vi, en] }
+      additionalProperties: false
+    ConversationSession:
+      type: object
+      required:
+        [id, profile, locale, status, version, createdAt, expiresAt, retentionUntil]
+      properties:
+        id: { type: string, format: uuid }
+        profile: { enum: [public_customer, authenticated_customer] }
+        locale: { enum: [vi, en] }
+        status: { enum: [active, handoff, closed] }
+        version: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        retentionUntil: { type: string, format: date-time }
+      additionalProperties: false
+    ConversationMessage:
+      type: object
+      required: [id, role, sequence, content, outcome, citations, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        role: { enum: [customer, assistant] }
+        sequence: { type: integer, minimum: 1 }
+        content: { type: string, minLength: 1, maxLength: 12000 }
+        outcome:
+          type: [string, "null"]
+          enum: [answered, conversational, refused, handed_off, null]
+        citations:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "../ai/conversation-public-event.schema.json#/$defs/Citation"
+        createdAt: { type: string, format: date-time }
+      allOf:
+        - if:
+            properties: { outcome: { const: answered } }
+            required: [outcome]
+          then:
+            properties: { citations: { type: array, minItems: 1, maxItems: 20 } }
+        - if:
+            properties:
+              outcome: { enum: [conversational, refused, handed_off, null] }
+            required: [outcome]
+          then:
+            properties: { citations: { type: array, maxItems: 0 } }
+      additionalProperties: false
+    ConversationMessagePage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/ConversationMessage" }
+        nextCursor: { type: [string, "null"], maxLength: 128 }
+      additionalProperties: false
+    ConversationCommandReceipt:
+      type: object
+      required: [sessionId, conversationVersion, eventCursor, status]
+      properties:
+        sessionId: { type: string, format: uuid }
+        conversationVersion: { type: integer, minimum: 1 }
+        eventCursor: { type: string, minLength: 1, maxLength: 128 }
+        status: { const: accepted }
+      additionalProperties: false
+    CustomerSafeConversationEvent:
+      $ref: "../ai/conversation-public-event.schema.json"
+    ConversationSseFrame:
+      $ref: "../ai/conversation-public-event.schema.json#/$defs/SseFrame"
+    ProblemDetails:
+      type: object
+      required: [type, title, status, code, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        code:
+          enum:
+            [
+              ACCESS_DENIED,
+              IDEMPOTENCY_CONFLICT,
+              VERSION_CONFLICT,
+              TURN_NOT_ACTIVE,
+              STREAM_CURSOR_EXPIRED,
+              RATE_LIMITED,
+              BUDGET_EXHAUSTED,
+              PROVIDER_UNAVAILABLE,
+              INTERNAL_FAILURE,
+            ]
+        correlationId: { type: string, format: uuid }
+        detail: { type: string, maxLength: 1000 }
+      additionalProperties: false

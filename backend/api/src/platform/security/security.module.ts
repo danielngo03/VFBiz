@@ -10,9 +10,15 @@ import { OidcTokenVerifier } from './oidc-token.verifier';
 import { OidcTrustPolicy } from './oidc-trust-policy';
 import { ScopeAuthorizationGuard } from './scope-authorization.guard';
 import { RoleAuthorizationGuard } from './role-authorization.guard';
+import { ConversationContentProtectionModule } from './conversation-content-protection.module';
+import { InternalAiTrustModule } from './internal-ai-trust.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [
+    ConversationContentProtectionModule,
+    DatabaseModule,
+    InternalAiTrustModule,
+  ],
   providers: [
     LocalSessionStatusVerifier,
     OidcJwksProvider,
@@ -24,6 +30,11 @@ import { RoleAuthorizationGuard } from './role-authorization.guard';
     { provide: APP_GUARD, useClass: ScopeAuthorizationGuard },
     { provide: APP_GUARD, useClass: RoleAuthorizationGuard },
   ],
-  exports: [LocalSessionStatusVerifier, OidcTokenVerifier, OidcTrustPolicy],
+  exports: [
+    ConversationContentProtectionModule,
+    LocalSessionStatusVerifier,
+    OidcTokenVerifier,
+    OidcTrustPolicy,
+  ],
 })
 export class PlatformSecurityModule {}

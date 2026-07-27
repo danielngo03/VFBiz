@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { parseTrustedProxyCidrs } from './trusted-proxy.config';
 
 export type RuntimeEnvironment =
   'development' | 'test' | 'staging' | 'production';
@@ -9,6 +10,7 @@ export interface EnvironmentVariables {
   readonly VFBIZ_API_PORT: number;
   readonly VFBIZ_API_DOCS_ENABLED: boolean;
   readonly VFBIZ_WORKFORCE_API_DOCS_ENABLED: boolean;
+  readonly VFBIZ_API_TRUSTED_PROXY_CIDRS: string;
   readonly VFBIZ_DATABASE_URL: string;
   readonly VFBIZ_REDIS_URL: string;
   readonly VFBIZ_CUSTOMER_OIDC_ISSUER: string;
@@ -21,8 +23,27 @@ export interface EnvironmentVariables {
   readonly VFBIZ_WORKFORCE_OIDC_JWKS_URI: string;
   readonly VFBIZ_WORKFORCE_OIDC_AUDIENCE: string;
   readonly VFBIZ_WORKFORCE_OIDC_AUTHORIZED_PARTIES: string;
+  readonly VFBIZ_CONVERSATION_CONTENT_ACTIVE_KEY_ID?: string;
+  readonly VFBIZ_CONVERSATION_CONTENT_KEYRING?: string;
+  readonly VFBIZ_INTERNAL_AI_ENABLED: boolean;
+  readonly VFBIZ_INTERNAL_AI_DISPATCH_ENABLED: boolean;
+  readonly VFBIZ_INTERNAL_AI_BASE_URL?: string;
+  readonly VFBIZ_INTERNAL_AI_ALLOWED_HOSTS?: string;
+  readonly VFBIZ_INTERNAL_AI_REQUEST_TIMEOUT_MS: number;
+  readonly VFBIZ_INTERNAL_AI_RETRY_BUDGET: number;
+  readonly VFBIZ_INTERNAL_AI_ASSERTION_ISSUER: 'vfbiz-api';
+  readonly VFBIZ_INTERNAL_AI_ASSERTION_AUDIENCE: 'vfbiz-ai';
+  readonly VFBIZ_INTERNAL_AI_ASSERTION_TTL_SECONDS: number;
+  readonly VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID?: string;
+  readonly VFBIZ_INTERNAL_AI_ASSERTION_KEYRING?: string;
+  readonly VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY?: string;
   readonly VFBIZ_LOG_LEVEL: string;
 }
+
+const keyIdSchema = Joi.string()
+  .trim()
+  .pattern(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/)
+  .empty('');
 
 const environmentSchema = Joi.object<EnvironmentVariables>({
   NODE_ENV: Joi.string()
@@ -46,6 +67,11 @@ const environmentSchema = Joi.object<EnvironmentVariables>({
       then: Joi.boolean().default(true),
       otherwise: Joi.boolean().default(false),
     }),
+  VFBIZ_API_TRUSTED_PROXY_CIDRS: Joi.string()
+    .trim()
+    .allow('')
+    .max(4_096)
+    .default(''),
   VFBIZ_DATABASE_URL: Joi.string()
     .uri({ scheme: ['postgresql'] })
     .required(),
@@ -79,6 +105,60 @@ const environmentSchema = Joi.object<EnvironmentVariables>({
     .trim()
     .pattern(/^[A-Za-z0-9._:-]+(?:,[A-Za-z0-9._:-]+)*$/)
     .required(),
+  VFBIZ_CONVERSATION_CONTENT_ACTIVE_KEY_ID: keyIdSchema.optional(),
+  VFBIZ_CONVERSATION_CONTENT_KEYRING: Joi.string().trim().empty('').optional(),
+  VFBIZ_INTERNAL_AI_ENABLED: Joi.boolean()
+    .truthy('true')
+    .falsy('false')
+    .default(false),
+  VFBIZ_INTERNAL_AI_DISPATCH_ENABLED: Joi.boolean()
+    .truthy('true')
+    .falsy('false')
+    .default(false),
+  VFBIZ_INTERNAL_AI_BASE_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .empty('')
+    .optional(),
+  VFBIZ_INTERNAL_AI_ALLOWED_HOSTS: Joi.string()
+    .trim()
+    .pattern(
+      /^(?:localhost|[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:]+\])(?:,(?:localhost|[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:]+\]))*$/,
+    )
+    .empty('')
+    .optional(),
+  VFBIZ_INTERNAL_AI_REQUEST_TIMEOUT_MS: Joi.number()
+    .integer()
+    .min(100)
+    .max(60_000)
+    .default(15_000),
+  VFBIZ_INTERNAL_AI_RETRY_BUDGET: Joi.number()
+    .integer()
+    .min(0)
+    .max(2)
+    .default(1),
+  VFBIZ_INTERNAL_AI_ASSERTION_ISSUER: Joi.string()
+    .valid('vfbiz-api')
+    .default('vfbiz-api'),
+  VFBIZ_INTERNAL_AI_ASSERTION_AUDIENCE: Joi.string()
+    .valid('vfbiz-ai')
+    .default('vfbiz-ai'),
+  VFBIZ_INTERNAL_AI_ASSERTION_TTL_SECONDS: Joi.number()
+    .integer()
+    .min(5)
+    .max(60)
+    .default(30),
+  VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID: keyIdSchema.optional(),
+  VFBIZ_INTERNAL_AI_ASSERTION_KEYRING: Joi.string()
+    .trim()
+    .max(32_768)
+    .empty('')
+    .optional(),
+  VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY: Joi.string()
+    .base64()
+    .min(44)
+    .max(256)
+    .empty('')
+    .optional(),
   VFBIZ_LOG_LEVEL: Joi.string()
     .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent')
     .default('info'),
@@ -96,6 +176,14 @@ export function validateEnvironment(
   if (error) throw new Error(`Invalid API environment: ${error.message}`);
 
   const validated: EnvironmentVariables = validation.value;
+  try {
+    parseTrustedProxyCidrs(validated.VFBIZ_API_TRUSTED_PROXY_CIDRS);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'invalid value';
+    throw new Error(
+      `Invalid API environment: VFBIZ_API_TRUSTED_PROXY_CIDRS ${message}`,
+    );
+  }
   if (
     validated.VFBIZ_CUSTOMER_OIDC_ISSUER ===
     validated.VFBIZ_WORKFORCE_OIDC_ISSUER
@@ -111,6 +199,57 @@ export function validateEnvironment(
   if (hasCiamAdminClient !== hasCiamAdminSecret) {
     throw new Error(
       'Invalid API environment: customer CIAM admin client id and secret must be configured together',
+    );
+  }
+  const hasConversationContentActiveKey =
+    validated.VFBIZ_CONVERSATION_CONTENT_ACTIVE_KEY_ID !== undefined;
+  const hasConversationContentKeyring =
+    validated.VFBIZ_CONVERSATION_CONTENT_KEYRING !== undefined;
+  if (hasConversationContentActiveKey !== hasConversationContentKeyring) {
+    throw new Error(
+      'Invalid API environment: conversation content active key id and keyring must be configured together',
+    );
+  }
+  const internalAiRequiredValues = [
+    validated.VFBIZ_INTERNAL_AI_BASE_URL,
+    validated.VFBIZ_INTERNAL_AI_ALLOWED_HOSTS,
+    validated.VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID,
+    validated.VFBIZ_INTERNAL_AI_ASSERTION_KEYRING,
+    validated.VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY,
+  ];
+  if (
+    validated.VFBIZ_INTERNAL_AI_ENABLED &&
+    internalAiRequiredValues.some((value) => value === undefined)
+  ) {
+    throw new Error(
+      'Invalid API environment: enabled internal AI requires base URL, exact host allowlist, active assertion key id, assertion keyring and subject pseudonymization key',
+    );
+  }
+  if (
+    validated.VFBIZ_INTERNAL_AI_DISPATCH_ENABLED &&
+    !validated.VFBIZ_INTERNAL_AI_ENABLED
+  ) {
+    throw new Error(
+      'Invalid API environment: internal AI dispatch requires internal AI trust to be enabled',
+    );
+  }
+  if (
+    !validated.VFBIZ_INTERNAL_AI_ENABLED &&
+    internalAiRequiredValues.some((value) => value !== undefined)
+  ) {
+    throw new Error(
+      'Invalid API environment: internal AI trust values require VFBIZ_INTERNAL_AI_ENABLED=true',
+    );
+  }
+  if (
+    validated.VFBIZ_INTERNAL_AI_ENABLED &&
+    validated.VFBIZ_INTERNAL_AI_BASE_URL !== undefined &&
+    validated.VFBIZ_INTERNAL_AI_ALLOWED_HOSTS !== undefined
+  ) {
+    validateInternalAiOrigin(
+      validated.VFBIZ_INTERNAL_AI_BASE_URL,
+      validated.VFBIZ_INTERNAL_AI_ALLOWED_HOSTS,
+      validated.NODE_ENV,
     );
   }
   if (
@@ -140,4 +279,55 @@ export function validateEnvironment(
     }
   }
   return Object.freeze(validated);
+}
+
+function validateInternalAiOrigin(
+  rawBaseUrl: string,
+  rawAllowedHosts: string,
+  environment: RuntimeEnvironment,
+): void {
+  const baseUrl = new URL(rawBaseUrl);
+  if (
+    baseUrl.username ||
+    baseUrl.password ||
+    baseUrl.search ||
+    baseUrl.hash ||
+    (baseUrl.pathname !== '' && baseUrl.pathname !== '/')
+  ) {
+    throw new Error(
+      'Invalid API environment: internal AI base URL must be an origin without credentials, path, query or fragment',
+    );
+  }
+  const hostname = normalizedHostname(baseUrl.hostname);
+  const allowedHosts = new Set(
+    rawAllowedHosts.split(',').map(normalizedHostname),
+  );
+  if (!allowedHosts.has(hostname)) {
+    throw new Error(
+      'Invalid API environment: internal AI base URL host is not in the exact allowlist',
+    );
+  }
+  if (
+    (environment === 'staging' || environment === 'production') &&
+    baseUrl.protocol !== 'https:'
+  ) {
+    throw new Error(
+      'Invalid API environment: internal AI base URL must use HTTPS in staging and production',
+    );
+  }
+  if (
+    (environment === 'staging' || environment === 'production') &&
+    (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1')
+  ) {
+    throw new Error(
+      'Invalid API environment: loopback internal AI host is forbidden in staging and production',
+    );
+  }
+}
+
+function normalizedHostname(value: string): string {
+  return value
+    .trim()
+    .replace(/^\[|\]$/g, '')
+    .toLowerCase();
 }

@@ -105,7 +105,7 @@ clean_url="$(connection_url "${clean_database}")"
   VFBIZ_TEST_DATABASE_URL="${clean_url}" \
     VFBIZ_DATABASE_URL="${clean_url}" \
     NODE_OPTIONS=--experimental-vm-modules \
-    npx jest --config ./test/integration/access/jest-postgres.json --runInBand
+    npx jest --config ./test/jest-postgres.json --runInBand
 )
 
 create_test_database "${legacy_database}"

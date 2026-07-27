@@ -25,6 +25,7 @@ describe('validateEnvironment', () => {
     expect(result.VFBIZ_API_PORT).toBe(8000);
     expect(result.VFBIZ_API_DOCS_ENABLED).toBe(true);
     expect(result.VFBIZ_WORKFORCE_API_DOCS_ENABLED).toBe(true);
+    expect(result.VFBIZ_API_TRUSTED_PROXY_CIDRS).toBe('');
   });
 
   it('disables interactive API docs by default outside development', () => {
@@ -70,6 +71,30 @@ describe('validateEnvironment', () => {
       validateEnvironment({ ...validEnvironment, VFBIZ_API_PORT: '70000' }),
     ).toThrow(/VFBIZ_API_PORT/);
   });
+
+  it('accepts an explicit proxy CIDR allowlist', () => {
+    const result = validateEnvironment({
+      ...validEnvironment,
+      VFBIZ_API_TRUSTED_PROXY_CIDRS:
+        '10.20.0.0/16,192.168.100.10/32,2001:db8:42::/48',
+    });
+
+    expect(result.VFBIZ_API_TRUSTED_PROXY_CIDRS).toBe(
+      '10.20.0.0/16,192.168.100.10/32,2001:db8:42::/48',
+    );
+  });
+
+  it.each(['*', '0.0.0.0/0', '::/0', 'proxy.internal', '10.0.0.1'])(
+    'rejects unsafe trusted proxy value %s',
+    (value) => {
+      expect(() =>
+        validateEnvironment({
+          ...validEnvironment,
+          VFBIZ_API_TRUSTED_PROXY_CIDRS: value,
+        }),
+      ).toThrow(/VFBIZ_API_TRUSTED_PROXY_CIDRS/);
+    },
+  );
 
   it('requires HTTPS OIDC trust endpoints in production', () => {
     expect(() =>

@@ -1,10 +1,15 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { AccessPrincipal } from '../../../../platform/security/access-principal';
 import {
   ConversationSessionRepository,
   type CreatedConversationSessionRecord,
 } from '../ports/conversation-session.repository';
+import { ActiveAssistantReleaseProjection } from '../ports/active-assistant-release-projection';
 
 export interface CreateConversationSessionInput {
   readonly locale: 'vi' | 'en';
@@ -21,10 +26,15 @@ export interface CreatedConversationSession {
 
 const SESSION_TTL_SECONDS = 30 * 60;
 const RETENTION_SECONDS = 24 * 60 * 60;
+const INITIAL_MODEL_TOKEN_BUDGET = 50_000;
+const INITIAL_COST_BUDGET_MICROS = 20_000_000;
 
 @Injectable()
 export class CreateConversationSessionService {
-  constructor(private readonly sessions: ConversationSessionRepository) {}
+  constructor(
+    private readonly sessions: ConversationSessionRepository,
+    private readonly releases: ActiveAssistantReleaseProjection,
+  ) {}
 
   async execute(
     input: CreateConversationSessionInput,
@@ -40,6 +50,16 @@ export class CreateConversationSessionService {
     }
 
     const now = input.now ?? new Date();
+    const release = await this.releases.resolve({
+      now,
+      profile: input.profile,
+    });
+    if (release === null) {
+      throw new ServiceUnavailableException({
+        code: 'ASSISTANT_RELEASE_UNAVAILABLE',
+        message: 'No approved assistant release is active for this profile.',
+      });
+    }
     const capability =
       input.profile === 'public_customer'
         ? randomBytes(32).toString('base64url')
@@ -58,8 +78,10 @@ export class CreateConversationSessionService {
             },
       expiresAt: new Date(now.getTime() + SESSION_TTL_SECONDS * 1000),
       id: randomUUID(),
+      initialCostBudgetMicros: INITIAL_COST_BUDGET_MICROS,
+      initialModelTokenBudget: INITIAL_MODEL_TOKEN_BUDGET,
       locale: input.locale,
-      policyRevision: 'customer-chat-policy-v1',
+      release,
       profile: input.profile,
       retentionUntil: new Date(now.getTime() + RETENTION_SECONDS * 1000),
     });
