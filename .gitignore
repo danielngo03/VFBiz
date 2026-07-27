@@ -85,3 +85,7 @@ local-data/
 private-data/
 artifacts/
 docs/work/capsules/
+
+# Personal setup runbooks for the repository owner and local coding agents.
+# These may describe private infrastructure choices and must never be published.
+guides/

@@ -196,7 +196,8 @@ uv run --directory backend/ai fastapi dev --host 127.0.0.1 --port 8888
 ```
 
 AI Platform mặc định fail closed khi chưa có provider và AI release được phê
-duyệt. Client không được gọi trực tiếp service này.
+duyệt. Client không được gọi trực tiếp service này. Các runbook chứa cấu hình
+hạ tầng cá nhân được quản lý ngoài repository công khai.
 
 ### Khởi động Portal
 

@@ -19,7 +19,7 @@
     "agent:hook": "node tools/agent-hook.mjs",
     "agent-control:check": "node tools/check-agent-control.mjs",
     "work-control:check": "node tools/check-work-management.mjs",
-    "contracts:lint": "redocly lint contracts/openapi/public-v1.yaml contracts/openapi/customer-bff-v1.yaml contracts/openapi/internal-v1.yaml contracts/openapi/workforce-v1.yaml && node tools/check-runtime-contracts.mjs && node tools/check-workforce-capabilities.mjs",
+    "contracts:lint": "redocly lint contracts/openapi/public-v1.yaml contracts/openapi/customer-conversation-candidate-v1.yaml contracts/openapi/customer-bff-v1.yaml contracts/openapi/internal-v1.yaml contracts/openapi/workforce-v1.yaml && node tools/check-runtime-contracts.mjs && node tools/check-workforce-capabilities.mjs",
     "authorization:check": "node tools/check-workforce-capabilities.mjs",
     "sdk:generate": "npm run generate --workspace @vfbiz/api-client && npm run generate --workspace @vfbiz/workforce-api-client",
     "context:resolve": "node tools/context-resolver.mjs",
@@ -29,6 +29,8 @@
     "docs:check": "node tools/docs-index.mjs --check",
     "reports:build": "node tools/reports.mjs build",
     "reports:check": "node tools/reports.mjs check",
+    "ai:doctor": "uv run --directory backend/ai python scripts/doctor.py",
+    "ai:doctor:live": "uv run --directory backend/ai python scripts/doctor.py --live",
     "work:new": "node tools/work.mjs new",
     "work:list": "node tools/work.mjs list",
     "work:show": "node tools/work.mjs show",
@@ -56,6 +58,7 @@
     "verify:identity-theme:runtime": "infra/local/keycloak/native-check.sh && npm run test:e2e --workspace @vfbiz/identity-theme",
     "verify:apps:e2e": "npm run test:e2e:required --workspace @vfbiz/customer-portal && npm run test:e2e:required --workspace @vfbiz/workforce-portal",
     "verify:ai": "cd backend/ai && uv run ruff check . && uv run pyright && uv run pytest && uv run alembic upgrade head --sql > /dev/null",
+    "verify:ai:integration": "test \"${VFBIZ_RUN_DB_INTEGRATION:-}\" = \"1\" && test -n \"${VFBIZ_AI_DATABASE_URL:-}\" && cd backend/ai && uv run alembic upgrade head && uv run pytest tests/integration -q",
     "verify:drupal": "cd drupal && ddev composer validate --strict && ddev composer phpcs && ddev composer phpstan && ddev composer phpunit && ddev drush config:status",
     "verify": "npm run verify:governance && npm run verify:api && npm run verify:apps && npm run verify:ai && npm run verify:drupal"
   },
@@ -63,7 +66,7 @@
     "node": ">=22"
   },
   "overrides": {
-    "js-yaml": "4.3.0"
+    "find-my-way": "9.7.0"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "11.16.0",
