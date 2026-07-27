@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "algorithm": {
+    "material": "UPPERCASE_METHOD + LF + EXACT_ORIGIN_FORM_PATH + LF + CANONICAL_JSON",
+    "digest": "SHA-256",
+    "encoding": "UTF-8",
+    "queryParameters": "forbidden",
+    "duplicateObjectKeys": "reject",
+    "floatingPointNumbers": "forbidden",
+    "unicodeNormalization": "none",
+    "objectMemberOrder": "lexicographic over schema-defined ASCII member names",
+    "integerFormat": "base-10 without leading zeros",
+    "whitespace": "none outside JSON string values"
+  },
+  "vectors": [
+    {
+      "name": "unicode-and-reordered-keys",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns",
+      "body": {
+        "b": 2,
+        "a": "xin chào"
+      },
+      "canonicalBody": "{\"a\":\"xin chào\",\"b\":2}",
+      "sha256": "31b97507b879bf0ce647803edfb9a3d64f83b9154e672fa777db9afdac172b5a"
+    },
+    {
+      "name": "cancel-operation",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns/123e4567-e89b-12d3-a456-426614174000/cancel",
+      "body": {
+        "reason": "user_interrupt",
+        "fencingToken": 7
+      },
+      "canonicalBody": "{\"fencingToken\":7,\"reason\":\"user_interrupt\"}",
+      "sha256": "c98dc85571e761085baa8390102f2ff054f869f44d91b70e0458cecd34e996bf"
+    },
+    {
+      "name": "maximum-interoperable-integer",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns",
+      "body": {
+        "conversationVersion": 9007199254740991
+      },
+      "canonicalBody": "{\"conversationVersion\":9007199254740991}",
+      "sha256": "a1e0a6ef89a25ae17fef03d71eb6d27e1e025ba92beb1e406f42799471352ef4"
+    }
+  ],
+  "rejections": [
+    {
+      "name": "duplicate-key",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns",
+      "rawBody": "{\"conversationVersion\":1,\"conversationVersion\":2}",
+      "error": "DUPLICATE_JSON_KEY"
+    },
+    {
+      "name": "query-parameter",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns?debug=true",
+      "rawBody": "{}",
+      "error": "QUERY_PARAMETERS_FORBIDDEN"
+    },
+    {
+      "name": "floating-point-number",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns",
+      "rawBody": "{\"conversationVersion\":1.0}",
+      "error": "FLOATING_POINT_FORBIDDEN"
+    },
+    {
+      "name": "integer-above-interoperable-range",
+      "method": "POST",
+      "path": "/internal/v1/conversation/turns",
+      "rawBody": "{\"conversationVersion\":9007199254740992}",
+      "error": "INTEGER_OUT_OF_RANGE"
+    }
+  ]
+}

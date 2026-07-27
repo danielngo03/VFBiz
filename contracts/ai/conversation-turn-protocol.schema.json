@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/conversation-turn-protocol/v1",
+  "title": "VFBiz Conversation Turn Protocol",
+  "description": "Machine-readable command, result and error vocabulary shared by the API and AI runtimes.",
+  "oneOf": [
+    { "$ref": "#/$defs/EnqueueMessageCommand" },
+    { "$ref": "#/$defs/MessageAcceptedResult" },
+    { "$ref": "#/$defs/CancelTurnCommand" },
+    { "$ref": "#/$defs/HandoffCommand" },
+    { "$ref": "#/$defs/ConversationProtocolError" }
+  ],
+  "$defs": {
+    "TurnBudget": {
+      "type": "object",
+      "required": ["maxModelTokens", "maxCostMicros"],
+      "properties": {
+        "maxModelTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32000
+        },
+        "maxCostMicros": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        }
+      },
+      "additionalProperties": false
+    },
+    "EnqueueMessageCommand": {
+      "type": "object",
+      "required": [
+        "kind",
+        "clientMessageId",
+        "expectedVersion",
+        "content",
+        "budget"
+      ],
+      "properties": {
+        "kind": { "const": "message.enqueue" },
+        "clientMessageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "description": "Canonical idempotency key for one customer message within a conversation session."
+        },
+        "expectedVersion": { "type": "integer", "minimum": 0 },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "budget": { "$ref": "#/$defs/TurnBudget" }
+      },
+      "additionalProperties": false
+    },
+    "MessageAcceptedResult": {
+      "type": "object",
+      "required": [
+        "kind",
+        "turnId",
+        "clientMessageId",
+        "receivedSequence",
+        "conversationVersion",
+        "eventCursor",
+        "replayed"
+      ],
+      "properties": {
+        "kind": { "const": "message.accepted" },
+        "turnId": { "type": "string", "format": "uuid" },
+        "clientMessageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "receivedSequence": { "type": "integer", "minimum": 1 },
+        "conversationVersion": { "type": "integer", "minimum": 1 },
+        "eventCursor": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "replayed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "CancelTurnCommand": {
+      "type": "object",
+      "required": ["kind", "expectedVersion", "reason"],
+      "properties": {
+        "kind": { "const": "turn.cancel" },
+        "expectedVersion": { "type": "integer", "minimum": 1 },
+        "reason": { "const": "user_interrupt" }
+      },
+      "additionalProperties": false
+    },
+    "HandoffCommand": {
+      "type": "object",
+      "required": ["kind", "expectedVersion", "reason"],
+      "properties": {
+        "kind": { "const": "handoff.request" },
+        "expectedVersion": { "type": "integer", "minimum": 0 },
+        "reason": { "const": "customer_requested" }
+      },
+      "additionalProperties": false
+    },
+    "ConversationProtocolError": {
+      "type": "object",
+      "required": ["kind", "code", "retryable", "correlationId"],
+      "properties": {
+        "kind": { "const": "conversation.error" },
+        "code": {
+          "enum": [
+            "ACCESS_DENIED",
+            "IDEMPOTENCY_CONFLICT",
+            "VERSION_CONFLICT",
+            "TURN_NOT_ACTIVE",
+            "STREAM_CURSOR_EXPIRED",
+            "RATE_LIMITED",
+            "BUDGET_EXHAUSTED",
+            "PROVIDER_UNAVAILABLE",
+            "INTERNAL_FAILURE"
+          ]
+        },
+        "retryable": { "type": "boolean" },
+        "correlationId": { "type": "string", "format": "uuid" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
