@@ -37,7 +37,7 @@ jobs:
         working-directory: backend/ai
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           enable-cache: true
       - run: uv sync --group test --frozen
@@ -99,7 +99,7 @@ jobs:
       VFBIZ_AI_DATABASE_URL: postgresql+asyncpg://vfbiz_integration:vfbiz_integration@127.0.0.1:5432/vfbiz_ai_integration
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           enable-cache: true
       - run: uv sync --group test --frozen

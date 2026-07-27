@@ -53,7 +53,7 @@ jobs:
         working-directory: backend/ai
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - run: uv export --frozen --all-groups --no-hashes --output-file /tmp/vfbiz-ai-requirements.txt
       - run: uvx --from pip-audit==2.10.0 pip-audit --requirement /tmp/vfbiz-ai-requirements.txt
 
