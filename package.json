@@ -56,6 +56,7 @@
     "verify:design-tokens": "npm run verify --workspace @vfbiz/design-tokens",
     "verify:identity-theme": "npm run verify --workspace @vfbiz/identity-theme",
     "verify:identity-theme:runtime": "infra/local/keycloak/native-check.sh && npm run test:e2e --workspace @vfbiz/identity-theme",
+    "security:audit:node": "node tools/check-node-audit.mjs",
     "verify:apps:e2e": "npm run test:e2e:required --workspace @vfbiz/customer-portal && npm run test:e2e:required --workspace @vfbiz/workforce-portal",
     "verify:ai": "cd backend/ai && uv run ruff check . && uv run pyright && uv run pytest && uv run alembic upgrade head --sql > /dev/null",
     "verify:ai:integration": "test \"${VFBIZ_RUN_DB_INTEGRATION:-}\" = \"1\" && test -n \"${VFBIZ_AI_DATABASE_URL:-}\" && cd backend/ai && uv run alembic upgrade head && uv run pytest tests/integration -q",

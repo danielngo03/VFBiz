@@ -1,0 +1,9 @@
+# Temporary, reviewed upstream-blocked exceptions. The expiring policy in
+# security/node-audit-exceptions.json remains the authority for Node findings.
+CVE-2026-15074
+CVE-2026-14257
+CVE-2026-47219
+GHSA-pm4m-ph32-ghv5
+CVE-2026-45623
+GHSA-r28c-9q8g-f849
+GHSA-f88m-g3jw-g9cj

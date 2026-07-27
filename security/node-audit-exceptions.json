@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "advisory": "1124286",
+      "package": "@fastify/static",
+      "expiresOn": "2026-08-10",
+      "reason": "NestJS Swagger runtime requires Fastify Static 9.x; documentation assets are not exposed on an untrusted filesystem root."
+    },
+    {
+      "advisory": "1124334",
+      "package": "brace-expansion",
+      "expiresOn": "2026-08-10",
+      "reason": "Transitive dependency; upstream consumers do not yet accept the fixed major release."
+    },
+    {
+      "advisory": "1124273",
+      "package": "find-my-way",
+      "expiresOn": "2026-08-10",
+      "reason": "NestJS Platform Fastify pins 9.6.0; temporary exception until its fixed dependency is released."
+    },
+    {
+      "advisory": "1124281",
+      "package": "js-yaml",
+      "expiresOn": "2026-08-10",
+      "reason": "NestJS Swagger pins 5.2.1; application-controlled OpenAPI input limits exposure."
+    },
+    {
+      "advisory": "1124252",
+      "package": "postcss",
+      "expiresOn": "2026-08-10",
+      "reason": "Next.js pins an older PostCSS build; runtime does not process attacker-supplied source maps."
+    },
+    {
+      "advisory": "1124288",
+      "package": "postcss",
+      "expiresOn": "2026-08-10",
+      "reason": "Next.js pins an older PostCSS build; runtime does not process attacker-supplied source maps."
+    },
+    {
+      "advisory": "1124066",
+      "package": "sharp",
+      "expiresOn": "2026-08-10",
+      "reason": "Next.js pins Sharp 0.34.x; portal image optimization does not accept untrusted uploads."
+    }
+  ]
+}

@@ -69,6 +69,8 @@ jobs:
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: "1"
+          trivyignores: .trivyignore
+          skip-dirs: drupal/web/core/modules/package_manager/tests/fixtures,drupal/.ddev/.dbimageBuild,drupal/.ddev/.webimageBuild
 
   sbom:
     runs-on: ubuntu-latest
