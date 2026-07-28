@@ -5,11 +5,15 @@ desktop.ini
 .vscode/
 *.swp
 *.tmp
+*.orig
+*.rej
 *.local
 *.log
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
 
 node_modules/
 .npm/
@@ -37,6 +41,7 @@ playwright-report/
 blob-report/
 junit.xml
 *.lcov
+.artifacts/
 .cache/
 __pycache__/
 .pytest_cache/
@@ -49,6 +54,9 @@ htmlcov/
 .coverage.*
 .playwright-cli/
 *.py[cod]
+wandb/
+mlruns/
+lightning_logs/
 
 # Private credentials and local signing material. Public test certificates must
 # be explicitly allowlisted and reviewed before they are committed.
