@@ -44,7 +44,8 @@
     "work:check": "node tools/work.mjs check",
     "work:generate": "node tools/work.mjs list --write",
     "governance:check": "npm run docs:check && npm run reports:check && npm run authorization:check && node tools/work.mjs check && node tools/check-agent-governance.mjs",
-    "test:governance": "npm run adapters:check && npm run agent-control:check && npm run work-control:check && npm run governance:check && npm run contracts:lint",
+    "test:governance": "npm run adapters:check && npm run agent-control:check && npm run work-control:check && npm run governance:check && npm run ai-integration-discovery:check && npm run contracts:lint",
+    "ai-integration-discovery:check": "node tests/governance/check-ai-integration-discovery.mjs",
     "test:runtime": "npm run test --workspace @vfbiz/api --if-present && npm run test --workspace @vfbiz/customer-portal --if-present && npm run test --workspace @vfbiz/workforce-portal --if-present",
     "test": "npm run test:governance && npm run test:runtime",
     "verify:governance": "npm run test:governance",
@@ -58,7 +59,7 @@
     "verify:identity-theme:runtime": "infra/local/keycloak/native-check.sh && npm run test:e2e --workspace @vfbiz/identity-theme",
     "verify:apps:e2e": "npm run test:e2e:required --workspace @vfbiz/customer-portal && npm run test:e2e:required --workspace @vfbiz/workforce-portal",
     "verify:ai": "cd backend/ai && uv run ruff check . && uv run pyright && uv run pytest && uv run alembic upgrade head --sql > /dev/null",
-    "verify:ai:integration": "test \"${VFBIZ_RUN_DB_INTEGRATION:-}\" = \"1\" && test -n \"${VFBIZ_AI_DATABASE_URL:-}\" && cd backend/ai && uv run alembic upgrade head && uv run pytest tests/integration -q",
+    "verify:ai:integration": "test \"${VFBIZ_RUN_DB_INTEGRATION:-}\" = \"1\" && test -n \"${VFBIZ_AI_DATABASE_URL:-}\" && cd backend/ai && uv run alembic upgrade head && uv run pytest tests/integration tests/evaluation/test_postgres_evaluation_run_registry.py -q",
     "verify:drupal": "cd drupal && ddev composer validate --strict && ddev composer phpcs && ddev composer phpstan && ddev composer phpunit && ddev drush config:status",
     "verify": "npm run verify:governance && npm run verify:api && npm run verify:apps && npm run verify:ai && npm run verify:drupal"
   },
