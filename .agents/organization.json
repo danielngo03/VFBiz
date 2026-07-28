@@ -25,7 +25,8 @@
       "drupal-config",
       "ai-source-registry",
       "ai-knowledge-release-registry",
-      "ai-dataset-registry"
+      "ai-dataset-registry",
+      "ai-evaluation-suite-registry"
     ],
     "sharedPathResources": [
       {
@@ -71,6 +72,10 @@
       {
         "path": "backend/ai/dataset-specs",
         "resource": "ai-source-registry"
+      },
+      {
+        "path": "backend/ai/dataset-specs/evaluation",
+        "resource": "ai-evaluation-suite-registry"
       },
       {
         "path": ".agents/organization.json",
@@ -181,12 +186,26 @@
     },
     {
       "id": "dataset-quality-reviewer",
-      "description": "Independently verify dataset schema, grounding, duplication, contamination, PII, bias and coverage without editing or releasing it.",
+      "description": "Independently verify dataset integrity, schema, lineage, duplication, contamination, PII, bias and coverage; return content-addressed evidence without editing, approving or releasing it.",
       "mode": "read-only",
       "authority": "evidence",
       "capabilities": ["read", "search", "shell"],
       "maxTurns": 24,
       "trigger": ["dataset-release", "synthetic-dataset-review"],
+      "modelTier": "critical"
+    },
+    {
+      "id": "golden-domain-reviewer",
+      "description": "Independently verify Dataset Product and Golden-case domain correctness, VinFast semantics, ViVi voice, tool/state behavior and ambiguity; return evidence without adjudicating or releasing it.",
+      "mode": "read-only",
+      "authority": "evidence",
+      "capabilities": ["read", "search", "shell"],
+      "maxTurns": 24,
+      "trigger": [
+        "dataset-release",
+        "golden-case-review",
+        "golden-suite-release"
+      ],
       "modelTier": "critical"
     }
   ],
@@ -570,6 +589,7 @@
         "backend/ai/tests/architecture",
         "backend/ai/tests/contract",
         "backend/ai/tests/integration/platform",
+        "backend/ai/scripts",
         "backend/ai/tests/unit"
       ],
       "specializations": ["fastapi", "security", "migration", "architecture"],
@@ -652,12 +672,18 @@
         "ingestion",
         "retrieval",
         "knowledge-revision",
-        "synthetic-candidates"
+        "synthetic-candidates",
+        "dataset-registry",
+        "dataset-lineage",
+        "dataset-quality-workflow"
       ],
       "paths": [
         "backend/ai/app/modules/knowledge",
+        "backend/ai/app/modules/datasets",
         "backend/ai/tests/unit/knowledge",
+        "backend/ai/tests/unit/datasets",
         "backend/ai/tests/integration/knowledge",
+        "backend/ai/tests/integration/datasets",
         "backend/ai/docs/knowledge-release.md",
         "backend/ai/docs/knowledge-ingestion.md",
         "backend/ai/docs/dataset-engineering.md",
@@ -669,9 +695,20 @@
         "embedding",
         "retrieval",
         "revision",
-        "synthetic-data"
+        "synthetic-data",
+        "dataset-lineage",
+        "annotation-workflow",
+        "contamination-detection"
       ],
-      "reviewProfiles": ["data", "privacy", "acl"]
+      "reviewProfiles": [
+        "data",
+        "privacy",
+        "acl",
+        "rights-provenance",
+        "annotation-quality",
+        "contamination-leakage",
+        "dataset-freshness"
+      ]
     },
     {
       "id": "ai-assurance",
@@ -702,7 +739,14 @@
         "shadow",
         "reproducibility"
       ],
-      "reviewProfiles": ["ai-safety", "data", "release"]
+      "reviewProfiles": [
+        "ai-safety",
+        "data",
+        "evaluation-validity",
+        "golden-domain-correctness",
+        "statistics",
+        "release"
+      ]
     },
     {
       "id": "data-governance",
@@ -865,6 +909,9 @@
       "legal-owner",
       "release-owner"
     ],
+    "dataset-board-review": ["data-owner"],
+    "golden-case-review": ["data-owner"],
+    "golden-suite-release": ["data-owner", "release-owner"],
     "ai-retrieval": ["data-owner"],
     "knowledge-revision": ["data-owner", "release-owner"],
     "knowledge-ingestion": ["data-owner", "privacy-owner", "legal-owner"],
@@ -873,6 +920,15 @@
     "multimodal-injection": ["security-owner", "privacy-owner"],
     "local-inference": ["security-owner", "release-owner"],
     "ai-evaluation": ["data-owner"],
+    "ai-quality-platform": ["data-owner", "engineering-lead"],
+    "benchmark-runner": ["engineering-lead"],
+    "grader-calibration": ["data-owner"],
+    "experiment-registry": ["engineering-lead"],
+    "continuous-evaluation": ["privacy-owner", "release-owner"],
+    "model-drift": ["data-owner"],
+    "shadow-canary": ["release-owner", "security-owner"],
+    "ai-incident": ["privacy-owner", "release-owner", "security-owner"],
+    "human-adjudication": ["data-owner"],
     "ai-release": ["data-owner", "security-owner", "release-owner"],
     "ev-trip-planner": ["architect", "privacy-owner"],
     "charging-data": ["data-owner"],

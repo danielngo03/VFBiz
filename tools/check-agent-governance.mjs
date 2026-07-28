@@ -16,6 +16,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { readFrontmatter } from "./lib/frontmatter.mjs";
 import { resolveContext } from "./lib/governance.mjs";
+import { validateDatasetReviewBoard } from "./lib/dataset-review-board.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
@@ -929,6 +930,70 @@ async function validateScenarios(scenarios) {
   }
 }
 
+function setVectorPath(target, dottedPath, value) {
+  const segments = dottedPath.split(".");
+  const final = segments.pop();
+  let current = target;
+  for (const segment of segments) current = current[segment];
+  current[final] = value;
+}
+
+function deleteVectorPath(target, dottedPath) {
+  const segments = dottedPath.split(".");
+  const final = segments.pop();
+  let current = target;
+  for (const segment of segments) current = current[segment];
+  delete current[final];
+}
+
+async function validateDatasetReviewBoardVectors(vectors) {
+  if (vectors?.version !== 1) {
+    fail("dataset review board vectors: expected version 1");
+    return;
+  }
+  const baseline = vectors.valid?.[0];
+  if (!baseline) {
+    fail("dataset review board vectors: valid baseline is missing");
+    return;
+  }
+  const validationTime = Date.parse(vectors.validationTime ?? "");
+  if (!Number.isFinite(validationTime)) {
+    fail("dataset review board vectors: validationTime is invalid");
+    return;
+  }
+  for (const vector of vectors.valid ?? []) {
+    const result = validateDatasetReviewBoard(vector, { now: validationTime });
+    if (!result.valid || result.recommendation !== "recommend")
+      fail(`${vector.id}: valid review board was rejected: ${result.errors}`);
+  }
+  for (const mutation of vectors.invalidMutations ?? []) {
+    const candidate = structuredClone(baseline);
+    if (mutation.operation === "remove-last") candidate.reviews.pop();
+    else if (mutation.operation === "delete")
+      deleteVectorPath(candidate, mutation.path);
+    else setVectorPath(candidate, mutation.path, mutation.value);
+    const result = validateDatasetReviewBoard(candidate, {
+      now: validationTime,
+    });
+    if (result.valid)
+      fail(`${mutation.id}: invalid review board evidence was accepted`);
+  }
+  const baselineDigest = validateDatasetReviewBoard(baseline, {
+    now: validationTime,
+  }).boardDigest;
+  for (const mutation of vectors.digestSensitivityMutations ?? []) {
+    const candidate = structuredClone(baseline);
+    setVectorPath(candidate, mutation.path, mutation.value);
+    const result = validateDatasetReviewBoard(candidate, {
+      now: validationTime,
+    });
+    if (!result.valid)
+      fail(`${mutation.id}: digest sensitivity candidate became invalid`);
+    else if (result.boardDigest === baselineDigest)
+      fail(`${mutation.id}: origin identity did not change boardDigest`);
+  }
+}
+
 async function validateSchemas(organization) {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
@@ -950,24 +1015,56 @@ async function validateSchemas(organization) {
         `${path.relative(ROOT, file)}: ${ajv.errorsText(validateWork.errors)}`,
       );
   }
-  const aiSchemaFiles = [
-    "source-register.schema.json",
-    "dataset-card.schema.json",
-    "dataset-manifest.schema.json",
-    "dataset-example.schema.json",
-    "generation-job.schema.json",
-    "evaluation-case.schema.json",
-    "ai-release-manifest.schema.json",
-  ];
+  const aiSchemaFiles = new Map([
+    [
+      "source-register.schema.json",
+      "contracts/ai/datasets/sources/source-register.schema.json",
+    ],
+    [
+      "source-catalog-entry.schema.json",
+      "contracts/ai/datasets/sources/catalog-entry.schema.json",
+    ],
+    [
+      "source-fetch-manifest.schema.json",
+      "contracts/ai/datasets/sources/fetch-manifest.schema.json",
+    ],
+    [
+      "dataset-card.schema.json",
+      "contracts/ai/datasets/products/card.schema.json",
+    ],
+    [
+      "dataset-manifest.schema.json",
+      "contracts/ai/datasets/products/release-manifest.schema.json",
+    ],
+    [
+      "dataset-example.schema.json",
+      "contracts/ai/datasets/products/example.schema.json",
+    ],
+    [
+      "generation-job.schema.json",
+      "contracts/ai/datasets/products/generation-job.schema.json",
+    ],
+    [
+      "evaluation-case.schema.json",
+      "contracts/ai/datasets/evaluation/case.schema.json",
+    ],
+    [
+      "ai-release-manifest.schema.json",
+      "contracts/ai/releases/ai-release-manifest.schema.json",
+    ],
+  ]);
   const aiValidators = new Map();
-  for (const name of aiSchemaFiles) {
-    const schema = await json(`contracts/ai/${name}`);
+  for (const [name, schemaPath] of aiSchemaFiles) {
+    const schema = await json(schemaPath);
     if (schema) aiValidators.set(name, ajv.compile(schema));
   }
-  const sourceCandidates = await json(
-    "backend/ai/dataset-specs/public-source-candidates.json",
+  const sourceCatalog = await json(
+    "backend/ai/dataset-specs/catalog/sources/index.json",
   );
   const validateSource = aiValidators.get("source-register.schema.json");
+  const validateCatalogEntry = aiValidators.get(
+    "source-catalog-entry.schema.json",
+  );
   const sourceSemanticErrors = (entry) => {
     const proposed = new Set(entry?.proposed_purposes ?? []);
     const approved = entry?.approved_purposes ?? [];
@@ -975,28 +1072,51 @@ async function validateSchemas(organization) {
       ? []
       : ["approved_purposes must be a subset of proposed_purposes"];
   };
-  if (!Array.isArray(sourceCandidates))
-    fail("public-source-candidates.json: expected an array");
-  else if (validateSource)
-    for (const candidate of sourceCandidates)
-      if (!validateSource(candidate))
+  if (!Array.isArray(sourceCatalog?.entries))
+    fail("catalog/sources/index.json: expected an entries array");
+  else {
+    const observedSourceIds = new Set();
+    for (const reference of sourceCatalog.entries) {
+      const candidate = await json(
+        `backend/ai/dataset-specs/${reference?.path ?? "missing"}`,
+      );
+      if (!candidate || candidate.source_id !== reference?.source_id) {
         fail(
-          `public source ${candidate?.source_id ?? "unknown"}: ${ajv.errorsText(validateSource.errors)}`,
+          `public source catalog reference is invalid: ${reference?.source_id ?? "unknown"}`,
         );
-      else if (sourceSemanticErrors(candidate).length)
+        continue;
+      }
+      if (observedSourceIds.has(candidate.source_id))
         fail(
-          `public source ${candidate?.source_id ?? "unknown"}: ${sourceSemanticErrors(candidate).join("; ")}`,
+          `public source catalog contains duplicate source_id: ${candidate.source_id}`,
         );
+      observedSourceIds.add(candidate.source_id);
+      if (validateCatalogEntry && !validateCatalogEntry(candidate))
+        fail(
+          `public source catalog ${candidate.source_id}: ${ajv.errorsText(validateCatalogEntry.errors)}`,
+        );
+      const registerEntry = candidate.source_register_snapshot;
+      if (registerEntry && validateSource && !validateSource(registerEntry))
+        fail(
+          `public source register ${candidate.source_id}: ${ajv.errorsText(validateSource.errors)}`,
+        );
+      else if (registerEntry && sourceSemanticErrors(registerEntry).length)
+        fail(
+          `public source register ${candidate.source_id}: ${sourceSemanticErrors(registerEntry).join("; ")}`,
+        );
+    }
+  }
   if (validateSource) {
     const approvedSource = {
       source_id: "approved-source-contract-test",
       version: "1",
       title: "Approved source contract test",
-      status: "approved",
+      status: "purpose-approved",
       source_type: "synthetic",
       locator: "https://example.invalid/source",
+      allowed_origin: "https://example.invalid/",
       source_revision: "fixture-1",
-      checksum_sha256: "a".repeat(64),
+      upstream_checksum_sha256: null,
       proposed_purposes: ["knowledge"],
       approved_purposes: ["knowledge"],
       acl_namespaces: ["public_customer:customer-support:vi-VN"],
@@ -1017,7 +1137,27 @@ async function validateSchemas(organization) {
         duration_days: 1,
       },
       deletion_method: "Delete the synthetic fixture.",
-      approval_evidence: ["DATA-APPROVAL-TEST", "LEGAL-APPROVAL-TEST"],
+      verified_fetch_ids: ["FETCH-TEST-1"],
+      fetch_approval_evidence: [
+        {
+          decision_id: "LEGAL-FETCH-APPROVAL-TEST",
+          role: "legal-owner",
+          actor_ref: "human:legal-owner:test",
+          decision: "approved",
+          evidence_digest: "b".repeat(64),
+          decided_at: "2026-07-28T00:00:00Z",
+        },
+      ],
+      purpose_approval_evidence: [
+        {
+          decision_id: "DATA-PURPOSE-APPROVAL-TEST",
+          role: "data-owner",
+          actor_ref: "human:data-owner:test",
+          decision: "approved",
+          evidence_digest: "c".repeat(64),
+          decided_at: "2026-07-28T00:01:00Z",
+        },
+      ],
       review_date: "2026-08-23",
     };
     if (!validateSource(approvedSource))
@@ -1203,6 +1343,9 @@ function validateOrganizationTopology(organization) {
 
 const organization = await json(".agents/organization.json");
 const scenarios = await json("tests/governance/scenarios.json");
+const reviewBoardVectors = await json(
+  "tests/governance/dataset-review-board-vectors.json",
+);
 if (organization) {
   validateOrganizationTopology(organization);
   await validateInstructions(organization);
@@ -1212,6 +1355,7 @@ if (organization) {
   await validateCoordinationLifecycle();
   await validateSkills(organization);
   await validateScenarios(scenarios);
+  await validateDatasetReviewBoardVectors(reviewBoardVectors);
   await validateSchemas(organization);
 }
 

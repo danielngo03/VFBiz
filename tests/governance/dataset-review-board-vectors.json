@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "validationTime": "2026-07-28T12:00:00.000Z",
+  "valid": [
+    {
+      "id": "three-independent-recommendations",
+      "subjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "rubricDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "policyDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "provenanceDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "authorActorIds": ["dataset-builder"],
+      "authorRunIds": ["author-run"],
+      "authorClaimIds": ["author-claim"],
+      "generatorActorIds": ["synthetic-builder"],
+      "generatorRunIds": ["generation-run"],
+      "generatorClaimIds": ["generation-claim"],
+      "reviews": [
+        {
+          "seat": "quality-integrity",
+          "role": "dataset-quality-reviewer",
+          "authority": "evidence",
+          "actorId": "quality-1",
+          "runId": "review-run-1",
+          "claimId": "review-claim-1",
+          "provider": "codex",
+          "recommendation": "recommend",
+          "evidenceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "observedAt": "2026-07-28T10:00:00.000Z",
+          "expiresAt": "2026-08-28T10:00:00.000Z",
+          "subjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "rubricDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "policyDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "provenanceDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        {
+          "seat": "domain-experience",
+          "role": "golden-domain-reviewer",
+          "authority": "evidence",
+          "actorId": "domain-1",
+          "runId": "review-run-2",
+          "claimId": "review-claim-2",
+          "provider": "claude",
+          "recommendation": "recommend",
+          "evidenceDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "observedAt": "2026-07-28T10:01:00.000Z",
+          "expiresAt": "2026-08-28T10:01:00.000Z",
+          "subjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "rubricDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "policyDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "provenanceDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        {
+          "seat": "risk-assurance",
+          "role": "risk-reviewer",
+          "authority": "evidence",
+          "actorId": "risk-1",
+          "runId": "review-run-3",
+          "claimId": "review-claim-3",
+          "provider": "gemini",
+          "recommendation": "recommend",
+          "evidenceDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "observedAt": "2026-07-28T10:02:00.000Z",
+          "expiresAt": "2026-08-28T10:02:00.000Z",
+          "subjectDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "rubricDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "policyDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "provenanceDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ]
+    }
+  ],
+  "invalidMutations": [
+    {
+      "id": "self-review",
+      "path": "reviews.0.actorId",
+      "value": "dataset-builder"
+    },
+    {
+      "id": "duplicate-run",
+      "path": "reviews.1.runId",
+      "value": "review-run-1"
+    },
+    {
+      "id": "duplicate-claim",
+      "path": "reviews.1.claimId",
+      "value": "review-claim-1"
+    },
+    { "id": "missing-seat", "path": "reviews", "operation": "remove-last" },
+    {
+      "id": "stale-subject",
+      "path": "reviews.2.subjectDigest",
+      "value": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    {
+      "id": "disagreement",
+      "path": "reviews.2.recommendation",
+      "value": "needs-human-decision"
+    },
+    {
+      "id": "agent-human-approval",
+      "path": "humanDecision",
+      "value": { "actorKind": "human", "decidedBy": "human:data-owner" }
+    },
+    {
+      "id": "provider-only-independence",
+      "path": "reviews.1.actorId",
+      "value": "quality-1"
+    },
+    {
+      "id": "missing-reviewer-actor",
+      "path": "reviews.0.actorId",
+      "operation": "delete"
+    },
+    {
+      "id": "missing-reviewer-run",
+      "path": "reviews.0.runId",
+      "operation": "delete"
+    },
+    {
+      "id": "missing-reviewer-claim",
+      "path": "reviews.0.claimId",
+      "operation": "delete"
+    },
+    {
+      "id": "missing-author-envelope",
+      "path": "authorActorIds",
+      "operation": "delete"
+    },
+    {
+      "id": "missing-generator-envelope",
+      "path": "generatorActorIds",
+      "operation": "delete"
+    },
+    {
+      "id": "missing-evidence-digest",
+      "path": "reviews.0.evidenceDigest",
+      "operation": "delete"
+    },
+    {
+      "id": "expired-review-evidence",
+      "path": "reviews.0.expiresAt",
+      "value": "2026-07-28T11:59:59.999Z"
+    }
+  ],
+  "digestSensitivityMutations": [
+    {
+      "id": "author-identity-bound-to-board-digest",
+      "path": "authorActorIds.0",
+      "value": "different-author"
+    },
+    {
+      "id": "generator-identity-bound-to-board-digest",
+      "path": "generatorRunIds.0",
+      "value": "different-generation-run"
+    }
+  ]
+}

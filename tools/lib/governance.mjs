@@ -23,6 +23,7 @@ const CONTROLLED = new Set([
   "ai-assistant",
   "ai-inference",
   "ai-release",
+  "ai-quality-platform",
   "ai-retrieval",
   "ai-tool",
   "ai-vision",
@@ -38,6 +39,7 @@ const CONTROLLED = new Set([
   "customer-data",
   "data-governance",
   "dataset-release",
+  "dataset-board-review",
   "dataset-source",
   "dependency-policy",
   "employee-data",
@@ -67,6 +69,16 @@ const CONTROLLED = new Set([
   "workforce-authorization",
   "knowledge-ingestion",
   "knowledge-revision",
+  "benchmark-runner",
+  "continuous-evaluation",
+  "experiment-registry",
+  "golden-case-review",
+  "golden-suite-release",
+  "grader-calibration",
+  "human-adjudication",
+  "model-drift",
+  "shadow-canary",
+  "ai-incident",
 ]);
 const DISCOVERY = new Set([
   "unclear-value",
@@ -186,10 +198,7 @@ function departmentForTeam(teamId, organization) {
 
 function teamsForSignals(signals) {
   const mapping = [
-    [
-      "customer-bff",
-      ["customer-web-experience", "api-foundation"],
-    ],
+    ["customer-bff", ["customer-web-experience", "api-foundation"]],
     ["customer-journey", ["customer-web-experience"]],
     ["design-system", ["customer-web-experience"]],
     ["accessibility", ["customer-web-experience"]],
@@ -222,15 +231,35 @@ function teamsForSignals(signals) {
     ["ai-retrieval", ["ai-knowledge-engineering"]],
     ["ai-release", ["ai-assurance"]],
     ["knowledge-revision", ["ai-knowledge-engineering", "ai-assurance"]],
-    [
-      "knowledge-ingestion",
-      ["ai-knowledge-engineering", "data-governance"],
-    ],
+    ["knowledge-ingestion", ["ai-knowledge-engineering", "data-governance"]],
     ["local-inference", ["ai-model-platform", "reliability-engineering"]],
     ["dataset-source", ["data-governance"]],
     ["data-governance", ["data-governance"]],
     ["synthetic-dataset", ["ai-knowledge-engineering", "data-governance"]],
     ["dataset-release", ["data-governance", "ai-assurance"]],
+    [
+      "dataset-board-review",
+      ["ai-assurance", "ai-knowledge-engineering", "data-governance"],
+    ],
+    [
+      "golden-case-review",
+      ["ai-assurance", "ai-knowledge-engineering", "data-governance"],
+    ],
+    [
+      "golden-suite-release",
+      ["ai-assurance", "data-governance", "ai-knowledge-engineering"],
+    ],
+    [
+      "ai-quality-platform",
+      ["ai-assurance", "ai-model-platform", "data-governance"],
+    ],
+    ["benchmark-runner", ["ai-assurance", "ai-model-platform"]],
+    ["grader-calibration", ["ai-assurance", "data-governance"]],
+    ["experiment-registry", ["ai-assurance", "ai-model-platform"]],
+    ["continuous-evaluation", ["ai-assurance", "reliability-engineering"]],
+    ["model-drift", ["ai-assurance", "reliability-engineering"]],
+    ["shadow-canary", ["ai-assurance", "reliability-engineering"]],
+    ["ai-incident", ["ai-assurance", "reliability-engineering"]],
   ];
   return mapping.flatMap(([signal, teams]) =>
     signals.has(signal) ? teams : [],
@@ -268,7 +297,7 @@ function inferSignals(input) {
       /contracts\/openapi|public api contract|openapi\/public|breaking contract/,
     ],
     ["payment", /payment|checkout|thanh toán|đặt cọc/],
-    ["pii", /\bpii\b|dữ liệu cá nhân|personal data/],
+    ["pii", /\bpii\b|privacy|quyền riêng tư|dữ liệu cá nhân|personal data/],
     [
       "customer-data",
       /customer data|dữ liệu khách hàng|customer profile|garage/,
@@ -277,10 +306,7 @@ function inferSignals(input) {
       "customer-profile",
       /customer profile|hồ sơ khách hàng|\/me\b|profile update/,
     ],
-    [
-      "customer-privacy",
-      /customer privacy|privacy journey/,
-    ],
+    ["customer-privacy", /customer privacy|privacy journey/],
     [
       "customer-journey",
       /customer journey|account journey|profile journey|security journey|garage journey|luồng khách hàng/,
@@ -330,6 +356,36 @@ function inferSignals(input) {
       "dataset-release",
       /dataset release|release dataset|dataset manifest|phát hành dataset/,
     ],
+    [
+      "dataset-board-review",
+      /dataset (?:and|&) golden review board|dataset review board|hội đồng (?:duyệt|review) dataset/,
+    ],
+    [
+      "golden-case-review",
+      /golden(?:\s+\w+){0,4}\s+(?:case\s+)?review|review(?:\s+\w+){0,4}\s+golden(?:\s+case)?|duyệt(?:\s+\w+){0,4}\s+golden(?:\s+case)?|golden adjudication/,
+    ],
+    [
+      "golden-suite-release",
+      /golden suite release|release golden suite|phát hành golden suite/,
+    ],
+    [
+      "ai-quality-platform",
+      /ai quality platform|quality control plane|nền tảng chất lượng ai/,
+    ],
+    [
+      "benchmark-runner",
+      /benchmark runner|evaluation runner|benchmark harness/,
+    ],
+    [
+      "grader-calibration",
+      /grader calibration|judge calibration|hiệu chuẩn grader/,
+    ],
+    ["experiment-registry", /experiment registry|baseline registry/],
+    ["continuous-evaluation", /continuous evaluation|continuous eval/],
+    ["model-drift", /model drift|quality drift|data drift/],
+    ["shadow-canary", /shadow(?: mode)?|canary(?: release)?/],
+    ["ai-incident", /ai incident|model incident|quality incident/],
+    ["human-adjudication", /human adjudication|sme adjudication/],
     ["data-governance", /data governance|quản trị dữ liệu|data steward/],
     ["ai-tool", /tool call|tool calling|ai tool|register-ai-tool/],
     [
@@ -340,14 +396,11 @@ function inferSignals(input) {
       "ai-inference",
       /model mesh|model routing|provider-neutral model|model adapter|provider fallback|embedding (?:provider|runtime|routing|cost policy)/,
     ],
-    [
-      "embedding-runtime",
-      /embedding (?:provider|runtime|routing|cost policy)/,
-    ],
+    ["embedding-runtime", /embedding (?:provider|runtime|routing|cost policy)/],
     ["ai-retrieval", /\brag\b|retrieval|embedding|citation|groundedness/],
     [
       "ai-evaluation",
-      /ai evaluation|model evaluation|validate-ai-release|fine[- ]?tun/,
+      /ai evaluation|model evaluation|evaluation platform|validate-ai-release|fine[- ]?tun/,
     ],
     [
       "ai-release",
@@ -377,10 +430,7 @@ function inferSignals(input) {
       "grounding-runtime",
       /grounding runtime|runtime grounding|grounding[- ]?runtime/,
     ],
-    [
-      "graph-execution",
-      /graph execution|execution graph|graph[- ]?execution/,
-    ],
+    ["graph-execution", /graph execution|execution graph|graph[- ]?execution/],
     [
       "trip-release",
       /trip (?:planner )?(?:staging |production )?release|validate-trip-release|phát hành trip/,
@@ -444,6 +494,16 @@ function inferSignals(input) {
   ];
   for (const [signal, pattern] of rules)
     if (pattern.test(text)) signals.push(signal);
+  const reviewsGoldenSuite =
+    input.stage === "review" &&
+    (input.paths ?? []).some((value) =>
+      /^backend\/ai\/dataset-specs\/evaluation\/(?:suites|split-locks)(?:\/|$)/.test(
+        repositoryPath(value),
+      ),
+    );
+  if (reviewsGoldenSuite) {
+    signals.push("golden-case-review", "dataset-board-review", "ai-evaluation");
+  }
   const isReleasePointerOcc = (clause) =>
     /\b(?:release|pointer)\b[^.\n]{0,80}\bocc\b|\bocc\b[^.\n]{0,80}\b(?:release|pointer)\b/.test(
       clause,
@@ -459,7 +519,8 @@ function inferSignals(input) {
   if (
     /session concurrency|concurrent message|message race|spam (?:phím )?enter|session inbox/.test(
       request,
-    ) || hasConversationOcc
+    ) ||
+    hasConversationOcc
   )
     signals.push("session-concurrency");
   const portalSecurityPath =
@@ -527,6 +588,27 @@ function inferSignals(input) {
     for (let index = signals.length - 1; index >= 0; index -= 1)
       if (signals[index] === "ai-dataset") signals.splice(index, 1);
   }
+  if (
+    signals.some((value) =>
+      [
+        "ai-quality-platform",
+        "benchmark-runner",
+        "grader-calibration",
+        "experiment-registry",
+        "continuous-evaluation",
+        "model-drift",
+        "shadow-canary",
+        "ai-incident",
+        "dataset-board-review",
+        "golden-case-review",
+        "golden-suite-release",
+      ].includes(value),
+    )
+  ) {
+    for (let index = signals.length - 1; index >= 0; index -= 1)
+      if (signals[index] === "ai-dataset") signals.splice(index, 1);
+    signals.push("ai-evaluation");
+  }
   if (signals.some((value) => RELEASE_CONTEXT_SIGNALS.has(value)))
     signals.push("ai-release");
   return [...new Set(signals)];
@@ -561,8 +643,13 @@ function resources(paths, signals) {
       result.add("database-migration");
     if (/^drupal\/(?:config|recipes)\//.test(relative))
       result.add("drupal-config");
-    if (/^backend\/ai\/dataset-specs(?:\/|$)/.test(relative))
+    if (
+      /^backend\/ai\/dataset-specs(?:\/|$)/.test(relative) &&
+      !/^backend\/ai\/dataset-specs\/evaluation(?:\/|$)/.test(relative)
+    )
       result.add("ai-source-registry");
+    if (/^backend\/ai\/dataset-specs\/evaluation(?:\/|$)/.test(relative))
+      result.add("ai-evaluation-suite-registry");
     if (/^\.agents\/organization\.json$/.test(relative))
       result.add("agent-organization-registry");
   }
@@ -574,6 +661,12 @@ function resources(paths, signals) {
     result.add("ai-knowledge-release-registry");
   if (signals.has("ai-dataset") || signals.has("dataset-release"))
     result.add("ai-dataset-registry");
+  if (
+    signals.has("dataset-board-review") ||
+    signals.has("golden-case-review") ||
+    signals.has("golden-suite-release")
+  )
+    result.add("ai-evaluation-suite-registry");
   if (signals.has("agent-control")) result.add("agent-organization-registry");
   return [...result].sort();
 }
@@ -612,17 +705,61 @@ function reviewProfiles(signals, behaviorChange) {
     ["provider-fallback", ["cost", "resilience", "security"]],
     ["ai-finops", ["cost"]],
     ["grounding", ["ai-safety", "security"]],
-    [
-      "embedding-runtime",
-      ["cost", "data", "resilience", "security"],
-    ],
+    ["embedding-runtime", ["cost", "data", "resilience", "security"]],
     ["grounding-runtime", ["ai-safety", "security"]],
     ["ai-release", ["ai-safety", "release"]],
     ["ai-tool", ["ai-safety", "authorization"]],
     ["ai-vision", ["ai-safety", "privacy"]],
-    ["dataset-source", ["data", "legal"]],
-    ["synthetic-dataset", ["data"]],
-    ["dataset-release", ["data", "release"]],
+    ["dataset-source", ["data", "legal", "rights-provenance"]],
+    [
+      "synthetic-dataset",
+      ["annotation-quality", "contamination-leakage", "data"],
+    ],
+    [
+      "dataset-release",
+      ["contamination-leakage", "data", "dataset-freshness", "release"],
+    ],
+    [
+      "dataset-board-review",
+      [
+        "annotation-quality",
+        "contamination-leakage",
+        "evaluation-validity",
+        "golden-domain-correctness",
+        "statistics",
+      ],
+    ],
+    [
+      "golden-case-review",
+      [
+        "annotation-quality",
+        "evaluation-validity",
+        "golden-domain-correctness",
+        "tool-correctness",
+        "vivi-voice",
+      ],
+    ],
+    [
+      "golden-suite-release",
+      [
+        "ai-safety",
+        "contamination-leakage",
+        "evaluation-validity",
+        "golden-domain-correctness",
+        "release",
+        "statistics",
+      ],
+    ],
+    [
+      "ai-quality-platform",
+      ["ai-safety", "cost", "evaluation-validity", "resilience", "statistics"],
+    ],
+    ["benchmark-runner", ["evaluation-validity", "resilience", "statistics"]],
+    ["grader-calibration", ["evaluation-validity", "statistics"]],
+    ["continuous-evaluation", ["privacy", "resilience", "statistics"]],
+    ["model-drift", ["data", "statistics"]],
+    ["shadow-canary", ["ai-safety", "release", "resilience"]],
+    ["ai-incident", ["ai-safety", "privacy", "resilience", "security"]],
     ["production", ["release", "resilience"]],
   ];
   const result = new Set();
@@ -630,11 +767,23 @@ function reviewProfiles(signals, behaviorChange) {
     if (!signals.has(signal)) continue;
     for (const profile of profiles) result.add(profile);
   }
-  if (behaviorChange && signals.has("customer-journey")) result.add("experience");
+  if (behaviorChange && signals.has("customer-journey"))
+    result.add("experience");
   return [...result].sort();
 }
 
 function roles(mode, stage, behaviorChange, signals) {
+  if (
+    signals.has("dataset-board-review") ||
+    signals.has("golden-case-review") ||
+    signals.has("golden-suite-release") ||
+    (stage === "review" && signals.has("dataset-release"))
+  )
+    return [
+      "dataset-quality-reviewer",
+      "golden-domain-reviewer",
+      "risk-reviewer",
+    ];
   if (stage === "review" && signals.has("synthetic-dataset"))
     return ["dataset-quality-reviewer", "risk-reviewer"];
   if (signals.has("dataset-source"))
@@ -643,8 +792,6 @@ function roles(mode, stage, behaviorChange, signals) {
       : ["dataset-source-researcher"];
   if (signals.has("synthetic-dataset"))
     return ["orchestrator", "synthetic-dataset-builder", "risk-reviewer"];
-  if (signals.has("dataset-release"))
-    return ["orchestrator", "dataset-quality-reviewer", "risk-reviewer"];
   if (stage === "review")
     return mode === "controlled"
       ? ["reviewer-verifier", "risk-reviewer"]
@@ -686,6 +833,15 @@ function skills(mode, stage, signals, workspaces) {
   if (signals.has("knowledge-ingestion"))
     return ["deliver-change", "onboard-dataset"];
   if (signals.has("dataset-release"))
+    return ["validate-ai-release", "review-change"];
+  if (
+    signals.has("dataset-board-review") ||
+    signals.has("golden-case-review") ||
+    signals.has("golden-suite-release") ||
+    signals.has("ai-quality-platform") ||
+    signals.has("benchmark-runner") ||
+    signals.has("grader-calibration")
+  )
     return ["validate-ai-release", "review-change"];
   if (workspaces.includes("ai") && signals.has("ai-dataset"))
     return ["onboard-dataset", "review-change"];
@@ -864,8 +1020,26 @@ export async function routeChange(input) {
     Boolean(work) && executableWorkStatuses.has(work.attributes.status);
   const needsDecision = requiresWorkItem && !workItemReady;
   const signalTeams = teamsForSignals(signalSet);
+  const assuranceOwned = [
+    "ai-quality-platform",
+    "benchmark-runner",
+    "grader-calibration",
+    "experiment-registry",
+    "continuous-evaluation",
+    "model-drift",
+    "shadow-canary",
+    "ai-incident",
+    "dataset-board-review",
+    "golden-case-review",
+    "golden-suite-release",
+  ].some((signal) => signalSet.has(signal));
+  const pathTeams = resolveTeams(paths, organization);
   const inferredTeams = [
-    ...new Set([...resolveTeams(paths, organization), ...signalTeams]),
+    ...new Set(
+      assuranceOwned
+        ? [...signalTeams, ...pathTeams]
+        : [...pathTeams, ...signalTeams],
+    ),
   ];
   const ownerTeam = work?.attributes.owner_team ?? inferredTeams[0] ?? null;
   const ownerDepartment = ownerTeam
@@ -900,8 +1074,7 @@ export async function routeChange(input) {
       coordinationTeams: inferredTeams.filter((team) => team !== ownerTeam),
     },
     dependencies: work?.attributes.depends_on ?? [],
-    declaredExclusiveResources:
-      work?.attributes.exclusive_resources ?? [],
+    declaredExclusiveResources: work?.attributes.exclusive_resources ?? [],
     budgets: organization.deliveryModes[mode],
     executionState: needsDecision
       ? "needs-decision"
@@ -911,15 +1084,24 @@ export async function routeChange(input) {
     writerAuthorized: !needsDecision && !mustStop,
     recommendedRoles: roles(mode, stage, input.behaviorChange, signalSet),
     requiredReviewers:
-      signalSet.has("synthetic-dataset") || signalSet.has("dataset-release")
-        ? ["dataset-quality-reviewer", "risk-reviewer"]
-        : signalSet.has("dataset-source")
-          ? ["risk-reviewer"]
-        : mode === "controlled"
-          ? ["reviewer-verifier", "risk-reviewer"]
-          : input.behaviorChange && mode === "bounded"
-            ? ["reviewer-verifier"]
-            : [],
+      signalSet.has("dataset-release") ||
+      signalSet.has("dataset-board-review") ||
+      signalSet.has("golden-case-review") ||
+      signalSet.has("golden-suite-release")
+        ? [
+            "dataset-quality-reviewer",
+            "golden-domain-reviewer",
+            "risk-reviewer",
+          ]
+        : signalSet.has("synthetic-dataset")
+          ? ["dataset-quality-reviewer", "risk-reviewer"]
+          : signalSet.has("dataset-source")
+            ? ["risk-reviewer"]
+            : mode === "controlled"
+              ? ["reviewer-verifier", "risk-reviewer"]
+              : input.behaviorChange && mode === "bounded"
+                ? ["reviewer-verifier"]
+                : [],
     reviewProfiles: reviewProfiles(signalSet, input.behaviorChange),
     requiredAuthorities: authorities(signalSet, mode, organization),
     requiredSkills: skills(mode, stage, signalSet, workspaces),
@@ -1124,10 +1306,7 @@ async function previousSourceHashMap(input) {
   try {
     const previous = JSON.parse(
       await readFile(
-        path.join(
-          contextCacheDirectory(),
-          `${input.previousContextKey}.json`,
-        ),
+        path.join(contextCacheDirectory(), `${input.previousContextKey}.json`),
         "utf8",
       ),
     );
@@ -1205,7 +1384,7 @@ export async function resolveContext(input) {
     )
     .sort(
       (a, b) => b.score - a.score || a.document.id.localeCompare(b.document.id),
-    )
+    );
   const exactCandidates = candidates.filter(
     ({ exactMatched }) => exactMatched.length > 0,
   );
@@ -1310,11 +1489,13 @@ export async function resolveContext(input) {
       });
     }
   }
-  const documentSources = documents.map(({ path: documentPath, selection }) => ({
-    kind: "document",
-    path: documentPath,
-    sourceHash: selection.sourceHash,
-  }));
+  const documentSources = documents.map(
+    ({ path: documentPath, selection }) => ({
+      kind: "document",
+      path: documentPath,
+      sourceHash: selection.sourceHash,
+    }),
+  );
   const sourceRevisions = [
     ...instructionSources,
     roleSource,
@@ -1325,10 +1506,12 @@ export async function resolveContext(input) {
     generatedFrom: { organizationVersion: organization.version },
     stage: input.stage ?? "delivery",
     ...route,
-    instructions: instructionSources.map(({ path: sourcePath, sourceHash }) => ({
-      path: sourcePath,
-      sourceHash,
-    })),
+    instructions: instructionSources.map(
+      ({ path: sourcePath, sourceHash }) => ({
+        path: sourcePath,
+        sourceHash,
+      }),
+    ),
     documents,
     sourceRevisions,
     exclusivePaths: route.paths.filter((value) =>
@@ -1358,11 +1541,12 @@ export async function resolveContext(input) {
           exclusive_resources: exclusiveResources,
           required_context: [
             ...instructions,
-            ...documents.flatMap(({ path: documentPath, selections, selection }) =>
-              (selections ?? [selection]).map(
-                ({ startLine, endLine }) =>
-                  `${documentPath}:${startLine}-${endLine}`,
-              ),
+            ...documents.flatMap(
+              ({ path: documentPath, selections, selection }) =>
+                (selections ?? [selection]).map(
+                  ({ startLine, endLine }) =>
+                    `${documentPath}:${startLine}-${endLine}`,
+                ),
             ),
           ],
           review_profiles: route.reviewProfiles,

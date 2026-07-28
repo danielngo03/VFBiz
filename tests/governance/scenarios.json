@@ -732,7 +732,9 @@
       "id": "dataset-source-without-rights-stops",
       "input": {
         "request": "Tải public dataset candidate chưa có quyền sử dụng",
-        "paths": ["backend/ai/dataset-specs/public-source-candidates.json"]
+        "paths": [
+          "backend/ai/dataset-specs/catalog/sources/public/banking77.json"
+        ]
       },
       "expected": {
         "mode": "controlled",
@@ -777,7 +779,9 @@
       "id": "dataset-release-independent-review",
       "input": {
         "request": "Review dataset release manifest trước khi phát hành dataset",
-        "paths": ["contracts/ai/dataset-manifest.schema.json"],
+        "paths": [
+          "contracts/ai/datasets/products/release-manifest.schema.json"
+        ],
         "stage": "review"
       },
       "expected": {
@@ -796,8 +800,151 @@
         ],
         "ownerTeam": "data-governance",
         "department": "ai-data",
-        "roles": ["orchestrator", "dataset-quality-reviewer", "risk-reviewer"],
-        "reviewers": ["dataset-quality-reviewer", "risk-reviewer"]
+        "roles": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ],
+        "reviewers": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ]
+      }
+    },
+    {
+      "id": "golden-review-board-three-independent-seats",
+      "input": {
+        "request": "Review Golden case bằng Dataset and Golden Review Board trước human adjudication",
+        "paths": [
+          "backend/ai/dataset-specs/evaluation/suites/customer-assistant-golden-v1-candidate.json"
+        ],
+        "stage": "review"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "signals": [
+          "ai-evaluation",
+          "dataset-board-review",
+          "golden-case-review"
+        ],
+        "resources": ["ai-evaluation-suite-registry"],
+        "authorities": ["data-owner"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-knowledge-engineering", "data-governance"],
+        "roles": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ],
+        "reviewers": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ],
+        "reviewProfiles": [
+          "annotation-quality",
+          "contamination-leakage",
+          "evaluation-validity",
+          "golden-domain-correctness",
+          "statistics",
+          "tool-correctness",
+          "vivi-voice"
+        ]
+      }
+    },
+    {
+      "id": "golden-review-natural-risk-wording",
+      "input": {
+        "request": "Review Golden safety and privacy case before human adjudication",
+        "paths": [
+          "backend/ai/dataset-specs/evaluation/suites/customer-assistant-golden-v1-candidate.json"
+        ],
+        "stage": "review"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "signals": [
+          "ai-evaluation",
+          "dataset-board-review",
+          "golden-case-review",
+          "human-adjudication",
+          "pii"
+        ],
+        "resources": ["ai-evaluation-suite-registry"],
+        "authorities": ["data-owner", "privacy-owner"],
+        "ownerTeam": "ai-assurance",
+        "department": "ai-data",
+        "coordinationTeams": ["ai-knowledge-engineering", "data-governance"],
+        "roles": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ],
+        "reviewers": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ],
+        "reviewProfiles": [
+          "annotation-quality",
+          "contamination-leakage",
+          "evaluation-validity",
+          "golden-domain-correctness",
+          "privacy",
+          "statistics",
+          "tool-correctness",
+          "vivi-voice"
+        ]
+      }
+    },
+    {
+      "id": "dataset-release-delivery-keeps-writer-role",
+      "input": {
+        "request": "Implement dataset release lifecycle code",
+        "paths": [
+          "backend/ai/app/modules/datasets/application/source_intake/quarantine.py"
+        ],
+        "stage": "delivery",
+        "work": "VFBIZ-0147"
+      },
+      "expected": {
+        "mode": "controlled",
+        "workspaces": ["ai"],
+        "claimRequired": true,
+        "maxDocs": 6,
+        "skills": ["validate-ai-release", "review-change"],
+        "signals": ["ai-dataset", "dataset-release"],
+        "resources": ["ai-dataset-registry"],
+        "authorities": [
+          "data-owner",
+          "legal-owner",
+          "privacy-owner",
+          "release-owner"
+        ],
+        "ownerTeam": "ai-knowledge-engineering",
+        "department": "ai-data",
+        "coordinationTeams": ["data-governance", "ai-assurance"],
+        "roles": [
+          "orchestrator",
+          "implementer",
+          "reviewer-verifier",
+          "risk-reviewer"
+        ],
+        "reviewers": [
+          "dataset-quality-reviewer",
+          "golden-domain-reviewer",
+          "risk-reviewer"
+        ]
       }
     },
     {
@@ -854,9 +1001,7 @@
       "id": "chatbot-graph-excludes-trip",
       "input": {
         "request": "Cập nhật LangGraph Supervisor cho Customer Chatbot",
-        "paths": [
-          "backend/ai/app/modules/assistant/graph/builder.py"
-        ]
+        "paths": ["backend/ai/app/modules/assistant/graph/builder.py"]
       },
       "expected": {
         "mode": "controlled",

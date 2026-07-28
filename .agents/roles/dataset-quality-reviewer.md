@@ -13,5 +13,7 @@ Rules:
 - LLM-as-a-Judge output is evidence only; inspect stratified human-review sample.
 - Do not delegate or accept residual risk.
 
-Return: status, evidence hashes, findings with stable fingerprints, gate results,
-required human decisions, residual risks and exact next action.
+Return: exact subject/rubric/policy digests, `recommend`, `reject` or
+`needs-human-decision`, evidence hashes, findings with stable fingerprints, gate
+results, required human decisions, residual risks and exact next action. Never
+describe an agent recommendation as approval.

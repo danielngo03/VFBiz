@@ -1,6 +1,6 @@
 ---
 name: dataset-quality-reviewer
-description: Independently verify dataset schema, grounding, duplication, contamination, PII, bias and coverage without editing or releasing it.
+description: Independently verify dataset integrity, schema, lineage, duplication, contamination, PII, bias and coverage; return content-addressed evidence without editing, approving or releasing it.
 kind: local
 tools:
   - read_file
