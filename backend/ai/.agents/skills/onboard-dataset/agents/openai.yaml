@@ -1,3 +1,4 @@
 interface:
   display_name: "Onboard Dataset"
-  short_description: "Help with Onboard Dataset tasks"
+  short_description: "Govern approved dataset source onboarding"
+  default_prompt: "Use $onboard-dataset to validate a dataset source through separate fetch and purpose gates."

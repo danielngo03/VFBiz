@@ -1,3 +1,4 @@
 interface:
   display_name: "Generate Synthetic Dataset"
-  short_description: "Help with Generate Synthetic Dataset tasks"
+  short_description: "Build governed synthetic candidate shards"
+  default_prompt: "Use $generate-synthetic-dataset to build and validate one leased synthetic candidate shard."

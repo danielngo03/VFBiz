@@ -9,14 +9,18 @@ description: Register, quarantine and prepare a VFBiz knowledge, evaluation, red
 2. Read `references/source-gate.md` and the exact sections selected from
    `backend/ai/docs/knowledge-data-governance.md`.
 3. Create/update a Source Register candidate without downloading content.
-4. Run `scripts/validate_source_entry.py --register <path> --source-id <id>
-   --purpose <purpose>`. Stop before network access unless the entry is
-   `approved`, that exact purpose is approved, commercial use/derivatives and
-   Legal review are permitted, checksum plus approval evidence exist, and
-   access conditions are satisfied.
-5. After authorized download, write only to quarantine. Scan malware, secrets,
+4. Before network access run `scripts/validate_source_entry.py --register
+   <path> --source-id <id> --gate fetch`. This requires exact revision,
+   allowlisted origin, rights evidence and human fetch approval; an upstream
+   checksum is optional because the observed hash does not exist yet.
+5. Use `scripts/fetch_to_quarantine.py` in the egress-restricted fetch worker.
+   It accepts only the approved exact HTTPS locator, rejects redirects and
+   streams a bounded JSON/JSONL/CSV/Parquet artifact to content-addressed
+   quarantine. Record its Source Fetch Manifest with observed SHA-256/tree
+   hash. Scan malware, secrets,
    PII, rights conflicts, poisoning and format before parsing.
-6. Pin purpose, source revision/checksum, classification, ACL, retention,
+6. Before parsing or evaluation run the same validator with `--gate purpose
+   --purpose <purpose> --fetch-manifest <scan-passed.json>`. Pin purpose, source revision/hash, classification, ACL, retention,
    deletion/tombstone and generation/ingestion budget.
 7. Keep knowledge, held-out evaluation, red-team and training candidate separate.
 8. Submit immutable evidence to independent reviewer and human authorities.
@@ -24,7 +28,7 @@ description: Register, quarantine and prepare a VFBiz knowledge, evaluation, red
 
 ## Stop conditions
 
-- Rights, owner, purpose, checksum, ACL, retention or deletion evidence missing.
+- Rights, owner, fetch/purpose approval, ACL, retention or deletion evidence missing.
 - Customer/production data proposed without explicit privacy/legal authority.
 - Evaluation/red-team records overlap knowledge or training candidate.
 - Download destination is Git, prompt context, logs or an unapproved store.

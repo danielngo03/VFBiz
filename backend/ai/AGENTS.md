@@ -1,23 +1,23 @@
 # VFBiz AI Platform instructions
 
 ## Mission and authority
-This private, fail-closed FastAPI service owns governed knowledge
-ingestion/retrieval, inference orchestration, tool proposals, evaluation and AI
-release policy. API Platform remains identity, authorization and side-effect
-authority. No client calls this service directly.
+This private FastAPI service owns governed knowledge, inference, tool proposals,
+evaluation and AI release policy. API Platform retains identity, authorization
+and side-effect authority; clients never call AI directly.
 
 ## Stable capabilities
 Only these directories may exist under `app/modules`:
 
 - `knowledge`: source lifecycle, chunks, ACL-aware retrieval and tombstones.
+- `datasets`: registry, trust zones, lineage, quality and immutable releases;
+  large payloads never enter Git or PostgreSQL.
 - `inference`: provider-neutral generation/embedding ports and routing policy.
 - `assistant`: answer orchestration and profile-specific behavior.
 - `evaluation`: offline/security/regression suites and deterministic gates.
 - `governance`: dataset/release manifests, approvals and kill-switch policy.
-Provider/model names, `chatbot`, a single screen or a temporary feature never
-become top-level modules. Provider adapters live under `app/infrastructure`.
-`tooling` chỉ được materialize khi có versioned registry, consumer và validation
-thực; tool contracts hiện vẫn thuộc release manifest và API execution boundary.
+Provider/model names, screens and temporary features never become top-level
+modules. Provider adapters live under `app/infrastructure`; `tooling` requires a
+versioned registry, consumer and validation.
 
 ## Internal layering
 Use `domain`, `application`, `presentation` and `infrastructure` only when a
@@ -33,8 +33,7 @@ schemas to domain/application types; SQLAlchemy models remain infrastructure.
   retrieval namespace, prompt or tool authority.
 - Tools create proposals only. API authorizes, confirms, executes and audits any
   side effect.
-- Fine-tuning is not a data freshness, authorization or missing-source fix.
-- No customer chat becomes training data by default.
+- Fine-tuning is not a freshness/authorization fix; customer chat is not training data by default.
 - A release gate never promotes/deploys its own candidate.
 
 ## Team boundary và assurance
@@ -45,14 +44,15 @@ schemas to domain/application types; SQLAlchemy models remain infrastructure.
 - Builder có thể chạy deterministic evaluation nhưng không tự chấp nhận evidence.
 - Independent reviewer xác minh suite/artifact; Data, Privacy, Legal và Security
   owners quyết định trong human authority của họ.
-- Automated gates produce evidence, not approval. The Release Owner alone
-  authorizes promotion, rollback and production release.
+- Gates produce evidence, not approval; Release Owner authorizes production.
 
 ## Persistence and migration
 
 - AI PostgreSQL/pgvector is separate from API PostgreSQL.
 - Alembic is migration authority; vector dimension and model/embedding revision
   are explicit.
+- Dataset payloads use content-addressed storage; PostgreSQL stores metadata,
+  state, digests, lineage, evidence and immutable pointers.
 - Store object keys/checksums and redacted text, not source binaries, secrets,
   unredacted PII or raw provider payloads.
 
