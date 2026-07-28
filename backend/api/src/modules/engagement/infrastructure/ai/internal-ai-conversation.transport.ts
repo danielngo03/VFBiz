@@ -14,6 +14,7 @@ import {
   type ConversationAiExecutionRequest,
   type ConversationAiExecutionResult,
 } from '../../application/runtime/conversation-ai.transport';
+import { InternalAiResponseVerifier } from './internal-ai-response-verifier';
 export {
   ConversationAiTransportError,
   type ConversationAiTransportFailureCode,
@@ -36,12 +37,16 @@ const AUTHENTICATED_TOOLS: readonly InternalAiReadOnlyTool[] = Object.freeze([
 export class InternalAiConversationTransport extends ConversationAiTransport {
   private circuitOpenedUntil = 0;
   private consecutiveFailures = 0;
+  private readonly responseVerifier: InternalAiResponseVerifier;
 
   constructor(
     private readonly config: InternalAiTrustConfig,
     private readonly signer: InternalAiAssertionSigner,
   ) {
     super();
+    this.responseVerifier = new InternalAiResponseVerifier(
+      this.config.responseVerificationKeyReferences ?? [],
+    );
   }
 
   async execute(
@@ -49,7 +54,16 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
     signal?: AbortSignal,
   ): Promise<ConversationAiExecutionResult> {
     const body = {
-      confirmedEntities: [],
+      confirmedEntities: request.confirmedEntities.map((entity) => ({
+        authority: entity.authority,
+        authorityDigest: entity.provenanceDigest,
+        classification: entity.classification,
+        confirmedAt: entity.confirmedAt.toISOString(),
+        expiresAt: entity.expiresAt.toISOString(),
+        kind: entity.kind,
+        reference: entity.opaqueReference,
+        sourceRevision: entity.sourceRevision,
+      })),
       conversationVersion: request.conversationVersion,
       correlationId: request.correlationId,
       fencingToken: request.fencingToken,
@@ -77,8 +91,15 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
       signal,
     });
     try {
+      const document = await readJsonDocument(response);
+      this.verifyResponse(
+        document,
+        response,
+        request.requestId,
+        request.correlationId,
+      );
       const result = parseExecutionResult(
-        await readJson(response),
+        document.value,
         {
           graph: request.release.graphRevision,
           knowledge: request.release.knowledgeRevision,
@@ -115,7 +136,7 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
       requestId: request.requestId,
     };
     try {
-      await this.send({
+      const response = await this.send({
         action: 'turn.cancel',
         authorization: authorizationFor(
           request,
@@ -131,6 +152,13 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
         request,
         signal,
       });
+      const document = await readJsonDocument(response);
+      this.verifyResponse(
+        document,
+        response,
+        request.requestId,
+        request.correlationId,
+      );
       this.recordSuccess();
       return { status: 'accepted' };
     } catch (error) {
@@ -138,6 +166,21 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
       this.recordFailure(failure);
       throw failure;
     }
+  }
+
+  private verifyResponse(
+    document: Readonly<{ bytes: Uint8Array; value: unknown }>,
+    response: Response,
+    requestId: string,
+    correlationId: string,
+  ): void {
+    if (!this.responseVerifier.enabled) return;
+    this.responseVerifier.verify({
+      body: document.bytes,
+      correlationId,
+      headers: response.headers,
+      requestId,
+    });
   }
 
   private async send(input: {
@@ -430,7 +473,24 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
+async function readJsonDocument(
+  response: Response,
+): Promise<Readonly<{ bytes: Uint8Array; value: unknown }>> {
+  try {
+    return await readJsonDocumentUnchecked(response);
+  } catch (error) {
+    if (error instanceof ConversationAiTransportError) throw error;
+    throw new ConversationAiTransportError('invalid_response', false);
+  }
+}
+
 async function readJsonUnchecked(response: Response): Promise<unknown> {
+  return (await readJsonDocumentUnchecked(response)).value;
+}
+
+async function readJsonDocumentUnchecked(
+  response: Response,
+): Promise<Readonly<{ bytes: Uint8Array; value: unknown }>> {
   const declaredLength = response.headers.get('content-length');
   if (
     declaredLength !== null &&
@@ -439,7 +499,7 @@ async function readJsonUnchecked(response: Response): Promise<unknown> {
   ) {
     throw new ConversationAiTransportError('invalid_response', false);
   }
-  if (response.body === null) return null;
+  if (response.body === null) return { bytes: new Uint8Array(), value: null };
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -460,9 +520,9 @@ async function readJsonUnchecked(response: Response): Promise<unknown> {
     offset += chunk.byteLength;
   }
   const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-  if (text.length === 0) return null;
+  if (text.length === 0) return { bytes, value: null };
   try {
-    return JSON.parse(text) as unknown;
+    return { bytes, value: JSON.parse(text) as unknown };
   } catch {
     throw new ConversationAiTransportError('invalid_response', false);
   }

@@ -3,6 +3,7 @@ import type {
   ConversationAccessScope,
   ConversationPublicEvent,
   ConversationRuntimeSnapshot,
+  ConfirmedConversationContextEntity,
 } from '../../domain/runtime/conversation-runtime';
 
 export interface AcceptedMessageReplay {
@@ -32,6 +33,15 @@ export type ConversationRuntimeCommitResult =
       readonly replay: AcceptedMessageReplay;
     };
 
+export type ConversationContextConfirmationResult =
+  | { readonly outcome: 'confirmed' }
+  | { readonly outcome: 'not-found' }
+  | { readonly outcome: 'stale' }
+  | {
+      readonly actualVersion: number;
+      readonly outcome: 'version-conflict';
+    };
+
 export type ConversationPublicEventReadResult =
   | {
       readonly events: readonly ConversationPublicEvent[];
@@ -50,6 +60,15 @@ export type ConversationPublicEventReadResult =
     };
 
 export abstract class ConversationRuntimeRepository {
+  abstract confirmContextEntity(input: {
+    accessScope: ConversationAccessScope;
+    correlationId: string;
+    entity: ConfirmedConversationContextEntity;
+    expectedVersion: number;
+    now: Date;
+    sessionId: string;
+  }): Promise<ConversationContextConfirmationResult>;
+
   abstract claimCancellationDispatches(
     now: Date,
     leaseUntil: Date,
@@ -158,6 +177,7 @@ export interface ConversationTurnExecutionContext {
     readonly maxModelTokens: number;
   };
   readonly content: string;
+  readonly confirmedEntities: readonly ConfirmedConversationContextEntity[];
   readonly conversationVersion: number;
   readonly fencingToken: number;
   readonly locale: 'en' | 'vi';

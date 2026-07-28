@@ -24,12 +24,15 @@ def control() -> GraphControlState:
 @pytest.mark.asyncio
 async def test_never_carries_forward_any_entity_without_a_real_catalog_check() -> None:
     revalidator = FailClosedEntityRevalidator()
+    confirmed_at = datetime.now(UTC)
     entities = (
         ConfirmedGlobalEntity(
             kind="vehicle_model",
             reference="vf-8",
             source_revision="a" * 64,
-            confirmed_at=datetime.now(UTC),
+            authority_digest="b" * 64,
+            confirmed_at=confirmed_at,
+            expires_at=confirmed_at + timedelta(days=1),
             confidence=0.9,
         ),
     )

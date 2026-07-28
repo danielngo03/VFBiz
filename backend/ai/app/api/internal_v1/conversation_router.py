@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Annotated, cast
 from uuid import UUID
 
@@ -16,7 +17,7 @@ from app.api.internal_v1.conversation_schemas import (
 )
 from app.bootstrap.conversation_graph import build_turn_runtime
 from app.bootstrap.release_runtime import ReleaseRuntimeUnavailable
-from app.modules.assistant.domain import GraphControlState, GraphOutcome
+from app.modules.assistant.domain import ConfirmedGlobalEntity, GraphControlState, GraphOutcome
 from app.modules.assistant.graph.runtime import ResumeRejected
 from app.modules.assistant.graph.state import ConversationGraphState
 from app.modules.inference.application import Citation, InferenceBudget
@@ -103,6 +104,7 @@ async def execute_turn(
         fencing_token=request.fencing_token,
         locale=request.locale,
     )
+    http_request.state.ai_response_request_id = str(request.request_id)
     dependencies = getattr(http_request.app.state, "conversation_dependencies", None)
     if dependencies is None:
         raise _unavailable("Conversation graph execution is not configured.")
@@ -147,7 +149,20 @@ async def execute_turn(
         "message": request.message,
         "final_answer": "",
         "citations": (),
-        "global_entities": (),
+        "global_entities": tuple(
+            ConfirmedGlobalEntity(
+                kind=entity.kind,
+                reference=entity.reference,
+                source_revision=entity.source_revision,
+                classification=entity.classification,
+                authority_digest=entity.authority_digest,
+                confirmed_at=entity.confirmed_at,
+                expires_at=entity.expires_at,
+                confidence=1.0,
+            )
+            for entity in request.confirmed_entities
+            if entity.expires_at > datetime.now(UTC)
+        ),
         "active_task": None,
         "control": control,
         "evidence": (),
@@ -248,6 +263,7 @@ async def cancel_turn(
         conversation_version=request.conversation_version,
         fencing_token=request.fencing_token,
     )
+    http_request.state.ai_response_request_id = str(request.request_id)
     port = execution_cancellation_port(http_request)
     receipt = await port.accept_durably(
         CancellationCommand(

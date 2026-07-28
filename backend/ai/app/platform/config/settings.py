@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     gateway_audience: str = "vfbiz-ai"
     gateway_jwks_url: str = "http://127.0.0.1:8000/api/v1/internal/ai/jwks"
     gateway_jwks_allowed_origins: tuple[str, ...] = ()
+    response_signing_key_id: str | None = Field(
+        default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    )
+    response_signing_private_key_file: Path | None = None
+    response_signing_ttl_seconds: int = Field(default=30, ge=5, le=60)
 
     generation_provider: Literal["disabled", "openai", "azure_openai", "self_hosted"] = "disabled"
     embedding_provider: Literal["disabled", "openai", "azure_openai", "self_hosted"] = "disabled"
@@ -230,6 +235,14 @@ class Settings(BaseSettings):
                 )
             if origin not in self.gateway_jwks_allowed_origins:
                 raise ValueError("gateway_jwks_url origin is not in gateway_jwks_allowed_origins")
+            if (
+                self.response_signing_key_id is None
+                or self.response_signing_private_key_file is None
+            ):
+                raise ValueError(
+                    "internal response signing key id and private key file are required "
+                    "outside local/test"
+                )
         else:
             jwks = urlsplit(self.gateway_jwks_url)
             if jwks.scheme == "http" and jwks.hostname not in {
@@ -238,6 +251,20 @@ class Settings(BaseSettings):
                 "::1",
             }:
                 raise ValueError("cleartext gateway_jwks_url is allowed only on loopback")
+        response_signing_values = (
+            self.response_signing_key_id,
+            self.response_signing_private_key_file,
+        )
+        if any(value is not None for value in response_signing_values) and not all(
+            value is not None for value in response_signing_values
+        ):
+            raise ValueError(
+                "response signing key id and private key file must be configured together"
+            )
+        if self.response_signing_private_key_file is not None and not (
+            self.response_signing_private_key_file.is_absolute()
+        ):
+            raise ValueError("response signing private key file must be an absolute path")
         if self.generation_provider != "disabled":
             if self.generation_model == "disabled":
                 raise ValueError(

@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _MAX_SAFE_INTEGER = 9_007_199_254_740_991
 
@@ -11,8 +12,20 @@ class ConfirmedEntityReference(BaseModel):
 
     kind: Literal["vehicle_model", "vehicle_variant", "market", "language"]
     reference: str = Field(min_length=1, max_length=160)
-    source_revision: str = Field(alias="sourceRevision", min_length=1, max_length=160)
+    source_revision: str = Field(alias="sourceRevision", pattern=r"^[a-f0-9]{64}$")
     classification: Literal["non_sensitive"]
+    authority: str = Field(min_length=1, max_length=80)
+    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+    confirmed_at: datetime = Field(alias="confirmedAt")
+    expires_at: datetime = Field(alias="expiresAt")
+
+    @model_validator(mode="after")
+    def validate_confirmation_window(self) -> "ConfirmedEntityReference":
+        if self.confirmed_at.tzinfo is None or self.expires_at.tzinfo is None:
+            raise ValueError("confirmedAt and expiresAt must include a timezone")
+        if self.expires_at <= self.confirmed_at:
+            raise ValueError("expiresAt must be after confirmedAt")
+        return self
 
 
 class ConversationTurnRequest(BaseModel):

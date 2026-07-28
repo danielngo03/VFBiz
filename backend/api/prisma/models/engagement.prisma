@@ -24,11 +24,35 @@ model ConversationSession {
   runtime                           ConversationRuntime?
   runtimeEvents                     ConversationPublicEvent[]
   runtimeTurns                      ConversationTurn[]
+  contextEntities                   ConversationContextEntity[]
   supportHandoffs                   SupportHandoff[]
 
   @@index([customerProfileId, updatedAt])
   @@index([ownerSubjectKeyHash, retentionUntil])
   @@map("conversation_session")
+}
+
+model ConversationContextEntity {
+  id                    String              @id @default(uuid()) @db.Uuid
+  conversationSessionId String              @db.Uuid
+  conversationSession   ConversationSession @relation(fields: [conversationSessionId], references: [id], onDelete: Cascade)
+  subjectKeyHash        String              @db.Char(64)
+  kind                  String              @db.VarChar(40)
+  opaqueReference       String              @db.VarChar(160)
+  authority             String              @db.VarChar(80)
+  sourceRevision        String              @db.VarChar(160)
+  classification        String              @default("non_sensitive") @db.VarChar(40)
+  confirmedAt           DateTime            @db.Timestamptz(6)
+  expiresAt             DateTime            @db.Timestamptz(6)
+  validationState       String              @default("validated") @db.VarChar(24)
+  provenanceDigest      String              @db.Char(64)
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+
+  @@unique([conversationSessionId, kind])
+  @@index([conversationSessionId, validationState, expiresAt], map: "conversation_context_entity_conversationSessionId_validationSta")
+  @@index([subjectKeyHash, expiresAt])
+  @@map("conversation_context_entity")
 }
 
 model ActiveAssistantReleaseProjection {
@@ -51,7 +75,7 @@ model ActiveAssistantReleaseProjection {
   updatedAt                DateTime @updatedAt @db.Timestamptz(6)
 
   @@id([assistantProfile, environment])
-  @@index([status, effectiveAt, expiresAt])
+  @@index([status, effectiveAt, expiresAt], map: "active_assistant_release_projection_status_effectiveAt_expiresA")
   @@map("active_assistant_release_projection")
 }
 
@@ -147,7 +171,7 @@ model ConversationTurn {
 
   @@unique([conversationSessionId, clientMessageId])
   @@unique([conversationSessionId, receivedSequence])
-  @@index([status, dispatchAvailableAt, receivedSequence])
+  @@index([status, dispatchAvailableAt, receivedSequence], map: "conversation_turn_status_dispatchAvailableAt_receivedSequence_i")
   @@index([conversationSessionId, status, receivedSequence])
   @@map("conversation_turn")
 }

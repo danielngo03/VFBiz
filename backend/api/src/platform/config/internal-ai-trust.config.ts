@@ -11,6 +11,12 @@ export interface InternalAiSigningKeyReference {
   readonly privateKeyFile: string;
 }
 
+export interface InternalAiResponseVerificationKeyReference {
+  readonly algorithm: 'EdDSA';
+  readonly kid: string;
+  readonly publicKeyFile: string;
+}
+
 export interface InternalAiTrustSettings {
   readonly activeKeyId: string | null;
   readonly allowedHosts: ReadonlySet<string>;
@@ -22,6 +28,7 @@ export interface InternalAiTrustSettings {
   readonly dispatchEnabled: boolean;
   readonly keyReferences: readonly InternalAiSigningKeyReference[];
   readonly requestTimeoutMs: number;
+  readonly responseVerificationKeyReferences: readonly InternalAiResponseVerificationKeyReference[];
   readonly retryBudget: number;
   readonly subjectPseudonymizationKey: string | null;
 }
@@ -41,6 +48,7 @@ export class InternalAiTrustConfig implements InternalAiTrustSettings {
   readonly dispatchEnabled: boolean;
   readonly keyReferences: readonly InternalAiSigningKeyReference[];
   readonly requestTimeoutMs: number;
+  readonly responseVerificationKeyReferences: readonly InternalAiResponseVerificationKeyReference[];
   readonly retryBudget: number;
   readonly subjectPseudonymizationKey: string | null;
 
@@ -71,6 +79,7 @@ export class InternalAiTrustConfig implements InternalAiTrustSettings {
       this.allowedHosts = new Set();
       this.baseUrl = null;
       this.keyReferences = Object.freeze([]);
+      this.responseVerificationKeyReferences = Object.freeze([]);
       this.subjectPseudonymizationKey = null;
       Object.freeze(this);
       return;
@@ -91,6 +100,11 @@ export class InternalAiTrustConfig implements InternalAiTrustSettings {
         infer: true,
       }),
     );
+    this.responseVerificationKeyReferences = parseResponseVerificationKeyring(
+      config.getOrThrow('VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING', {
+        infer: true,
+      }),
+    );
     this.subjectPseudonymizationKey = config.getOrThrow(
       'VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY',
       { infer: true },
@@ -103,6 +117,57 @@ export class InternalAiTrustConfig implements InternalAiTrustSettings {
     }
     Object.freeze(this);
   }
+}
+
+function parseResponseVerificationKeyring(
+  value: string,
+): readonly InternalAiResponseVerificationKeyReference[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(
+      'Internal AI response verification keyring must be valid JSON',
+    );
+  }
+  if (!isExactRecord(parsed, ['keys']) || !Array.isArray(parsed.keys)) {
+    throw new Error(
+      'Internal AI response verification keyring must contain only a keys array',
+    );
+  }
+  if (parsed.keys.length === 0 || parsed.keys.length > MAX_KEY_REFERENCES) {
+    throw new Error(
+      `Internal AI response verification keyring must contain between 1 and ${MAX_KEY_REFERENCES} keys`,
+    );
+  }
+  const ids = new Set<string>();
+  return Object.freeze(
+    parsed.keys.map((candidate: unknown) => {
+      if (
+        !isExactRecord(candidate, ['alg', 'kid', 'publicKeyFile']) ||
+        candidate.alg !== 'EdDSA' ||
+        typeof candidate.kid !== 'string' ||
+        !KEY_ID_PATTERN.test(candidate.kid) ||
+        typeof candidate.publicKeyFile !== 'string' ||
+        !isAbsolute(candidate.publicKeyFile)
+      ) {
+        throw new Error(
+          'Internal AI response verification keys require EdDSA, valid kid and absolute publicKeyFile',
+        );
+      }
+      if (ids.has(candidate.kid)) {
+        throw new Error(
+          'Internal AI response verification key ids must be unique',
+        );
+      }
+      ids.add(candidate.kid);
+      return Object.freeze({
+        algorithm: 'EdDSA' as const,
+        kid: candidate.kid,
+        publicKeyFile: normalize(candidate.publicKeyFile),
+      });
+    }),
+  );
 }
 
 function parseAllowedHosts(value: string): ReadonlySet<string> {

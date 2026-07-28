@@ -137,7 +137,6 @@ async def test_retrieval_and_evidence_authority_bind_exact_active_snapshot() -> 
     evidence = await retriever.retrieve(
         "approved fact",
         AssistantProfile.AUTHENTICATED_CUSTOMER,
-        "subject-1",
     )
     digest = citation_digest(
         evidence_id=evidence[0].evidence_id,
@@ -171,14 +170,12 @@ async def test_rejects_pointer_drift_and_cross_profile_retrieval() -> None:
         await retriever.retrieve(
             "approved fact",
             AssistantProfile.PUBLIC_CUSTOMER,
-            "subject-1",
         )
         == ()
     )
     evidence = await retriever.retrieve(
         "approved fact",
         AssistantProfile.AUTHENTICATED_CUSTOMER,
-        "subject-1",
     )
     authority = ReleasedEvidenceAuthority(
         retriever=retriever,

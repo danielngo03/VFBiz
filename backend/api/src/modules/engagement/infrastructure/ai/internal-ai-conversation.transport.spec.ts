@@ -1,4 +1,11 @@
-import { createHash } from 'node:crypto';
+import {
+  createHash,
+  generateKeyPairSync,
+  sign as signBytes,
+} from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { InternalAiTrustConfig } from '../../../../platform/config/internal-ai-trust.config';
 import type { InternalAiAssertionSigner } from '../../../../platform/security/internal-ai-assertion-signer';
 import type { InternalAiExecutionAssertionInput } from '../../../../platform/security/internal-ai-execution-assertion';
@@ -20,6 +27,20 @@ const responseRevisions = {
 } as const;
 
 describe('InternalAiConversationTransport', () => {
+  const responseKeys = generateKeyPairSync('ed25519');
+  const responseKeyDirectory = mkdtempSync(
+    join(tmpdir(), 'vfbiz-ai-transport-response-'),
+  );
+  const responsePublicKeyFile = join(responseKeyDirectory, 'public.pem');
+  writeFileSync(
+    responsePublicKeyFile,
+    responseKeys.publicKey.export({ format: 'pem', type: 'spki' }),
+    { mode: 0o600 },
+  );
+
+  afterAll(() => {
+    rmSync(responseKeyDirectory, { force: true, recursive: true });
+  });
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -56,7 +77,23 @@ describe('InternalAiConversationTransport', () => {
       }),
     );
 
-    const result = await transport.execute(executionRequest());
+    const confirmedAt = new Date('2026-07-25T07:00:00.000Z');
+    const expiresAt = new Date('2026-07-26T07:00:00.000Z');
+    const result = await transport.execute({
+      ...executionRequest(),
+      confirmedEntities: [
+        {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt,
+          expiresAt,
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-8',
+          provenanceDigest: 'c'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+      ],
+    });
 
     expect(result.outcome).toBe('answered');
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -76,7 +113,121 @@ describe('InternalAiConversationTransport', () => {
     if (typeof rawBody !== 'string') throw new Error('Expected string body');
     const body = rawBody;
     expect(body).toBe(canonicalJson(JSON.parse(body) as unknown));
+    expect(JSON.parse(body)).toMatchObject({
+      confirmedEntities: [
+        {
+          authority: 'vehicle-catalog',
+          authorityDigest: 'c'.repeat(64),
+          classification: 'non_sensitive',
+          confirmedAt: confirmedAt.toISOString(),
+          expiresAt: expiresAt.toISOString(),
+          kind: 'vehicle_model',
+          reference: 'vf-8',
+          sourceRevision: 'd'.repeat(64),
+        },
+      ],
+    });
   });
+
+  it('verifies a detached workload signature before parsing the response', async () => {
+    const { transport } = fixture({
+      responseVerificationKeyReferences: [
+        {
+          algorithm: 'EdDSA',
+          kid: 'ai-response-current',
+          publicKeyFile: responsePublicKeyFile,
+        },
+      ],
+    });
+    const payload = {
+      citations: [],
+      message: 'Không đủ bằng chứng.',
+      outcome: 'refused',
+      releaseCommitReceipt: releaseReceipt(),
+      releaseRevision: '00000000-0000-4000-8000-000000000010',
+      revisions: responseRevisions,
+      usage: { costMicros: 10, modelTokens: 5 },
+    };
+    jest.spyOn(global, 'fetch').mockResolvedValue(signedResponse(payload));
+
+    await expect(transport.execute(executionRequest())).resolves.toMatchObject({
+      outcome: 'refused',
+    });
+  });
+
+  it('rejects a tampered body even when signature headers are present', async () => {
+    const { transport } = fixture({
+      responseVerificationKeyReferences: [
+        {
+          algorithm: 'EdDSA',
+          kid: 'ai-response-current',
+          publicKeyFile: responsePublicKeyFile,
+        },
+      ],
+    });
+    const response = signedResponse({
+      citations: [],
+      message: 'Original.',
+      outcome: 'refused',
+      releaseCommitReceipt: releaseReceipt(),
+      releaseRevision: '00000000-0000-4000-8000-000000000010',
+      revisions: responseRevisions,
+      usage: { costMicros: 10, modelTokens: 5 },
+    });
+    const tampered = new Response(
+      JSON.stringify({ outcome: 'answered', message: 'Tampered.' }),
+      { headers: response.headers, status: 200 },
+    );
+    jest.spyOn(global, 'fetch').mockResolvedValue(tampered);
+
+    await expect(transport.execute(executionRequest())).rejects.toMatchObject({
+      code: 'invalid_response',
+      retryable: false,
+    });
+  });
+
+  function signedResponse(payload: unknown): Response {
+    const body = JSON.stringify(payload);
+    const issuedAt = new Date(Date.now() - 1_000).toISOString();
+    const expiresAt = new Date(Date.now() + 29_000).toISOString();
+    const bodySha256 = createHash('sha256').update(body).digest('hex');
+    const canonical = Buffer.from(
+      `VFBIZ-AI-RESPONSE-V1\nai-response-current\n${issuedAt}\n${expiresAt}\n${requestId}\n${correlationId}\n${bodySha256}`,
+      'utf8',
+    );
+    return new Response(body, {
+      headers: {
+        'content-type': 'application/json',
+        'x-vfbiz-ai-response-body-sha256': bodySha256,
+        'x-vfbiz-ai-response-expires-at': expiresAt,
+        'x-vfbiz-ai-response-issued-at': issuedAt,
+        'x-vfbiz-ai-response-key-id': 'ai-response-current',
+        'x-vfbiz-ai-response-signature': signBytes(
+          null,
+          canonical,
+          responseKeys.privateKey,
+        ).toString('base64url'),
+      },
+      status: 200,
+    });
+  }
+
+  function releaseReceipt(): Record<string, unknown> {
+    return {
+      activationEnvelopeSha256: 'b'.repeat(64),
+      activationId: '00000000-0000-4000-8000-000000000010',
+      candidateSha256: 'a'.repeat(64),
+      conversationVersion: 2,
+      expiresAt: new Date(Date.now() + 15_000).toISOString(),
+      fencingToken: 7,
+      issuedAt: new Date().toISOString(),
+      leaseId: '00000000-0000-4000-8000-000000000001',
+      pointerRevision: 1,
+      requestId,
+      sessionId,
+      turnId,
+    };
+  }
 
   it('creates a new one-time assertion for a retryable attempt', async () => {
     const { signer, transport } = fixture({ retryBudget: 1 });
@@ -381,6 +532,7 @@ function executionRequest(): ConversationAiExecutionRequest {
     },
     assistantProfile: 'public_customer',
     budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
+    confirmedEntities: [],
     content: 'Chính sách bảo hành là gì?',
     conversationVersion: 2,
     correlationId,

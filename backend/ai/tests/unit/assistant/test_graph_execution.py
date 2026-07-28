@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 
-from app.modules.assistant.application import WorkerResult
+from app.modules.assistant.application import RouteDecision, WorkerResult
 from app.modules.assistant.domain import EvidenceReference
 from app.modules.assistant.graph.builder import build_conversation_graph
 from app.modules.assistant.graph.state import merge_confirmed_entities
@@ -36,6 +36,58 @@ def graph_for(
         execution_control=execution_control or ExecutionControl(),
         evidence_authority=evidence_authority or EvidenceAuthority(),
     )
+
+
+class FixedSupervisor:
+    def __init__(self, decision: RouteDecision) -> None:
+        self._decision = decision
+
+    async def route(self, **_kwargs: object) -> RouteDecision:
+        return self._decision
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("decision", "expected_code", "expected_kind"),
+    [
+        (
+            RouteDecision(intent="vehicle_question", multi_intent=True),
+            "MULTIPLE_INTENTS_REQUIRE_CLARIFICATION",
+            "needs_clarification",
+        ),
+        (
+            RouteDecision(intent="unknown", out_of_domain=True),
+            "OUT_OF_DOMAIN",
+            "refused",
+        ),
+        (
+            RouteDecision(
+                intent="public_knowledge",
+                abuse_signals=("instruction_override",),
+            ),
+            "ABUSE_SIGNAL_DETECTED",
+            "refused",
+        ),
+    ],
+)
+async def test_supervisor_policy_terminates_before_worker(
+    decision: RouteDecision,
+    expected_code: str,
+    expected_kind: str,
+) -> None:
+    worker = SequenceWorker([])
+    graph = build_conversation_graph(
+        supervisor=FixedSupervisor(decision),
+        worker=worker,
+        execution_control=ExecutionControl(),
+        evidence_authority=EvidenceAuthority(),
+    )
+
+    result = await graph.ainvoke(initial_state("ambiguous message"))
+
+    assert result["outcome"].code == expected_code
+    assert result["outcome"].kind == expected_kind
+    assert worker.calls == 0
 
 
 @pytest.mark.asyncio

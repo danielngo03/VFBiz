@@ -29,6 +29,7 @@ from app.modules.knowledge.application import (
 from app.modules.knowledge.application import (
     KnowledgeEvidence as Evidence,
 )
+from tests.unit.assistant.conversation_fakes import confirmed_entity
 
 POLICY = DeploymentPolicyDescriptor(
     revision="policy-r1",
@@ -60,10 +61,10 @@ EVIDENCE = (
 class FakeRetriever:
     def __init__(self, evidence: tuple[Evidence, ...] = ()) -> None:
         self.evidence = evidence
-        self.calls: list[tuple[str, AssistantProfile, str]] = []
+        self.calls: list[tuple[str, AssistantProfile]] = []
 
-    async def retrieve(self, query: str, profile: AssistantProfile, subject: str):
-        self.calls.append((query, profile, subject))
+    async def retrieve(self, query: str, profile: AssistantProfile):
+        self.calls.append((query, profile))
         return self.evidence
 
 
@@ -100,7 +101,6 @@ def task() -> ActiveTaskState:
 
 def worker(*, retriever: FakeRetriever, model_mesh: FakeModelMesh) -> KnowledgeGroundedWorker:
     return KnowledgeGroundedWorker(
-        subject="customer-1",
         retriever=retriever,  # type: ignore[arg-type]
         model_mesh=model_mesh,  # type: ignore[arg-type]
         policy=POLICY,
@@ -325,7 +325,7 @@ async def test_completes_with_evidence_references_derived_from_citations() -> No
 
 
 @pytest.mark.asyncio
-async def test_retrieval_receives_the_control_profile_and_worker_subject() -> None:
+async def test_retrieval_receives_contextual_query_without_customer_subject() -> None:
     retriever = FakeRetriever(evidence=())
     model_mesh = FakeModelMesh()
     instance = worker(retriever=retriever, model_mesh=model_mesh)
@@ -335,5 +335,28 @@ async def test_retrieval_receives_the_control_profile_and_worker_subject() -> No
     )
 
     assert retriever.calls == [
-        ("VF 8 giá bao nhiêu?", AssistantProfile.PUBLIC_CUSTOMER, "customer-1")
+        (
+            "VF 8 giá bao nhiêu? intent:vehicle_question",
+            AssistantProfile.PUBLIC_CUSTOMER,
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_retrieval_query_carries_only_confirmed_non_sensitive_context() -> None:
+    retriever = FakeRetriever(evidence=())
+    instance = worker(retriever=retriever, model_mesh=FakeModelMesh())
+
+    await instance.execute(
+        message="Thế chiếc xe lúc nãy thì sao?",
+        task=task(),
+        global_entities=(confirmed_entity(),),
+        control=control(),
+    )
+
+    assert retriever.calls == [
+        (
+            "Thế chiếc xe lúc nãy thì sao? intent:vehicle_question context:vehicle_model:vf-8",
+            AssistantProfile.PUBLIC_CUSTOMER,
+        )
     ]

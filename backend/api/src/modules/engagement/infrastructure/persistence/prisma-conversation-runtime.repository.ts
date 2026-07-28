@@ -15,14 +15,17 @@ import {
   MAX_PUBLIC_EVENT_PAYLOAD_BYTES,
   copyConversationPublicEvent,
   encodePublicEventCursor,
+  assertConfirmedConversationContextEntity,
   sameConversationAccessScope,
   type ConversationAccessScope,
   type ConversationCitation,
+  type ConfirmedConversationContextEntity,
   type ConversationPublicEvent,
   type ConversationRuntimeSnapshot,
   type ConversationTurn,
 } from '../../domain/runtime/conversation-runtime';
 import {
+  type ConversationContextConfirmationResult,
   ConversationRuntimeRepository,
   type AcceptedMessageReplay,
   type ConversationRuntimeCommit,
@@ -52,6 +55,7 @@ type SessionAccessRow = {
 };
 
 const SERIALIZABLE_RETRY_LIMIT = 3;
+const CONTEXT_CONFIRMATION_CLOCK_SKEW_MS = 5 * 60 * 1_000;
 const ACTIVE_HANDOFF_STATUSES = ['requested', 'queued', 'connected'] as const;
 
 export class ConversationRuntimePersistenceCorruptionError extends Error {
@@ -68,6 +72,142 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
     private readonly contentCipher: ConversationContentCipher,
   ) {
     super();
+  }
+
+  async confirmContextEntity(input: {
+    accessScope: ConversationAccessScope;
+    correlationId: string;
+    entity: ConfirmedConversationContextEntity;
+    expectedVersion: number;
+    now: Date;
+    sessionId: string;
+  }): Promise<ConversationContextConfirmationResult> {
+    assertConfirmedConversationContextEntity(input.entity);
+    if (
+      input.entity.confirmedAt.getTime() >
+      input.now.getTime() + CONTEXT_CONFIRMATION_CLOCK_SKEW_MS
+    ) {
+      throw new TypeError(
+        'Conversation context confirmation is in the future.',
+      );
+    }
+    return this.prisma.$transaction(
+      async (transaction) => {
+        await lockConversationSession(transaction, input.sessionId);
+        const session = await this.findSessionAccess(
+          transaction,
+          input.sessionId,
+        );
+        if (
+          session === null ||
+          !matchesAccessScope(session, input.accessScope) ||
+          !runtimeReadable(session, input.now)
+        ) {
+          return { outcome: 'not-found' };
+        }
+        const runtime = await transaction.conversationRuntime.findUnique({
+          select: { version: true },
+          where: { conversationSessionId: input.sessionId },
+        });
+        if (runtime === null) {
+          return { outcome: 'not-found' };
+        }
+        const actualVersion = safeNumber(runtime.version);
+        if (actualVersion !== input.expectedVersion) {
+          return { actualVersion, outcome: 'version-conflict' };
+        }
+        if (
+          input.entity.expiresAt.getTime() >
+          Math.min(
+            storedDate(session.expiresAt).getTime(),
+            storedDate(session.retentionUntil).getTime(),
+          )
+        ) {
+          throw new TypeError(
+            'Conversation context cannot outlive its owning session.',
+          );
+        }
+        const subjectKeyHash = contextSubjectKeyHash(input.accessScope);
+        const existing = await transaction.conversationContextEntity.findUnique(
+          {
+            where: {
+              conversationSessionId_kind: {
+                conversationSessionId: input.sessionId,
+                kind: input.entity.kind,
+              },
+            },
+          },
+        );
+        if (
+          existing !== null &&
+          storedDate(existing.confirmedAt).getTime() >=
+            input.entity.confirmedAt.getTime()
+        ) {
+          const exactReplay =
+            storedDate(existing.confirmedAt).getTime() ===
+              input.entity.confirmedAt.getTime() &&
+            existing.authority === input.entity.authority &&
+            existing.classification === input.entity.classification &&
+            storedDate(existing.expiresAt).getTime() ===
+              input.entity.expiresAt.getTime() &&
+            existing.opaqueReference === input.entity.opaqueReference &&
+            existing.provenanceDigest === input.entity.provenanceDigest &&
+            existing.sourceRevision === input.entity.sourceRevision &&
+            existing.subjectKeyHash === subjectKeyHash &&
+            existing.validationState === 'validated';
+          return { outcome: exactReplay ? 'confirmed' : 'stale' };
+        }
+        await transaction.conversationContextEntity.upsert({
+          create: {
+            authority: input.entity.authority,
+            classification: input.entity.classification,
+            confirmedAt: input.entity.confirmedAt,
+            conversationSessionId: input.sessionId,
+            expiresAt: input.entity.expiresAt,
+            kind: input.entity.kind,
+            opaqueReference: input.entity.opaqueReference,
+            provenanceDigest: input.entity.provenanceDigest,
+            sourceRevision: input.entity.sourceRevision,
+            subjectKeyHash,
+            validationState: 'validated',
+          },
+          update: {
+            authority: input.entity.authority,
+            classification: input.entity.classification,
+            confirmedAt: input.entity.confirmedAt,
+            expiresAt: input.entity.expiresAt,
+            opaqueReference: input.entity.opaqueReference,
+            provenanceDigest: input.entity.provenanceDigest,
+            sourceRevision: input.entity.sourceRevision,
+            subjectKeyHash,
+            validationState: 'validated',
+          },
+          where: {
+            conversationSessionId_kind: {
+              conversationSessionId: input.sessionId,
+              kind: input.entity.kind,
+            },
+          },
+        });
+        await transaction.outboxEvent.create({
+          data: {
+            aggregateId: input.sessionId,
+            aggregateType: 'conversation',
+            correlationId: input.correlationId,
+            eventType: 'conversation.context.confirmed',
+            eventVersion: 1,
+            payload: {
+              authority: input.entity.authority,
+              kind: input.entity.kind,
+              provenanceDigest: input.entity.provenanceDigest,
+              sourceRevision: input.entity.sourceRevision,
+            },
+          },
+        });
+        return { outcome: 'confirmed' };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
 
   async commit(
@@ -535,8 +675,17 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
     turnId: string,
     now: Date,
   ): Promise<ConversationTurnExecutionContext | null> {
+    const subjectKeyHash = contextSubjectKeyHash(accessScope);
     const session = await this.prisma.conversationSession.findUnique({
       include: {
+        contextEntities: {
+          orderBy: { kind: 'asc' },
+          where: {
+            expiresAt: { gt: now },
+            subjectKeyHash,
+            validationState: 'validated',
+          },
+        },
         customerProfile: {
           select: {
             identitySubject: { select: { issuer: true, subject: true } },
@@ -596,6 +745,16 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
           'message',
         ),
       ),
+      confirmedEntities: session.contextEntities.map((entity) => ({
+        authority: entity.authority,
+        classification: 'non_sensitive' as const,
+        confirmedAt: entity.confirmedAt,
+        expiresAt: entity.expiresAt,
+        kind: entity.kind as ConfirmedConversationContextEntity['kind'],
+        opaqueReference: entity.opaqueReference,
+        provenanceDigest: entity.provenanceDigest,
+        sourceRevision: entity.sourceRevision,
+      })),
       conversationVersion: safeNumber(session.runtime.version),
       fencingToken: safeNumber(turn.fencingToken),
       locale: session.locale as 'en' | 'vi',
@@ -1582,6 +1741,14 @@ function copyAccessScope(
   accessScope: ConversationAccessScope,
 ): ConversationAccessScope {
   return { ...accessScope };
+}
+
+function contextSubjectKeyHash(accessScope: ConversationAccessScope): string {
+  return accessScope.kind === 'authenticated_customer'
+    ? conversationSubjectKeyHash(accessScope.issuer, accessScope.subject)
+    : createHash('sha256')
+        .update(`public-capability:${accessScope.capabilityHash}`, 'utf8')
+        .digest('hex');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

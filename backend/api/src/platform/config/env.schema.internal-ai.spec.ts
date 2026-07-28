@@ -25,6 +25,8 @@ const enabledInternalAi = {
   VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID: 'api-ai-current',
   VFBIZ_INTERNAL_AI_ASSERTION_KEYRING:
     '{"keys":[{"alg":"ES256","kid":"api-ai-current","privateKeyFile":"/run/secrets/api-ai.pem"}]}',
+  VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING:
+    '{"keys":[{"alg":"EdDSA","kid":"ai-response-current","publicKeyFile":"/run/secrets/ai-response-public.pem"}]}',
   VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY:
     'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
 } as const;

@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping
+from collections.abc import AsyncGenerator, AsyncIterable, Awaitable, Callable, Mapping
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import cast
 from uuid import UUID, uuid4
@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.responses import Response
+from starlette.responses import Response, StreamingResponse
 
 from app.api.internal_v1 import internal_v1_router
 from app.bootstrap.conversation_graph import (
@@ -20,6 +20,7 @@ from app.platform.config import Settings
 from app.platform.database import DatabaseRuntime, create_database_runtime
 from app.platform.health import public_health_router
 from app.platform.security.execution_assertion import build_execution_assertion_verifier
+from app.platform.security.response_authenticity import InternalResponseSigner
 
 
 def create_application(settings: Settings | None = None) -> FastAPI:
@@ -76,6 +77,16 @@ async def application_lifespan(application: FastAPI) -> AsyncGenerator[None]:
         if assertion_redis_client is not None:
             stack.push_async_callback(assertion_redis_client.aclose)
         application.state.execution_assertion_verifier = assertion_verifier
+        application.state.internal_response_signer = (
+            InternalResponseSigner.from_pem_file(
+                key_id=configuration.response_signing_key_id,
+                private_key_file=configuration.response_signing_private_key_file,
+                ttl_seconds=configuration.response_signing_ttl_seconds,
+            )
+            if configuration.response_signing_key_id is not None
+            and configuration.response_signing_private_key_file is not None
+            else None
+        )
         yield
 
 
@@ -90,6 +101,38 @@ async def secure_response_middleware(
         correlation_id = str(uuid4())
     request.state.correlation_id = correlation_id
     response = await call_next(request)
+    if (
+        request.url.path.startswith("/internal/v1/conversation/turns")
+        and 200 <= response.status_code < 300
+        and (signer := getattr(request.app.state, "internal_response_signer", None))
+        is not None
+    ):
+        body_iterator = cast(
+            AsyncIterable[bytes | str], cast(StreamingResponse, response).body_iterator
+        )
+        chunks = [chunk async for chunk in body_iterator]
+        body = b"".join(chunk.encode() if isinstance(chunk, str) else chunk for chunk in chunks)
+        request_id = getattr(request.state, "ai_response_request_id", "")
+        if not request_id:
+            return problem_response(
+                request,
+                500,
+                "INTERNAL_ERROR",
+                "The response authenticity binding is unavailable.",
+            )
+        signed_headers = signer.sign(
+            body=body,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+        preserved_headers = dict(response.headers)
+        preserved_headers.update(signed_headers.as_http_headers())
+        response = Response(
+            content=body,
+            status_code=response.status_code,
+            headers=preserved_headers,
+            media_type=response.media_type,
+        )
     response.headers["cache-control"] = "no-store"
     response.headers["x-content-type-options"] = "nosniff"
     response.headers["referrer-policy"] = "no-referrer"

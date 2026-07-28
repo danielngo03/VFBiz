@@ -126,6 +126,197 @@ describeWithDatabase('Conversation Runtime PostgreSQL integration', () => {
     return id;
   }
 
+  it('persists authority-confirmed context and exposes only active session entities', async () => {
+    const sessionId = await createSession();
+    const confirmedAt = new Date('2026-07-25T07:00:00.000Z');
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt,
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-8',
+          provenanceDigest: 'c'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).resolves.toEqual({ outcome: 'confirmed' });
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt,
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-9',
+          provenanceDigest: 'c'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+        expectedVersion: 1,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).resolves.toEqual({ actualVersion: 0, outcome: 'version-conflict' });
+    await expect(
+      repository.confirmContextEntity({
+        accessScope: { ...accessScope, capabilityHash: 'f'.repeat(64) },
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt,
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-9',
+          provenanceDigest: 'e'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).resolves.toEqual({ outcome: 'not-found' });
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt: new Date('2026-07-25T07:30:00.000Z'),
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-9',
+          provenanceDigest: 'e'.repeat(64),
+          sourceRevision: 'f'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).resolves.toEqual({ outcome: 'confirmed' });
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt: new Date('2026-07-25T07:15:00.000Z'),
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-7',
+          provenanceDigest: 'a'.repeat(64),
+          sourceRevision: 'b'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).resolves.toEqual({ outcome: 'stale' });
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt: new Date('2026-07-25T08:06:00.000Z'),
+          expiresAt: new Date('2026-07-25T11:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-8',
+          provenanceDigest: 'c'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).rejects.toThrow('confirmation is in the future');
+    await expect(
+      repository.confirmContextEntity({
+        accessScope,
+        correlationId: randomUUID(),
+        entity: {
+          authority: 'vehicle-catalog',
+          classification: 'non_sensitive',
+          confirmedAt,
+          expiresAt: new Date('2026-07-25T13:00:00.000Z'),
+          kind: 'vehicle_model',
+          opaqueReference: 'vf-8',
+          provenanceDigest: 'c'.repeat(64),
+          sourceRevision: 'd'.repeat(64),
+        },
+        expectedVersion: 0,
+        now: new Date('2026-07-25T08:00:00.000Z'),
+        sessionId,
+      }),
+    ).rejects.toThrow('cannot outlive its owning session');
+
+    const accepted = await service.acceptMessage({
+      accessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Chiếc xe lúc nãy có chính sách gì?',
+      expectedVersion: 0,
+      sessionId,
+    });
+    const claimed = await service.claimTurn({
+      accessScope,
+      expectedVersion: accepted.conversationVersion,
+      fencingToken: 1,
+      leaseExpiresAt: new Date('2026-07-25T09:00:00.000Z'),
+      sessionId,
+      turnId: accepted.turnId,
+      workerId: 'context-worker',
+    });
+    const context = await repository.getTurnExecutionContext(
+      sessionId,
+      accessScope,
+      accepted.turnId,
+      new Date('2026-07-25T08:00:00.000Z'),
+    );
+
+    expect(context?.conversationVersion).toBe(claimed.conversationVersion);
+    expect(context?.confirmedEntities).toEqual([
+      expect.objectContaining({
+        authority: 'vehicle-catalog',
+        kind: 'vehicle_model',
+        opaqueReference: 'vf-9',
+      }),
+    ]);
+    await prisma.conversationContextEntity.updateMany({
+      data: { subjectKeyHash: 'f'.repeat(64) },
+      where: { conversationSessionId: sessionId },
+    });
+    await expect(
+      repository.getTurnExecutionContext(
+        sessionId,
+        accessScope,
+        accepted.turnId,
+        new Date('2026-07-25T08:00:00.000Z'),
+      ),
+    ).resolves.toMatchObject({ confirmedEntities: [] });
+    await expect(
+      prisma.outboxEvent.findFirst({
+        where: {
+          aggregateId: sessionId,
+          eventType: 'conversation.context.confirmed',
+        },
+      }),
+    ).resolves.not.toBeNull();
+  });
+
   it('atomically persists an encrypted inbox turn and replay-safe idempotency', async () => {
     const sessionId = await createSession();
     const content = 'Synthetic private customer message';

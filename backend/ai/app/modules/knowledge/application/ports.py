@@ -33,7 +33,6 @@ class KnowledgeRetriever(Protocol):
         self,
         query: str,
         profile: KnowledgeAssistantProfile,
-        subject: str,
     ) -> tuple[KnowledgeEvidence, ...]: ...
 
 

@@ -46,6 +46,10 @@ class InMemoryConversationRuntimeRepository extends ConversationRuntimeRepositor
     super();
   }
 
+  confirmContextEntity() {
+    return Promise.resolve({ outcome: 'confirmed' as const });
+  }
+
   findDispatchCandidates() {
     return Promise.resolve([]);
   }

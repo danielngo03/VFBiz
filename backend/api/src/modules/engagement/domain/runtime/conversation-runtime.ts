@@ -25,6 +25,48 @@ export interface ConversationBudget {
   readonly remainingModelTokens: number;
 }
 
+export type ConversationContextEntityKind =
+  'language' | 'market' | 'vehicle_model' | 'vehicle_variant';
+
+export interface ConfirmedConversationContextEntity {
+  readonly authority: string;
+  readonly classification: 'non_sensitive';
+  readonly confirmedAt: Date;
+  readonly expiresAt: Date;
+  readonly kind: ConversationContextEntityKind;
+  readonly opaqueReference: string;
+  readonly provenanceDigest: string;
+  readonly sourceRevision: string;
+}
+
+export function assertConfirmedConversationContextEntity(
+  entity: ConfirmedConversationContextEntity,
+): void {
+  const identifier = /^[a-z0-9]+(?:-[a-z0-9]+){1,7}$/;
+  const digest = /^[a-f0-9]{64}$/;
+  if (
+    entity.classification !== 'non_sensitive' ||
+    !digest.test(entity.provenanceDigest) ||
+    entity.authority.length < 1 ||
+    entity.authority.length > 80 ||
+    !digest.test(entity.sourceRevision) ||
+    !Number.isFinite(entity.confirmedAt.getTime()) ||
+    !Number.isFinite(entity.expiresAt.getTime()) ||
+    entity.expiresAt.getTime() <= entity.confirmedAt.getTime()
+  ) {
+    throw new TypeError('Invalid confirmed conversation context entity.');
+  }
+  if (
+    ((entity.kind === 'vehicle_model' || entity.kind === 'vehicle_variant') &&
+      !identifier.test(entity.opaqueReference)) ||
+    (entity.kind === 'market' && !/^[A-Z]{2}$/.test(entity.opaqueReference)) ||
+    (entity.kind === 'language' &&
+      !['en', 'vi'].includes(entity.opaqueReference))
+  ) {
+    throw new TypeError('Invalid confirmed conversation context reference.');
+  }
+}
+
 export type ConversationAccessScope =
   | {
       readonly capabilityHash: string;

@@ -34,6 +34,19 @@ class ResumeClaim:
 class RouteDecision:
     intent: TaskIntent
     required_arguments: tuple[OpaqueSlotName, ...] = ()
+    confidence: float = 1.0
+    missing_slots: tuple[OpaqueSlotName, ...] = ()
+    multi_intent: bool = False
+    out_of_domain: bool = False
+    abuse_signals: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("route confidence must be between zero and one")
+        if len(self.required_arguments) > 16 or len(self.missing_slots) > 16:
+            raise ValueError("route slot limit exceeded")
+        if len(self.abuse_signals) > 16:
+            raise ValueError("route abuse signal limit exceeded")
 
 
 @dataclass(frozen=True, slots=True)

@@ -48,9 +48,7 @@ class ReleasedKnowledgeRetriever:
         self,
         query: str,
         profile: KnowledgeAssistantProfile,
-        subject: str,
     ) -> tuple[KnowledgeEvidence, ...]:
-        _ = subject
         if profile.value != self._scope.assistant_profile:
             return ()
         result = await self._service.retrieve(

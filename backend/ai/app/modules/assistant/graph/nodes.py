@@ -55,6 +55,28 @@ class ConversationNodes:
                     kind="handoff_required", code="SUPERVISOR_DEADLINE_EXCEEDED"
                 )
             }
+        if decision.abuse_signals:
+            return {
+                "outcome": GraphOutcome(kind="refused", code="ABUSE_SIGNAL_DETECTED")
+            }
+        if decision.out_of_domain:
+            return {"outcome": GraphOutcome(kind="refused", code="OUT_OF_DOMAIN")}
+        if decision.multi_intent:
+            return {
+                "outcome": GraphOutcome(
+                    kind="needs_clarification",
+                    code="MULTIPLE_INTENTS_REQUIRE_CLARIFICATION",
+                    pending_slots=("primary_intent",),
+                )
+            }
+        if decision.missing_slots:
+            return {
+                "outcome": GraphOutcome(
+                    kind="needs_clarification",
+                    code="MISSING_REQUIRED_ARGUMENTS",
+                    pending_slots=decision.missing_slots,
+                )
+            }
         retry_count = (
             state["active_task"].retry_count
             if state["active_task"] is not None

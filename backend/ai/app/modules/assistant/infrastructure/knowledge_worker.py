@@ -29,7 +29,7 @@ def citation_digest(*, evidence_id: str, source_revision: str) -> str:
 class KnowledgeGroundedWorker:
     """Retrieve grounded evidence, generate through Model Mesh, map the result.
 
-    Constructed per turn (closing over subject/budget/policy/prompt identity)
+    Constructed per turn (closing over budget/policy/prompt identity)
     for the same reason as `PostgresExecutionControlAdapter`:
     `GraphControlState` carries no customer subject or per-request budget,
     only the revision/fencing metadata the graph itself needs to stay
@@ -43,7 +43,6 @@ class KnowledgeGroundedWorker:
     def __init__(
         self,
         *,
-        subject: str,
         retriever: KnowledgeRetriever,
         model_mesh: ModelMesh,
         policy: DeploymentPolicyDescriptor,
@@ -52,7 +51,6 @@ class KnowledgeGroundedWorker:
         prompt_content_sha256: str,
         correlation_id: str,
     ) -> None:
-        self._subject = subject
         self._retriever = retriever
         self._model_mesh = model_mesh
         self._policy = policy
@@ -71,11 +69,14 @@ class KnowledgeGroundedWorker:
         global_entities: tuple[ConfirmedGlobalEntity, ...],
         control: GraphControlState,
     ) -> WorkerResult:
-        _ = task, global_entities
+        query = build_retrieval_query(
+            message=message,
+            task=task,
+            global_entities=global_entities,
+        )
         evidence = await self._retriever.retrieve(
-            message,
+            query,
             KnowledgeAssistantProfile(control.assistant_profile),
-            self._subject,
         )
         if not evidence:
             return WorkerResult(
@@ -205,3 +206,27 @@ class KnowledgeGroundedWorker:
             0,
             self._remaining_cost_microusd - cost_microusd,
         )
+
+
+def build_retrieval_query(
+    *,
+    message: str,
+    task: ActiveTaskState,
+    global_entities: tuple[ConfirmedGlobalEntity, ...],
+) -> str:
+    """Build a bounded public-knowledge query from authority-confirmed refs.
+
+    Entity values are already constrained opaque identifiers. They help
+    retrieval resolve references across turns but never become prompt policy
+    or customer-private facts.
+    """
+
+    context = " ".join(
+        f"{entity.kind}:{entity.reference}"
+        for entity in global_entities
+        if entity.classification == "non_sensitive"
+    )
+    suffix = f" intent:{task.intent}"
+    if context:
+        suffix += f" context:{context}"
+    return f"{message.strip()}{suffix}"[:4_000]

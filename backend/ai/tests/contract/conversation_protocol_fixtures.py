@@ -65,8 +65,12 @@ def turn_body(*, conversation_version: int = 1, fencing_token: int = 7) -> dict[
             {
                 "kind": "vehicle_model",
                 "reference": "vf-8",
-                "sourceRevision": "catalog-r1",
+                "sourceRevision": "a" * 64,
                 "classification": "non_sensitive",
+                "authority": "vehicle-catalog",
+                "authorityDigest": "b" * 64,
+                "confirmedAt": "2026-07-27T00:00:00Z",
+                "expiresAt": "2026-07-28T00:00:00Z",
             }
         ],
     }

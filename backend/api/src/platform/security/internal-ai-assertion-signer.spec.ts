@@ -15,13 +15,20 @@ describe('InternalAiAssertionSigner', () => {
   const directory = mkdtempSync(join(tmpdir(), 'vfbiz-api-ai-trust-'));
   const es256KeyFile = join(directory, 'es256.pem');
   const edDsaKeyFile = join(directory, 'eddsa.pem');
+  const responsePublicKeyFile = join(directory, 'response-public.pem');
 
   beforeAll(() => {
     writePrivateKey(
       es256KeyFile,
       generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey,
     );
-    writePrivateKey(edDsaKeyFile, generateKeyPairSync('ed25519').privateKey);
+    const responseKeyPair = generateKeyPairSync('ed25519');
+    writePrivateKey(edDsaKeyFile, responseKeyPair.privateKey);
+    writeFileSync(
+      responsePublicKeyFile,
+      responseKeyPair.publicKey.export({ format: 'pem', type: 'spki' }),
+      { mode: 0o600 },
+    );
   });
 
   afterAll(() => {
@@ -224,6 +231,15 @@ describe('InternalAiAssertionSigner', () => {
       VFBIZ_INTERNAL_AI_ASSERTION_TTL_SECONDS: 30,
       VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID: activeKeyId,
       VFBIZ_INTERNAL_AI_ASSERTION_KEYRING: JSON.stringify({ keys }),
+      VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING: JSON.stringify({
+        keys: [
+          {
+            alg: 'EdDSA',
+            kid: 'ai-response-current',
+            publicKeyFile: responsePublicKeyFile,
+          },
+        ],
+      }),
       VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY:
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=',
     } as unknown as EnvironmentVariables;

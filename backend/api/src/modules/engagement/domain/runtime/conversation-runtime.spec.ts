@@ -8,6 +8,7 @@ import {
   ConversationStaleFencingTokenError,
   ConversationVersionConflictError,
   MAX_CONVERSATION_INPUT_CHARACTERS,
+  assertConfirmedConversationContextEntity,
   createConversationRuntimeSnapshot,
   decodePublicEventCursor,
   type CustomerSafeTurnOutcome,
@@ -779,5 +780,47 @@ describe('ConversationRuntimeAggregate', () => {
       }),
     ).toThrow(ConversationVersionConflictError);
     expect(aggregate.snapshot().status).toBe('open');
+  });
+});
+
+describe('confirmed conversation context', () => {
+  const confirmedAt = new Date('2026-07-27T10:00:00.000Z');
+  const base = {
+    authority: 'vehicle-catalog',
+    classification: 'non_sensitive' as const,
+    confirmedAt,
+    expiresAt: new Date('2026-07-28T10:00:00.000Z'),
+    kind: 'vehicle_model' as const,
+    opaqueReference: 'vf-8',
+    provenanceDigest: 'a'.repeat(64),
+    sourceRevision: 'b'.repeat(64),
+  };
+
+  it('accepts only authority-confirmed opaque references', () => {
+    expect(() => assertConfirmedConversationContextEntity(base)).not.toThrow();
+  });
+
+  it.each(['LHDXXXXXXXXXXXXXXX', 'customer@example.com', '+84901234567'])(
+    'rejects raw sensitive reference %s',
+    (opaqueReference) => {
+      expect(() =>
+        assertConfirmedConversationContextEntity({ ...base, opaqueReference }),
+      ).toThrow('Invalid confirmed conversation context reference.');
+    },
+  );
+
+  it('rejects expired confirmation windows and untrusted source revisions', () => {
+    expect(() =>
+      assertConfirmedConversationContextEntity({
+        ...base,
+        expiresAt: confirmedAt,
+      }),
+    ).toThrow('Invalid confirmed conversation context entity.');
+    expect(() =>
+      assertConfirmedConversationContextEntity({
+        ...base,
+        sourceRevision: 'catalog-r1',
+      }),
+    ).toThrow('Invalid confirmed conversation context entity.');
   });
 });

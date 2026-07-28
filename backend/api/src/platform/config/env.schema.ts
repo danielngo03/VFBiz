@@ -36,6 +36,7 @@ export interface EnvironmentVariables {
   readonly VFBIZ_INTERNAL_AI_ASSERTION_TTL_SECONDS: number;
   readonly VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID?: string;
   readonly VFBIZ_INTERNAL_AI_ASSERTION_KEYRING?: string;
+  readonly VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING?: string;
   readonly VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY?: string;
   readonly VFBIZ_LOG_LEVEL: string;
 }
@@ -153,6 +154,11 @@ const environmentSchema = Joi.object<EnvironmentVariables>({
     .max(32_768)
     .empty('')
     .optional(),
+  VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING: Joi.string()
+    .trim()
+    .max(32_768)
+    .empty('')
+    .optional(),
   VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY: Joi.string()
     .base64()
     .min(44)
@@ -215,6 +221,7 @@ export function validateEnvironment(
     validated.VFBIZ_INTERNAL_AI_ALLOWED_HOSTS,
     validated.VFBIZ_INTERNAL_AI_ASSERTION_ACTIVE_KEY_ID,
     validated.VFBIZ_INTERNAL_AI_ASSERTION_KEYRING,
+    validated.VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING,
     validated.VFBIZ_INTERNAL_AI_SUBJECT_PSEUDONYMIZATION_KEY,
   ];
   if (
@@ -222,7 +229,7 @@ export function validateEnvironment(
     internalAiRequiredValues.some((value) => value === undefined)
   ) {
     throw new Error(
-      'Invalid API environment: enabled internal AI requires base URL, exact host allowlist, active assertion key id, assertion keyring and subject pseudonymization key',
+      'Invalid API environment: enabled internal AI requires base URL, exact host allowlist, assertion keyring, response verification keyring and subject pseudonymization key',
     );
   }
   if (

@@ -50,13 +50,17 @@ class GlobalEntityReference(BaseModel):
 class ConfirmedGlobalEntity(GlobalEntityReference):
     """A reference promoted after authoritative confirmation."""
 
+    authority_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
     confirmed_at: datetime
+    expires_at: datetime
     confidence: float = Field(strict=True, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def require_confirmation_timezone(self) -> "ConfirmedGlobalEntity":
-        if self.confirmed_at.tzinfo is None:
-            raise ValueError("confirmed_at must include a timezone")
+        if self.confirmed_at.tzinfo is None or self.expires_at.tzinfo is None:
+            raise ValueError("confirmed_at and expires_at must include a timezone")
+        if self.expires_at <= self.confirmed_at:
+            raise ValueError("expires_at must be after confirmed_at")
         return self
 
 

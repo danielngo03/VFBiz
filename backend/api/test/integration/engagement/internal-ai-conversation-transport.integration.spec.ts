@@ -197,6 +197,7 @@ function executionRequest(): ConversationAiExecutionRequest {
     },
     assistantProfile: 'public_customer',
     budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
+    confirmedEntities: [],
     content: 'hello',
     conversationVersion: 2,
     correlationId,

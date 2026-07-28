@@ -57,7 +57,7 @@ class IntegrationEmbedder:
     dimension: int = 1536
 
     async def embed_query(self, query: str) -> tuple[float, ...]:
-        assert query == "VinFast approved active evidence"
+        assert query == "VinFast approved active evidence intent:vehicle_question"
         return (1.0, *([0.0] * 1535))
 
     async def aclose(self) -> None:

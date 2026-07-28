@@ -12,6 +12,7 @@ import { InternalAiTrustModule } from '../../../src/platform/security/internal-a
 describe('InternalAiTrustModule integration', () => {
   const directory = mkdtempSync(join(tmpdir(), 'vfbiz-ai-trust-module-'));
   const privateKeyFile = join(directory, 'api-ai.pem');
+  const responsePublicKeyFile = join(directory, 'ai-response-public.pem');
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -24,6 +25,12 @@ describe('InternalAiTrustModule integration', () => {
       { mode: 0o600 },
     );
     chmodSync(privateKeyFile, 0o600);
+    const responsePublicKey = generateKeyPairSync('ed25519').publicKey;
+    writeFileSync(
+      responsePublicKeyFile,
+      responsePublicKey.export({ format: 'pem', type: 'spki' }),
+      { mode: 0o600 },
+    );
 
     module = await Test.createTestingModule({
       imports: [
@@ -47,6 +54,15 @@ describe('InternalAiTrustModule integration', () => {
                     alg: 'ES256',
                     kid: 'api-ai-current',
                     privateKeyFile,
+                  },
+                ],
+              }),
+              VFBIZ_INTERNAL_AI_RESPONSE_VERIFICATION_KEYRING: JSON.stringify({
+                keys: [
+                  {
+                    alg: 'EdDSA',
+                    kid: 'ai-response-current',
+                    publicKeyFile: responsePublicKeyFile,
                   },
                 ],
               }),

@@ -232,7 +232,6 @@ async def build_turn_runtime(
             expected_release_id=expected_knowledge_release,
         )
         worker = KnowledgeGroundedWorker(
-            subject=subject,
             retriever=released_retriever,
             model_mesh=release.model_mesh,
             policy=release.policy,

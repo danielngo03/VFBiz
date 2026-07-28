@@ -28,6 +28,7 @@ const context: ConversationTurnExecutionContext = {
   accessScope,
   assistantProfile: 'public_customer',
   budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
+  confirmedEntities: [],
   content: 'Chính sách là gì?',
   conversationVersion: 4,
   fencingToken: 9,

@@ -71,5 +71,7 @@ def test_staging_requires_https_allowlisted_jwks_origin() -> None:
         expose_docs=False,
         gateway_jwks_url="https://api.internal.example/.well-known/jwks.json",
         gateway_jwks_allowed_origins=("https://api.internal.example",),
+        response_signing_key_id="ai-response-current",
+        response_signing_private_key_file="/run/secrets/ai-response-private.pem",
     )
     assert settings.gateway_jwks_url.startswith("https://")

@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from langgraph.checkpoint.memory import InMemorySaver
@@ -224,11 +224,14 @@ def confirmed_entity(
     *,
     confirmed_at: datetime | None = None,
 ) -> ConfirmedGlobalEntity:
+    confirmation_time = confirmed_at or datetime.now(UTC)
     return ConfirmedGlobalEntity(
         kind=kind,  # type: ignore[arg-type]
         reference=reference,
         source_revision="c" * 64,
-        confirmed_at=confirmed_at or datetime.now(UTC),
+        authority_digest="d" * 64,
+        confirmed_at=confirmation_time,
+        expires_at=confirmation_time + timedelta(days=1),
         confidence=1.0,
     )
 

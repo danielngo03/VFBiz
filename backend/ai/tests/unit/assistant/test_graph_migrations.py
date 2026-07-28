@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import cast
 from uuid import uuid4
 
@@ -129,7 +129,9 @@ def test_checkpoint_entities_reject_vin_like_customer_data() -> None:
             kind="vehicle_model",
             reference="VF8VINRLZ123456789",
             source_revision="c" * 64,
+            authority_digest="d" * 64,
             confirmed_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=1),
             confidence=1.0,
         )
 
@@ -140,7 +142,9 @@ def test_checkpoint_entity_rejects_pii_shaped_source_revision() -> None:
             kind="vehicle_model",
             reference="vf-8",
             source_revision="customer-email-anhtuan-example-com",
+            authority_digest="d" * 64,
             confirmed_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=1),
             confidence=1.0,
         )
 
@@ -151,6 +155,8 @@ def test_checkpoint_entity_rejects_pii_prefixed_digest() -> None:
             kind="vehicle_model",
             reference="vf-8",
             source_revision=f"customer-anhtuan@{'a' * 64}",
+            authority_digest="d" * 64,
             confirmed_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=1),
             confidence=1.0,
         )

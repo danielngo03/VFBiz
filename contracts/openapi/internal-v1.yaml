@@ -36,6 +36,12 @@ paths:
       responses:
         '200':
           description: Customer-safe result, recommendation or read-only tool proposal
+          headers:
+            X-VFBiz-AI-Response-Key-Id: {$ref: '#/components/headers/AIResponseKeyId'}
+            X-VFBiz-AI-Response-Issued-At: {$ref: '#/components/headers/AIResponseTimestamp'}
+            X-VFBiz-AI-Response-Expires-At: {$ref: '#/components/headers/AIResponseTimestamp'}
+            X-VFBiz-AI-Response-Body-SHA256: {$ref: '#/components/headers/AIResponseDigest'}
+            X-VFBiz-AI-Response-Signature: {$ref: '#/components/headers/AIResponseSignature'}
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ConversationTurnResult'}
@@ -68,7 +74,14 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/AIConversationTurnCancellation'}
       responses:
-        '202': {description: Cancellation was accepted by the execution cancellation boundary}
+        '202':
+          description: Cancellation was accepted by the execution cancellation boundary
+          headers:
+            X-VFBiz-AI-Response-Key-Id: {$ref: '#/components/headers/AIResponseKeyId'}
+            X-VFBiz-AI-Response-Issued-At: {$ref: '#/components/headers/AIResponseTimestamp'}
+            X-VFBiz-AI-Response-Expires-At: {$ref: '#/components/headers/AIResponseTimestamp'}
+            X-VFBiz-AI-Response-Body-SHA256: {$ref: '#/components/headers/AIResponseDigest'}
+            X-VFBiz-AI-Response-Signature: {$ref: '#/components/headers/AIResponseSignature'}
         '400': {$ref: '#/components/responses/InternalProblem'}
         '401': {$ref: '#/components/responses/InternalProblem'}
         '403': {$ref: '#/components/responses/InternalProblem'}
@@ -106,6 +119,22 @@ components:
         minLength: 64
         maxLength: 8192
         pattern: '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
+  headers:
+    AIResponseKeyId:
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$'}
+    AIResponseTimestamp:
+      required: true
+      schema: {type: string, format: date-time}
+    AIResponseDigest:
+      required: true
+      schema: {type: string, pattern: '^[a-f0-9]{64}$'}
+    AIResponseSignature:
+      required: true
+      description: |
+        Base64url Ed25519 signature over protocol version, key id, issued/expiry,
+        request id, correlation id and the raw response-body SHA-256 digest.
+      schema: {type: string, minLength: 80, maxLength: 128, pattern: '^[A-Za-z0-9_-]+$'}
   responses:
     InternalProblem:
       description: Typed internal protocol failure
@@ -139,12 +168,16 @@ components:
       additionalProperties: false
     ConfirmedEntityReference:
       type: object
-      required: [kind, reference, sourceRevision, classification]
+      required: [kind, reference, sourceRevision, classification, authority, authorityDigest, confirmedAt, expiresAt]
       properties:
         kind: {enum: [vehicle_model, vehicle_variant, market, language]}
         reference: {type: string, minLength: 1, maxLength: 160}
-        sourceRevision: {type: string, minLength: 1, maxLength: 160}
+        sourceRevision: {type: string, pattern: '^[a-f0-9]{64}$'}
         classification: {const: non_sensitive}
+        authority: {type: string, minLength: 1, maxLength: 80}
+        authorityDigest: {type: string, pattern: '^[a-f0-9]{64}$'}
+        confirmedAt: {type: string, format: date-time}
+        expiresAt: {type: string, format: date-time}
       additionalProperties: false
     ConversationTurnResult:
       oneOf:
