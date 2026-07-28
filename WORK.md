@@ -53,6 +53,22 @@
 | VFBIZ-0123 | P0 | proposed | Customer Engagement | api | VFBIZ-0115 | — | [Release-pinned conversation budget policy](docs/work/items/VFBIZ-0123.md) |
 | VFBIZ-0124 | P0 | proposed | AI Assurance | ai | VFBIZ-0110, VFBIZ-0115 | — | [Calibrate Vietnamese grounding validator](docs/work/items/VFBIZ-0124.md) |
 | VFBIZ-0125 | P0 | active | AI Knowledge Engineering | ai | — | — | [Enforce real PII redaction in knowledge materialization](docs/work/items/VFBIZ-0125.md) |
+| VFBIZ-0130 | P0 | active | Customer Engagement | api | — | — | [Durable conversation context and AI propagation](docs/work/items/VFBIZ-0130.md) |
+| VFBIZ-0132 | P0 | active | Architecture & Integration | root | — | — | [Authenticate internal AI execution responses](docs/work/items/VFBIZ-0132.md) |
+| VFBIZ-0135 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0133, VFBIZ-0134 | — | [Golden case v2 annotation workflow](docs/work/items/VFBIZ-0135.md) |
+| VFBIZ-0136 | P0 | proposed | AI Knowledge Engineering | ai | VFBIZ-0133 | — | [First-party VinFast knowledge source release](docs/work/items/VFBIZ-0136.md) |
+| VFBIZ-0137 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0133 | — | [Fetch approved ViVi Wave A public datasets](docs/work/items/VFBIZ-0137.md) |
+| VFBIZ-0138 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0133 | — | [Synthetic candidate factory and independent review](docs/work/items/VFBIZ-0138.md) |
+| VFBIZ-0139 | P0 | proposed | AI Assurance | ai | VFBIZ-0133 | — | [Bind released golden suites to AI release gate](docs/work/items/VFBIZ-0139.md) |
+| VFBIZ-0147 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0146 | — | [Refactor Dataset runtime dependency boundaries](docs/work/items/VFBIZ-0147.md) |
+| VFBIZ-0154 | P0 | review | Data Governance | ai | — | — | [Define ViVi AI Quality Platform contracts and boundaries](docs/work/items/VFBIZ-0154.md) |
+| VFBIZ-0155 | P0 | review | AI Assurance | ai | — | — | [Build AI Quality benchmark and grader registries](docs/work/items/VFBIZ-0155.md) |
+| VFBIZ-0156 | P0 | review | AI Assurance | ai | — | — | [Build resumable AI evaluation run registry](docs/work/items/VFBIZ-0156.md) |
+| VFBIZ-0162 | P0 | active | Agent Platform | root | — | — | [Add governed Dataset and Golden Review Board](docs/work/items/VFBIZ-0162.md) |
+| VFBIZ-0163 | P0 | review | AI Platform Foundation | ai | — | — | [Repair Dataset tooling after runtime boundary refactor](docs/work/items/VFBIZ-0163.md) |
+| VFBIZ-0164 | P0 | review | Agent Platform | root | — | — | [Resolve canonical AI contract vectors](docs/work/items/VFBIZ-0164.md) |
+| VFBIZ-0165 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python AI contract vectors with canonical registry](docs/work/items/VFBIZ-0165.md) |
+| VFBIZ-0166 | P0 | review | Agent Platform | root | — | — | [Register AI Quality PostgreSQL release gate](docs/work/items/VFBIZ-0166.md) |
 | VFBIZ-0036 | P1 | proposed | Product Management | root | VFBIZ-0035 | — | [Verified Vehicle Asset và customer association](docs/work/items/VFBIZ-0036.md) |
 | VFBIZ-0075 | P1 | review | Architecture & Integration | root | — | — | [Bộ báo cáo kiến trúc đích VFBiz](docs/work/items/VFBIZ-0075.md) |
 | VFBIZ-0083 | P1 | proposed | Mobility Platform | customer-portal | VFBIZ-0072, VFBIZ-0082 | — | [Customer EV Journey Planner experience](docs/work/items/VFBIZ-0083.md) |

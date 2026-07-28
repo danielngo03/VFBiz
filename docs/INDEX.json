@@ -18,11 +18,11 @@
         "architecture",
         "rag"
       ],
-      "revision": "2026-07-23.2",
+      "revision": "2026-07-27.1",
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/architecture.md",
-      "source_hash": "2c4d752cc50e4acde00ae2c44cee2967c2504bfc810a94e6ec0a8e3ce9dfd561"
+      "source_hash": "5d0d9921f7a919a3535867f3e91ffc30685397255a5bb05f23264bc004eb23c8"
     },
     {
       "id": "ai-conversation-graph",
@@ -41,11 +41,11 @@
         "state-machine",
         "assistant"
       ],
-      "revision": 3,
+      "revision": 4,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/conversation-graph.md",
-      "source_hash": "da5e3f0be0bbd971d474167916e87fa82ddfe4a4747738f0bc2636c6e932ac5f"
+      "source_hash": "ddb0b0afb3a8c54f16c6c25191b4e57be95bb73fb70e12fec0717c2b409202e2"
     },
     {
       "id": "ai-dataset-engineering",
@@ -64,11 +64,11 @@
         "evaluation",
         "synthetic-data"
       ],
-      "revision": 1,
-      "review_date": "2026-08-23T00:00:00.000Z",
+      "revision": 4,
+      "review_date": "2026-08-28T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/dataset-engineering.md",
-      "source_hash": "e94322ffa379707a16205ef702c30188c05e520973a8cb1a1146f5a54b03cf58"
+      "source_hash": "f67cbef6d346299a812083009326b2c791e2817d62be56c80081f5a3a4e7c65c"
     },
     {
       "id": "ai-evaluation-release",
@@ -96,7 +96,7 @@
     },
     {
       "id": "ai-inference-serving",
-      "title": "Model Mesh và local inference serving",
+      "title": "Governed model gateway và inference serving",
       "status": "active",
       "owner_role": "engineering-lead",
       "scope": "ai",
@@ -112,11 +112,11 @@
         "finops",
         "resilience"
       ],
-      "revision": 6,
+      "revision": 7,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/inference-serving.md",
-      "source_hash": "ebea4db1fb6f308c323a3bfe9ac2bbd1504708ccfaace20ed667aac59b0d2fb4"
+      "source_hash": "e26c91776ad7d11dae9397bba52f0045a442235527df9ab5868de31bea0f7804"
     },
     {
       "id": "ai-knowledge-data-governance",
@@ -140,7 +140,7 @@
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/knowledge-data-governance.md",
-      "source_hash": "a6843d86673c2aea317cd0921b391fc9382d157a980cf2d3567e4456a45ab8de"
+      "source_hash": "dc5d4d06c18b0678f9c1bdad396392daf720b8e3ca2cbaec2bd2dd01211a79c9"
     },
     {
       "id": "ai-knowledge-ingestion",
@@ -259,7 +259,7 @@
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/ai-gateway-and-tools.md",
-      "source_hash": "e97b540282fd2bccb4d1a8b74af837d9f8bb342caaca55600a26bdb6f1d54add"
+      "source_hash": "0bfd141c3ba0e75f49e2c605d73a556997f7728a3cef3023c6bd6cb761613546"
     },
     {
       "id": "api-architecture",
@@ -300,11 +300,11 @@
         "concurrency",
         "privacy"
       ],
-      "revision": 3,
+      "revision": 4,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/conversation-runtime.md",
-      "source_hash": "579618f01fb924dfdcb86c9c1a043e355677f15712114398a77bade11fdab42d"
+      "source_hash": "a27ad7d8f3647441e45600cc8debd4c1696367fc85a23e113ef0343e2d99f4c8"
     },
     {
       "id": "api-data-model",
@@ -1558,7 +1558,7 @@
         "review",
         "anti-loop"
       ],
-      "revision": 2,
+      "revision": 3,
       "review_date": "2026-09-01T00:00:00.000Z",
       "supersedes": [
         "multi-agent",
@@ -1566,7 +1566,7 @@
         "agent-execution-control"
       ],
       "path": "docs/operating-model/multi-agent-and-review.md",
-      "source_hash": "ee21488ed4fcdd6fcbc1c820623f00bf49d92194cae9f780fcfad8d55dafd490"
+      "source_hash": "fb13d68d48d98174d4730ac0efd6ee1ffa54aa62ad72dbdc5d556905791f3a65"
     },
     {
       "id": "open-source-brand-ip",

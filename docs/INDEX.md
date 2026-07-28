@@ -8,7 +8,7 @@
 | ai-conversation-graph | active | ai | engineering-lead | [LangGraph Conversation State Machine](../backend/ai/docs/conversation-graph.md) | customer-conversation, ai-assistant, session-concurrency, ai-vision |
 | ai-dataset-engineering | active | ai | data-owner | [Dataset Factory cho Customer Chatbot](../backend/ai/docs/dataset-engineering.md) | dataset-source, synthetic-dataset, dataset-release, ai-dataset |
 | ai-evaluation-release | active | ai | engineering-lead | [AI evaluation và release evidence](../backend/ai/docs/evaluation-and-release.md) | ai-evaluation, ai-release, fine-tuning |
-| ai-inference-serving | active | ai | engineering-lead | [Model Mesh và local inference serving](../backend/ai/docs/inference-serving.md) | local-inference, model-routing, provider-fallback, ai-finops |
+| ai-inference-serving | active | ai | engineering-lead | [Governed model gateway và inference serving](../backend/ai/docs/inference-serving.md) | local-inference, model-routing, provider-fallback, ai-finops |
 | ai-knowledge-data-governance | active | ai | data-owner | [Knowledge và dataset governance của AI Platform](../backend/ai/docs/knowledge-data-governance.md) | dataset, data-governance, ai-dataset, ai-retrieval |
 | ai-knowledge-ingestion | active | ai | data-owner | [Knowledge-source ingestion của AI Platform](../backend/ai/docs/knowledge-ingestion.md) | dataset-source, knowledge-ingestion, ai-retrieval |
 | ai-knowledge-release | active | ai | data-owner | [Knowledge revision và atomic release](../backend/ai/docs/knowledge-release.md) | knowledge-revision, knowledge-release, ai-retrieval, webhook |

@@ -64,9 +64,11 @@ register source -> quarantine -> malware/secret/PII/rights checks
   quan và để lại audit evidence; không chỉ ẩn UI.
 - Dataset release không đồng nghĩa model/prompt/retriever/tool release.
 
-Machine-readable contract nằm trong `contracts/ai/`. Public source candidate tại
-`dataset-specs/public-source-candidates.json` chỉ là research metadata; entry
-không ở trạng thái `approved` phải bị download gate từ chối trước network access.
+Machine-readable contract nằm trong `contracts/ai/`. Public source catalog được
+resolve qua `dataset-specs/catalog/sources/index.json`; mỗi source có một
+manifest độc lập. `catalog_status` không cấp quyền tải hoặc sử dụng dữ liệu.
+Download gate chỉ chấp nhận Source Register entry có approval evidence hợp lệ;
+quarantine checksum/scan không được suy diễn thành Legal hoặc purpose approval.
 
 ## Storage và dữ liệu cấm
 

@@ -13,7 +13,7 @@ tags:
   - langgraph
   - state-machine
   - assistant
-revision: 3
+revision: 4
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -23,8 +23,9 @@ supersedes: []
 ## Boundary
 
 Module `assistant` sở hữu graph, typed state, Supervisor, clarification,
-reflection taxonomy, interrupt và checkpoint migration. Nó gọi `knowledge`,
-`inference` và `tooling` qua application port. Nó không authorize customer,
+reflection taxonomy và checkpoint migration. Nó gọi `knowledge` và `inference`
+qua application port; tool contract chỉ materialize khi có released registry và
+API executor. Nó không authorize customer,
 execute business tool hoặc ghi API database.
 
 ## State contract
@@ -37,10 +38,11 @@ ConversationGraphState
 └── evidence
 ```
 
-- `global_entities`: entity đã xác nhận; mỗi field pin origin, confidence,
-  timestamp và sensitivity. Chỉ promoted field mới được dùng qua intent khác.
-- `active_task`: intent, slots, current node, attempt, pending clarification và
-  interrupt token. Task mới thay active task trước đó, được đọc global entity
+- `global_entities`: opaque entity do API business authority xác nhận; mỗi field
+  pin authority digest, source revision, timestamp, expiry và sensitivity. Chỉ
+  promoted field mới được dùng qua intent khác.
+- `active_task`: intent, slots, current node, attempt và pending clarification.
+  Task mới thay active task trước đó, được đọc global entity
   nhưng không tự promote output.
 - `control`: graph/policy/prompt/knowledge revision, profile, budget, event
   sequence và cancellation/fencing ID.
@@ -55,6 +57,13 @@ FastAPI chuyển tiếp nhưng không ghi nó vào checkpoint.
 
 ## Supervisor outcome
 
+| Capability | Trạng thái |
+|---|---|
+| Deterministic fallback router | Implemented |
+| VI/EN normalization, multi-intent và abuse signal | Implemented |
+| Release-pinned semantic classifier | Candidate |
+| Production routing thresholds | Human-blocked |
+
 Mỗi node trả một discriminated outcome:
 
 - `completed`
@@ -65,7 +74,8 @@ Mỗi node trả một discriminated outcome:
 - `handoff_required`
 - `cancelled`
 
-Supervisor có thể re-plan khi lỗi transient hoặc thiếu slot có thể hỏi khách.
+Supervisor có thể re-plan khi lỗi transient. Thiếu slot hoặc multi-intent trả
+terminal clarification để turn kế tiếp dùng durable context.
 Một operation tối đa ba attempt; global graph budget và deadline luôn ưu tiên.
 Authorization, ACL, license, PII, safety và stale critical evidence không được
 retry bằng cách đổi model hoặc tham số. Worker output không thể tự tăng scope.
@@ -83,6 +93,12 @@ Intent mới thay Active Task State hiện tại; baseline chưa giữ task stac
 Global Entities vẫn tồn tại nếu chưa expired/revoked. Pronoun như “xe lúc nãy”
 chỉ resolve từ entity đã confirmed, không từ draft. Task-stack/resume nhiều tác
 vụ chỉ được thêm khi có use case và contract rõ, không được tuyên bố ngầm.
+
+Durable entity projection thuộc API PostgreSQL. Internal request chỉ mang
+allowlisted non-sensitive reference; FastAPI map vào `ConfirmedGlobalEntity`
+và Knowledge Worker đưa intent/reference vào bounded retrieval query. Public
+retrieval không nhận customer subject. Customer-private facts phải đi qua
+NestJS read-only tool có object authorization, không đi qua public RAG.
 
 ## Checkpoint migration
 
@@ -124,7 +140,7 @@ tại revalidate; active task và evidence luôn reset.
 `CheckpointIdentity.graph_version` và `GraphControlState.graph_version` phải
 khớp trước khi đọc checkpoint; mismatch fail closed trước mọi deserialization.
 
-## Interrupt và Vision
+## Cancellation và Vision
 
 Cancellation được kiểm giữa node và truyền xuống provider adapter. Output sau
 fencing token hết hiệu lực bị drop. Vision kết quả là `Observation` với source,
@@ -133,7 +149,9 @@ khi vào active task. Observation không bao giờ là system instruction.
 
 ## Runtime ports
 
-- `SupervisorPort` chỉ trả structured intent và required arguments.
+- `SupervisorPort` trả strict routing metadata gồm intent, confidence, slots,
+  multi-intent, OOD và abuse signal. Deterministic router là fallback an toàn;
+  semantic classifier chỉ được compose khi có release/evaluation evidence.
 - `TaskWorkerPort` chỉ trả discriminated result cùng evidence reference đã
   sanitize; provider, retrieval và business tool vẫn nằm sau port.
 - Worker không được tự khai báo câu trả lời là factual/non-factual. Grounding

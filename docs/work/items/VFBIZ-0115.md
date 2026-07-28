@@ -135,10 +135,12 @@ Progress hiện tại (chưa commit; xem Evidence):
   adapters. Fixture này là technical evidence, không đại diện Content/Legal
   approval cho nguồn VinFast staging.
 - Coordination Request với AI Knowledge Engineering đã được phản hồi và đóng.
-- Exact next action: chốt response authenticity (mTLS hoặc signed response)
-  giữa FastAPI và NestJS, rồi đưa một nguồn VinFast được Content/Legal Owner
-  duyệt qua release pipeline. Public/staging dispatch tiếp tục bị khóa cho tới
-  khi hai human/security gate này và browser E2E đạt.
+- Response authenticity đã được triển khai trong `VFBIZ-0132` bằng detached
+  Ed25519 signature bind raw body/request/correlation/TTL. Exact next action:
+  hoàn tất independent security review cùng production mTLS evidence, rồi đưa
+  một nguồn VinFast được Content/Legal Owner duyệt qua release pipeline.
+  Public/staging dispatch tiếp tục bị khóa tới khi các human/security gate và
+  browser E2E đạt.
 
 ## Evidence
 

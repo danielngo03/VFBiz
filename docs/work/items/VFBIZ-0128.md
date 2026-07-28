@@ -51,12 +51,25 @@ common-directory state.
 
 ## Checkpoint
 
-- Exact next action: mark ready, then implement the reconciliation command and
-  its deterministic coverage.
+- `state reconcile` is implemented through the same atomic dispatcher lock as
+  claim/lease mutation. It persists only elapsed active claim/lease transitions
+  and returns separate counts.
+- Deterministic coverage proves exactly-once expiry, idempotent repetition,
+  rejection of the expired claim, stale-lock recovery and protection of a live
+  dispatcher lock.
+- Live repository reconciliation on 2026-07-27 reported zero expired claims and
+  zero expired leases; no unrelated work state was changed.
+- Exact next action: independent reviewer-verifier checks the control-store
+  transition and CLI output before this controlled item moves to done.
 
 ## Evidence
 
-- [ ] `npm run verify:governance` — add evidence reference
+- [x] `npm run agent:control -- state reconcile` — returned a typed successful
+      result and persisted no unrelated changes on 2026-07-27.
+- [x] `npm run governance:check` — agent-control deterministic scenarios and all
+      72 provider-neutral routing scenarios passed on 2026-07-27.
+- [ ] Independent reviewer-verifier evidence remains required; the implementer
+      does not self-approve the controlled item.
 
 ### active — 2026-07-27T03:57:58.669Z
 

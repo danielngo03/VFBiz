@@ -123,3 +123,9 @@ và metrics cảnh báo; không làm request chính thất bại.
 - Tool schema, cross-subject, disabled tool, stale source và anomaly.
 - Session cache isolation, invalidation và DSAR purge.
 - Timeout/circuit breaker/static handoff và telemetry outage.
+Successful execution responses are authenticated independently from request
+assertions. FastAPI signs the raw response digest with a short-lived Ed25519
+workload key and binds it to request/correlation identity. NestJS holds only an
+allowlisted public-key ring, verifies before JSON parsing, and fails closed on
+missing, expired, unknown-key or tampered responses. Overlapping public keys
+support rotation. This complements, but does not replace, production mTLS.

@@ -1,6 +1,6 @@
 ---
 id: ai-inference-serving
-title: Model Mesh và local inference serving
+title: Governed model gateway và inference serving
 status: active
 owner_role: engineering-lead
 scope: ai
@@ -14,12 +14,27 @@ tags:
   - vllm
   - finops
   - resilience
-revision: 6
+revision: 7
 review_date: 2026-08-23
 supersedes: []
 ---
 
-# Model Mesh và local inference serving
+# Governed model gateway và inference serving
+
+## Capability status
+
+| Capability | Trạng thái |
+|---|---|
+| Provider-neutral generation/embedding ports | Implemented |
+| Một OpenAI generation candidate sau release gate | Candidate |
+| TEI-compatible self-hosted embedding | Candidate |
+| Hai provider tương đương và automatic cross-provider fallback | Target-only |
+| Production activation, residency và cost approval | Human-blocked |
+
+Tên operational hiện tại là **governed model gateway**. `ModelMesh` vẫn là tên
+application abstraction, nhưng hệ thống không được quảng bá multi-provider mesh
+trước khi có ít nhất hai deployment vượt cùng safety, quality, residency, SLO
+và cost gate.
 
 ## Routing contract
 

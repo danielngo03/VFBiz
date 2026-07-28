@@ -13,7 +13,7 @@ tags:
   - handoff
   - concurrency
   - privacy
-revision: 3
+revision: 4
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -49,6 +49,33 @@ Runtime worker poll PostgreSQL inbox bằng batch hữu hạn. Mỗi process ch�
 đa ba session song song và không chạy đồng thời hai turn của cùng một session;
 OCC, lease và fencing trong PostgreSQL mới là authority xuyên process. Khi
 internal AI bị tắt, worker không claim turn và public contract chưa được mở.
+
+## Durable conversation context
+
+API PostgreSQL sở hữu projection `ConversationContextEntity`; LangGraph
+checkpoint không phải conversation-memory authority. Chỉ reference đã được
+business authority xác nhận mới được lưu và truyền qua signed internal request:
+
+```text
+kind, opaqueReference, authority, sourceRevision,
+confirmedAt, expiresAt, validationState, provenanceDigest
+```
+
+Baseline chỉ cho `vehicle_model`, `vehicle_variant`, `market`, `language` với
+classification `non_sensitive`. Raw VIN, contact data, exact location và model
+observation chưa xác nhận bị từ chối. Mỗi session có tối đa một current value
+cho mỗi kind; update context và outbox evidence commit cùng transaction.
+
+Execution context chỉ đọc entity còn `validated`, chưa hết hạn và thuộc đúng
+session/access scope. FastAPI nhận opaque reference cùng authority digest; AI
+được dùng để resolve follow-up nhưng không được tự promote candidate. Ghi mới
+được fence bằng conversation version và `confirmedAt`, nên kết quả cũ không thể
+ghi đè entity mới hơn.
+
+Hiện đây là **Candidate foundation**: chưa có production business-tool writer
+và chưa có authority adapter để thu hồi/revalidate `sourceRevision`. Cho tới khi
+hai phần đó được triển khai, public Chat API vẫn disabled và không được tuyên bố
+multi-turn factual capability.
 
 ## Cancellation
 
@@ -189,6 +216,7 @@ authority, purpose và expiry riêng.
 ## Kiểm thử bắt buộc
 
 - Duplicate message, out-of-order message, OCC conflict và stale fencing token.
+- VF 8 → chính sách vay → “chiếc xe lúc nãy”; context hết hạn/cross-session bị chặn.
 - Client disconnect/cancel cùng provider response muộn.
 - Public capability replay và cross-customer conversation denial.
 - Offline handoff, reconnect, notification consent và queue outage.
