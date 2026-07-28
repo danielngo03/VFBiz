@@ -1,0 +1,34 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "xquad-vi-en",
+  "title": "google-deepmind/xquad",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "google-deepmind/xquad",
+    "revision": "7d30520c717524000f0d9d2f9c10a069acd9d285",
+    "access": "public"
+  },
+  "selectors": {
+    "files": ["xquad.vi.json", "xquad.en.json"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-golden-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["factual-citation", "retrieval"]
+    }
+  ],
+  "declared_license": "CC-BY-SA-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "profile_id": "google-cloud-v1",
+  "training_submission": false,
+  "destinations": [
+    {
+      "allowed_use": "sft",
+      "format": "gemini-supervised-tuning-jsonl",
+      "files": ["gemini/sft.jsonl"]
+    },
+    {
+      "allowed_use": "preference",
+      "format": "gemini-preference-tuning-jsonl",
+      "files": ["gemini/preference.jsonl"]
+    },
+    {
+      "allowed_use": "embedding",
+      "format": "vertex-text-embedding-tuning",
+      "files": [
+        "vertex-embedding/corpus.jsonl",
+        "vertex-embedding/queries.jsonl",
+        "vertex-embedding/train.tsv",
+        "vertex-embedding/validation.tsv",
+        "vertex-embedding/test.tsv"
+      ]
+    },
+    {
+      "allowed_use": "evaluation",
+      "format": "vfbiz-vertex-evaluation-jsonl",
+      "files": ["evaluation/cases.jsonl"]
+    }
+  ],
+  "upload": {
+    "authentication": "application-default-credentials-or-workload-identity",
+    "service_account_json_allowed": false,
+    "object_precondition": "ifGenerationMatch=0"
+  }
+}

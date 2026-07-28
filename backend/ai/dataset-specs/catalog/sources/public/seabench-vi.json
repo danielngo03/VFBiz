@@ -1,0 +1,39 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "seabench-vi",
+  "title": "SeaLLMs/SeaBench",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "SeaLLMs/SeaBench",
+    "revision": "49b15f72aed49e0ed121b7a615863f67d85903ea",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "public-questions.jsonl",
+        "byte_size": 1029563
+      }
+    ],
+    "post_fetch_selection": "vietnamese-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["conversation-quality", "refusal-safety"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

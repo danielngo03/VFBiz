@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/source-fetch-manifest/v2",
+  "title": "VFBiz Source Fetch Manifest",
+  "type": "object",
+  "required": ["fetch_id", "source_id", "source_version", "source_revision", "status", "requested_uri", "requested_at", "storage_zone"],
+  "properties": {
+    "fetch_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "plan_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "plan_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact_selector": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "source_version": {"type": "string", "minLength": 1},
+    "source_revision": {"type": "string", "minLength": 1},
+    "status": {"enum": ["requested", "downloading", "quarantined", "verified", "scan-passed", "rejected", "deleted"]},
+    "requested_uri": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "resolved_uri": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "requested_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "storage_zone": {"const": "quarantine"},
+    "content_address": {"type": "string", "pattern": "^sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+    "observed_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "observed_tree_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "bytes": {"type": "integer", "minimum": 0},
+    "media_type": {"enum": ["application/json", "application/x-ndjson", "text/csv", "application/vnd.apache.parquet"]},
+    "scan_evidence_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "rejection_reason": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {
+      "if": {"required": ["plan_id"]},
+      "then": {"required": ["plan_digest", "artifact_selector"]}
+    },
+    {"if": {"properties": {"status": {"enum": ["quarantined", "verified", "scan-passed"]}}, "required": ["status"]}, "then": {"required": ["resolved_uri", "content_address", "observed_sha256", "observed_tree_hash", "bytes", "media_type", "completed_at"]}},
+    {"if": {"properties": {"status": {"const": "scan-passed"}}, "required": ["status"]}, "then": {"required": ["scan_evidence_ids"], "properties": {"scan_evidence_ids": {"minItems": 1}}}},
+    {"if": {"properties": {"status": {"const": "rejected"}}, "required": ["status"]}, "then": {"required": ["rejection_reason"]}}
+  ],
+  "additionalProperties": false
+}

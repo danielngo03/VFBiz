@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/source-fetch-plan/v1",
+  "title": "VFBiz Source Fetch Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "source_id",
+    "source_version",
+    "source_revision",
+    "fetch_approval_digest",
+    "artifact_selector",
+    "requested_uri",
+    "media_type",
+    "max_bytes",
+    "allowed_redirect_hosts",
+    "created_at"
+  ],
+  "properties": {
+    "plan_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "source_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "source_version": {"type": "string", "minLength": 1},
+    "source_revision": {"type": "string", "minLength": 1},
+    "fetch_approval_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifact_selector": {"type": "string", "minLength": 1},
+    "requested_uri": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "media_type": {
+      "enum": [
+        "application/json",
+        "application/x-ndjson",
+        "text/csv",
+        "application/vnd.apache.parquet"
+      ]
+    },
+    "max_bytes": {"type": "integer", "minimum": 1, "maximum": 536870912},
+    "upstream_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "allowed_redirect_hosts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9.-]+$"
+      }
+    },
+    "created_at": {"type": "string", "format": "date-time"}
+  }
+}

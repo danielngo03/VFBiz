@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/tool/v1",
+  "title": "ViVi Tool Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "messages",
+    "tool_schema_revision",
+    "expected_tool",
+    "expected_arguments",
+    "authorization_decision",
+    "expected_outcome"
+  ],
+  "properties": {
+    "messages": {"type": "array", "minItems": 1},
+    "tool_schema_revision": {"type": "string", "minLength": 1},
+    "expected_tool": {"type": ["string", "null"]},
+    "expected_arguments": {"type": ["object", "null"]},
+    "authorization_decision": {"enum": ["allow", "deny", "not-applicable"]},
+    "expected_outcome": {
+      "enum": ["tool-proposal", "clarification", "refusal", "typed-error"]
+    }
+  }
+}

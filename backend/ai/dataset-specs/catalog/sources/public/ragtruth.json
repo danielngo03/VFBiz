@@ -1,0 +1,44 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "ragtruth",
+  "title": "ParticleMedia/RAGTruth",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "ParticleMedia/RAGTruth",
+    "revision": "c103204b9ce28d6bbad859304bf30de72b8ed8fe",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "dataset/response.jsonl",
+        "byte_size": 21458735
+      },
+      {
+        "path": "dataset/source_info.jsonl",
+        "byte_size": 15117971
+      }
+    ],
+    "post_fetch_selection": "test-split-only",
+    "execution_policy": "inert-evaluation-data-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-grounding-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["factual-citation", "retrieval", "refusal-safety"]
+    }
+  ],
+  "declared_license": "MIT",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

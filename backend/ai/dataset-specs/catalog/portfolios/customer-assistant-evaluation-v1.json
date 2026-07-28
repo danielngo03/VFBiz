@@ -1,0 +1,65 @@
+{
+  "schema_version": "vivi-source-portfolio/v2",
+  "portfolio_id": "customer-assistant-evaluation-v1",
+  "portfolio_kind": "evaluation",
+  "source_ids": [
+    "belebele-vi-en",
+    "bfcl",
+    "ifeval",
+    "ragtruth",
+    "seabench-vi",
+    "vbench-public",
+    "viequad-retrieval",
+    "vietnamese-function-calling-test",
+    "vmlu-suite",
+    "xquad-vi-en"
+  ],
+  "product_bindings": [
+    {
+      "product_id": "vivi-conversation-eval-v1",
+      "source_ids": [
+        "seabench-vi"
+      ]
+    },
+    {
+      "product_id": "vivi-embedding-eval-v1",
+      "source_ids": [
+        "viequad-retrieval"
+      ]
+    },
+    {
+      "product_id": "vivi-golden-v1",
+      "source_ids": [
+        "belebele-vi-en",
+        "xquad-vi-en"
+      ]
+    },
+    {
+      "product_id": "vivi-grounding-eval-v1",
+      "source_ids": [
+        "ragtruth"
+      ]
+    },
+    {
+      "product_id": "vivi-instruction-eval-v1",
+      "source_ids": [
+        "ifeval"
+      ]
+    },
+    {
+      "product_id": "vivi-tool-eval-v1",
+      "source_ids": [
+        "bfcl",
+        "vietnamese-function-calling-test"
+      ]
+    },
+    {
+      "product_id": "vivi-vietnamese-capability-eval-v1",
+      "source_ids": [
+        "vbench-public",
+        "vmlu-suite"
+      ]
+    }
+  ],
+  "decision": "catalog-only-until-purpose-approved"
+}

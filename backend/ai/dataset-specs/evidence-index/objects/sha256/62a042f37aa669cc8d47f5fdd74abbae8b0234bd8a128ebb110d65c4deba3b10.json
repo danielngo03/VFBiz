@@ -1,0 +1,399 @@
+{
+  "artifact_count": 18,
+  "artifacts": [
+    {
+      "artifact_selector": "default/test",
+      "byte_size": 977517,
+      "content_address": "file://quarantine/52/52bbb79461bff9887c9987a5737d9a06f5ec6c78c08d770828c37fc182ce2cca.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-52bbb79461bff988",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "52bbb79461bff9887c9987a5737d9a06f5ec6c78c08d770828c37fc182ce2cca",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "aya-human-vi-en",
+      "source_revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/train",
+      "byte_size": 137195800,
+      "content_address": "file://quarantine/51/51baa85043b569ba117f41516b32d1b0e4e2647fb203a08933f98a556fb1fb06.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-51baa85043b569ba",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "51baa85043b569ba117f41516b32d1b0e4e2647fb203a08933f98a556fb1fb06",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "aya-human-vi-en",
+      "source_revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "demographics/train",
+      "byte_size": 113702,
+      "content_address": "file://quarantine/64/6468cc56f1c115458507368381fd2b9e74d7b7a5dc0228f6b550146e5320bc2d.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-6468cc56f1c11545",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "6468cc56f1c115458507368381fd2b9e74d7b7a5dc0228f6b550146e5320bc2d",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "aya-human-vi-en",
+      "source_revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "eng_Latn/test",
+      "byte_size": 297082,
+      "content_address": "file://quarantine/f4/f4d5c512557fa897de908a8ff68bae7d502ce4f2f127a6ff2ea7db2647f858f3.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-f4d5c512557fa897",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "f4d5c512557fa897de908a8ff68bae7d502ce4f2f127a6ff2ea7db2647f858f3",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "belebele-vi-en",
+      "source_revision": "7899cdfa4e1e0d733fd77c848e2c273cb1d32be2",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "vie_Latn/test",
+      "byte_size": 346886,
+      "content_address": "file://quarantine/67/674c0782072868033e78dc446c0e5c1ac60d9107084ef399a87d957270719e7a.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-674c078207286803",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "674c0782072868033e78dc446c0e5c1ac60d9107084ef399a87d957270719e7a",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "belebele-vi-en",
+      "source_revision": "7899cdfa4e1e0d733fd77c848e2c273cb1d32be2",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/train",
+      "byte_size": 6048908,
+      "content_address": "file://quarantine/b6/b640524f835054627cf9eb0071f456cf3399b8cb7efe0712de426f33ed4bd8b4.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-b640524f83505462",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "b640524f835054627cf9eb0071f456cf3399b8cb7efe0712de426f33ed4bd8b4",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "bitext-customer-support",
+      "source_revision": "430d1a89bd93bd1fa23c16f29dd53e73f0087443",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/train",
+      "byte_size": 18495985,
+      "content_address": "file://quarantine/24/246d731fc0b7aeef89841425a3e27abf5dc2dff6abeac9ee7ddd80bcc2194792.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-246d731fc0b7aeef",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "246d731fc0b7aeef89841425a3e27abf5dc2dff6abeac9ee7ddd80bcc2194792",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "helpsteer2",
+      "source_revision": "990b2711a36180dd19d9c94b8627844866f8982a",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/validation",
+      "byte_size": 963692,
+      "content_address": "file://quarantine/0a/0add582523f049c233d4716d57a578b6a7b4ddee51bc8060e1598d9f26832c70.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-0add582523f049c2",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "0add582523f049c233d4716d57a578b6a7b4ddee51bc8060e1598d9f26832c70",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "helpsteer2",
+      "source_revision": "990b2711a36180dd19d9c94b8627844866f8982a",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "en-US/test",
+      "byte_size": 191261,
+      "content_address": "file://quarantine/c4/c418da9a5f3a7425b5cf44941bcea032a31040dbda2da85e0dd9323785c7731e.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-c418da9a5f3a7425",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "c418da9a5f3a7425b5cf44941bcea032a31040dbda2da85e0dd9323785c7731e",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "en-US/train",
+      "byte_size": 676404,
+      "content_address": "file://quarantine/9c/9c8b3ce8a96ec3b0d4aee104d8778d9f6bacdbd18f2cea232f6d8333d24401b1.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-9c8b3ce8a96ec3b0",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "9c8b3ce8a96ec3b0d4aee104d8778d9f6bacdbd18f2cea232f6d8333d24401b1",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "en-US/validation",
+      "byte_size": 139770,
+      "content_address": "file://quarantine/cf/cf22bf142963c86ee164c5bb1fe22c67c1261df5c52dfd7217ea87b977c7bb43.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-cf22bf142963c86e",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "cf22bf142963c86ee164c5bb1fe22c67c1261df5c52dfd7217ea87b977c7bb43",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "vi-VN/test",
+      "byte_size": 235681,
+      "content_address": "file://quarantine/af/af38f1da3143d8ed44604158992d92daa0235201301da856b58ae38c7a1cb757.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-af38f1da3143d8ed",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "af38f1da3143d8ed44604158992d92daa0235201301da856b58ae38c7a1cb757",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "vi-VN/train",
+      "byte_size": 857230,
+      "content_address": "file://quarantine/e3/e360aeb04dd992873365c820e96b16b0783212407c5d935061807b3b2b7b0c7d.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-e360aeb04dd99287",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "e360aeb04dd992873365c820e96b16b0783212407c5d935061807b3b2b7b0c7d",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "vi-VN/validation",
+      "byte_size": 173095,
+      "content_address": "file://quarantine/c6/c693b12c3a3e52425cf9ed68df01e073d30546fcdfb7d821529914258bde72f5.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-c693b12c3a3e5242",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "c693b12c3a3e52425cf9ed68df01e073d30546fcdfb7d821529914258bde72f5",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "massive-vi-en",
+      "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/train",
+      "byte_size": 64337794,
+      "content_address": "file://quarantine/21/21db1d1bbc8f705819f2913735a1a4f8fe08585944d7741534a1d83f908a3c16.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-21db1d1bbc8f7058",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "21db1d1bbc8f705819f2913735a1a4f8fe08585944d7741534a1d83f908a3c16",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "oasst2",
+      "source_revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "default/validation",
+      "byte_size": 3180111,
+      "content_address": "file://quarantine/fd/fd46c63babc0756909a957ee40975bcf5610d58c5d1ab5ff2c57c0f57be1f273.parquet",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-fd46c63babc07569",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/vnd.apache.parquet",
+      "observed_sha256": "fd46c63babc0756909a957ee40975bcf5610d58c5d1ab5ff2c57c0f57be1f273",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "oasst2",
+      "source_revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "xquad.en.json",
+      "byte_size": 609383,
+      "content_address": "file://quarantine/e4/e4c57d1c9143aaa1c5d265ba5987a65f4e69528d2a98f29d6e75019b10344f29.json",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-e4c57d1c9143aaa1",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/json",
+      "observed_sha256": "e4c57d1c9143aaa1c5d265ba5987a65f4e69528d2a98f29d6e75019b10344f29",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "xquad-vi-en",
+      "source_revision": "7d30520c717524000f0d9d2f9c10a069acd9d285",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    },
+    {
+      "artifact_selector": "xquad.vi.json",
+      "byte_size": 911401,
+      "content_address": "file://quarantine/f6/f619a1eb11fb42d3ab0834259e488a65f585447ef6154437bfb7199d85161a04.json",
+      "dlp_scan": "pending-production-scanner",
+      "import_id": "local-import-f619a1eb11fb42d3",
+      "malware_scan": "pending-production-scanner",
+      "media_type": "application/json",
+      "observed_sha256": "f619a1eb11fb42d3ab0834259e488a65f585447ef6154437bfb7199d85161a04",
+      "origin_binding": "pending-exact-fetch-plan",
+      "purpose_approval": "not-granted",
+      "release_eligible": false,
+      "source_id": "xquad-vi-en",
+      "source_revision": "7d30520c717524000f0d9d2f9c10a069acd9d285",
+      "structural_scan": {
+        "passed": true,
+        "reasons": [],
+        "scanner_revision": "vivi-quarantine-structural-v1"
+      }
+    }
+  ],
+  "observed_at": "2026-07-28T06:30:00Z",
+  "portfolio_reconciliation": {
+    "observed_source_count": 7,
+    "observed_source_ids": [
+      "aya-human-vi-en",
+      "belebele-vi-en",
+      "bitext-customer-support",
+      "helpsteer2",
+      "massive-vi-en",
+      "oasst2",
+      "xquad-vi-en"
+    ],
+    "pending_source_ids": [
+      "aya-collection-vi-en",
+      "bfcl",
+      "ultrachat-200k",
+      "xlam-function-calling-60k"
+    ],
+    "planned_source_count": 11,
+    "unplanned_artifacts": [
+      "aya-human-vi-en:demographics/train"
+    ]
+  },
+  "promotion_blockers": [
+    "exact fetch-plan/result origin binding",
+    "production malware scan",
+    "production DLP scan",
+    "purpose approval",
+    "independent quality review"
+  ],
+  "reconciliation_id": "vivi-wave-a-local-quarantine-v1",
+  "schema_version": 1,
+  "source_evidence_id": "vivi-wave-a-smoke-fetch-20260728",
+  "trust_zone": "quarantine"
+}

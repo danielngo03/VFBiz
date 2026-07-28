@@ -1,0 +1,66 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "bitext-customer-support",
+  "title": "bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+  "catalog_status": "active-candidate",
+  "registry_status": "legal-hold",
+  "origin": {
+    "repository": "bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+    "revision": "430d1a89bd93bd1fa23c16f29dd53e73f0087443",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["default"],
+    "splits": ["train"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["conversation-quality", "intent-ood"]
+    }
+  ],
+  "declared_license": "CDLA-Sharing-1.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": true,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  },
+  "source_register_snapshot": {
+    "source_id": "bitext-customer-support",
+    "version": "candidate-2026-07-23",
+    "title": "Bitext Customer Support",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+    "source_revision": "unfetched-candidate",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality", "intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CDLA-Sharing-1.0",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Giữ legal-hold tới khi Legal xác nhận nghĩa vụ sharing/derived data.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
+    "review_date": "2026-08-23",
+    "notes": "Không download trước khi rights review hoàn tất."
+  }
+}

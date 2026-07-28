@@ -1,0 +1,36 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "aya-human-vi-en",
+  "title": "CohereLabs/aya_dataset",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "CohereLabs/aya_dataset",
+    "revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["default"],
+    "splits": ["train", "test"],
+    "languages": ["Vietnamese", "English"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["conversation-quality"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

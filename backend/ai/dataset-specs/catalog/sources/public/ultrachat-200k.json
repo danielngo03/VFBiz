@@ -1,0 +1,52 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "ultrachat-200k",
+  "title": "HuggingFaceH4/ultrachat_200k",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "HuggingFaceH4/ultrachat_200k",
+    "revision": "8049631c405ae6576f93f445c6b8166f76f5505a",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "data/train_sft-00000-of-00003-a3ecf92756993583.parquet",
+        "byte_size": 243999189,
+        "sha256": "afa8fa7426081b2a0e732fb50dbb5cd402a28ad5f0dbe66c0d996d63e7220727"
+      },
+      {
+        "path": "data/train_sft-00001-of-00003-0a1804bcb6ae68c6.parquet",
+        "byte_size": 243897199,
+        "sha256": "c8230190bc8b29084c974ff32f05589b458fad1908fc4b2fb2b9e1e9f7921f03"
+      },
+      {
+        "path": "data/train_sft-00002-of-00003-ee46ed25cfae92c6.parquet",
+        "byte_size": 244131731,
+        "sha256": "6fe7d2a5e95cf660f972ecaf304aa5632d7f53384e4b0e0d0f44d9c96733c03e"
+      }
+    ],
+    "excluded": ["data/train_gen-*", "data/test_gen-*", "data/test_sft-*"],
+    "post_fetch_selection": "family-aware-quality-filtered-hash-sample"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["conversation-quality"]
+    }
+  ],
+  "declared_license": "MIT",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

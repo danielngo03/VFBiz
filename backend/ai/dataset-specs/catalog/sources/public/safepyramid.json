@@ -1,0 +1,40 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "safepyramid",
+  "title": "ByteDance/SafePyramid",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "ByteDance/SafePyramid",
+    "revision": "4baf426ee941ff18e48825addc052cf6453357c6",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "benchmark.json",
+        "byte_size": 86700843
+      }
+    ],
+    "excluded": ["benchmark_with_evidence.json", "benchmark.parquet"],
+    "execution_policy": "inert-evaluation-data-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-redteam-v1",
+      "allowed_use": "red-team",
+      "task_families": ["refusal-safety", "conversation-quality"]
+    }
+  ],
+  "declared_license": "CC-BY-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "massive-vi-en",
+  "title": "AmazonScience/massive",
+  "catalog_status": "active-candidate",
+  "registry_status": "legal-hold",
+  "origin": {
+    "repository": "AmazonScience/massive",
+    "revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["vi-VN", "en-US"],
+    "splits": ["train", "validation", "test"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-router-classifier-v1",
+      "allowed_use": "classifier-training",
+      "task_families": ["intent-ood"]
+    }
+  ],
+  "declared_license": "CC-BY-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": true,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  },
+  "source_register_snapshot": {
+    "source_id": "massive-vi-en",
+    "version": "candidate-2026-07-28",
+    "title": "MASSIVE Vietnamese and English",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/AmazonScience/massive",
+    "source_revision": "unfetched-exact-revision-pending",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["intent-ood", "conversation-quality"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-4.0",
+      "commercial_use": "permitted",
+      "derivatives": "permitted",
+      "redistribution": "permitted",
+      "access_conditions": "Exact revision, files and attribution notice require Legal/Data approval before fetch.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/AmazonScience/massive/blob/main/README.md"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Delete candidate/quarantine artifacts and tombstone lineage.",
+    "review_date": "2026-08-28",
+    "notes": "Priority 1 benchmark candidate; taxonomy is not copied unchanged. No download authorized."
+  }
+}

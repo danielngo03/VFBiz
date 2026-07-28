@@ -1,0 +1,39 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "ifeval",
+  "title": "google/IFEval",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "google/IFEval",
+    "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "ifeval_input_data.jsonl",
+        "byte_size": 207111
+      }
+    ],
+    "execution_policy": "deterministic-evaluator-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-instruction-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["conversation-quality"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

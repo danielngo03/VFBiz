@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-export-profile/v1",
+  "title": "ViVi Dataset Export Profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "revision",
+    "destination",
+    "allowed_use",
+    "format",
+    "max_records_per_shard",
+    "max_bytes_per_shard",
+    "training_submission",
+    "profile_digest"
+  ],
+  "properties": {
+    "profile_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "revision": {"type": "string", "minLength": 1},
+    "destination": {
+      "enum": ["google-gemini", "vertex-embedding", "open-weight", "vfbiz-evaluation"]
+    },
+    "allowed_use": {
+      "enum": [
+        "classifier-training",
+        "sft",
+        "preference",
+        "embedding",
+        "reranker",
+        "evaluation",
+        "red-team"
+      ]
+    },
+    "format": {
+      "enum": [
+        "gemini-sft-jsonl",
+        "gemini-preference-jsonl",
+        "vertex-embedding-v1",
+        "open-weight-chat-jsonl",
+        "open-weight-preference-jsonl",
+        "tool-jsonl",
+        "reranker-jsonl",
+        "classifier-jsonl",
+        "evaluation-jsonl"
+      ]
+    },
+    "max_records_per_shard": {"type": "integer", "minimum": 1},
+    "max_bytes_per_shard": {"type": "integer", "minimum": 1},
+    "training_submission": {"const": false},
+    "profile_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/source-catalog-entry/v1",
+  "title": "VFBiz source catalog entry",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_id",
+    "title",
+    "catalog_status",
+    "registry_status",
+    "origin",
+    "selectors",
+    "bindings",
+    "declared_license",
+    "evidence_refs",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": { "const": "vivi-source-catalog-entry/v1" },
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "catalog_status": {
+      "enum": ["active-candidate", "research-backlog", "rejected", "tombstoned"]
+    },
+    "registry_status": {
+      "description": "Fail-closed Source Register projection. Approval-bearing states live in the runtime registry and are never inferred from quarantine evidence.",
+      "enum": ["candidate", "legal-hold", "rejected", "tombstoned"]
+    },
+    "origin": {
+      "type": "object",
+      "required": ["access"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "locator": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "revision": { "type": "string", "minLength": 1 },
+        "artifact_set_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "access": {
+          "enum": ["public", "public-or-gated", "gated", "public-test-only"]
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [{ "required": ["repository"] }, { "required": ["locator"] }]
+        },
+        {
+          "anyOf": [
+            { "required": ["revision"] },
+            { "required": ["artifact_set_digest"] }
+          ]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "selectors": { "type": ["object", "null"] },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["product_id", "allowed_use", "task_families"],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "allowed_use": {
+            "enum": [
+              "knowledge-index",
+              "classifier-training",
+              "sft",
+              "preference",
+              "embedding",
+              "reranker",
+              "evaluation",
+              "red-team"
+            ]
+          },
+          "task_families": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "factual-citation",
+                "retrieval",
+                "intent-ood",
+                "conversation-quality",
+                "tool-use",
+                "refusal-safety",
+                "state-resilience"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "declared_license": { "type": ["string", "null"] },
+    "evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^evidence-index:[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "source_register_snapshot": { "type": "object" },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "catalog_origin",
+        "migration_evidence_ref",
+        "legacy_entry_superseded"
+      ],
+      "properties": {
+        "catalog_origin": { "type": "string", "minLength": 1 },
+        "migration_evidence_ref": {
+          "type": "string",
+          "pattern": "^evidence-index:[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "legacy_entry_superseded": { "type": "boolean" },
+        "quarantine_observation": {
+          "enum": ["not-observed", "fetched-unapproved", "verified-unapproved"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "catalog_status": { "const": "active-candidate" } }
+      },
+      "then": { "properties": { "bindings": { "minItems": 1 } } }
+    },
+    {
+      "if": {
+        "properties": { "catalog_status": { "const": "research-backlog" } }
+      },
+      "then": { "required": ["source_register_snapshot"] }
+    }
+  ],
+  "additionalProperties": false
+}

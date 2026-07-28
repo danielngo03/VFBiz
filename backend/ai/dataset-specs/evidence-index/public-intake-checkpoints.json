@@ -1,0 +1,56 @@
+{
+  "schema_version": "vivi-evidence-index/v1",
+  "index_id": "public-intake-checkpoints",
+  "generated_evidence_authority": "object-storage-and-postgresql",
+  "warnings": [
+    "Historical reconciliation payloads reused an internal reconciliation_id; index_id and SHA-256 are the unique identities.",
+    "These five compact pre-registry checkpoints are retained in Git by content hash so history consolidation cannot break provenance. New runtime evidence belongs only in object storage and PostgreSQL."
+  ],
+  "entries": [
+    {
+      "index_id": "training-smoke-fetch-checkpoint",
+      "evidence_id": "vivi-wave-a-smoke-fetch-20260728",
+      "source_evidence_id": null,
+      "sha256": "ce4d5dd421993ed2e10110eba7e8941105c255e9585975a466f508e1bb31fc41",
+      "immutable_ref": "sha256:ce4d5dd421993ed2e10110eba7e8941105c255e9585975a466f508e1bb31fc41",
+      "object_locator": "repo:backend/ai/dataset-specs/evidence-index/objects/sha256/ce4d5dd421993ed2e10110eba7e8941105c255e9585975a466f508e1bb31fc41.json",
+      "retention": "content-addressed historical checkpoint; future runtime evidence belongs in object storage and PostgreSQL"
+    },
+    {
+      "index_id": "public-fetch-security-checkpoint",
+      "evidence_id": "vivi-public-fetch-security-20260728",
+      "source_evidence_id": null,
+      "sha256": "219f6a8a9ab1bd2adc4bb27a5cd3fe026292aa6f1a7d457a7fcb27914e68b93c",
+      "immutable_ref": "sha256:219f6a8a9ab1bd2adc4bb27a5cd3fe026292aa6f1a7d457a7fcb27914e68b93c",
+      "object_locator": "repo:backend/ai/dataset-specs/evidence-index/objects/sha256/219f6a8a9ab1bd2adc4bb27a5cd3fe026292aa6f1a7d457a7fcb27914e68b93c.json",
+      "retention": "content-addressed historical checkpoint; future runtime evidence belongs in object storage and PostgreSQL"
+    },
+    {
+      "index_id": "training-local-reconciliation-checkpoint",
+      "evidence_id": "vivi-wave-a-local-quarantine-v1",
+      "source_evidence_id": "vivi-wave-a-smoke-fetch-20260728",
+      "sha256": "62a042f37aa669cc8d47f5fdd74abbae8b0234bd8a128ebb110d65c4deba3b10",
+      "immutable_ref": "sha256:62a042f37aa669cc8d47f5fdd74abbae8b0234bd8a128ebb110d65c4deba3b10",
+      "object_locator": "repo:backend/ai/dataset-specs/evidence-index/objects/sha256/62a042f37aa669cc8d47f5fdd74abbae8b0234bd8a128ebb110d65c4deba3b10.json",
+      "retention": "content-addressed historical checkpoint; future runtime evidence belongs in object storage and PostgreSQL"
+    },
+    {
+      "index_id": "evaluation-fetch-checkpoint",
+      "evidence_id": "vivi-public-evaluation-fetch-20260728",
+      "source_evidence_id": null,
+      "sha256": "899e6ce02d811400e6704ac1b2d245ca51845cfbabda91ce5e1e550f65e79366",
+      "immutable_ref": "sha256:899e6ce02d811400e6704ac1b2d245ca51845cfbabda91ce5e1e550f65e79366",
+      "object_locator": "repo:backend/ai/dataset-specs/evidence-index/objects/sha256/899e6ce02d811400e6704ac1b2d245ca51845cfbabda91ce5e1e550f65e79366.json",
+      "retention": "content-addressed historical checkpoint; future runtime evidence belongs in object storage and PostgreSQL"
+    },
+    {
+      "index_id": "evaluation-local-reconciliation-checkpoint",
+      "evidence_id": "vivi-wave-a-local-quarantine-v1",
+      "source_evidence_id": "vivi-public-evaluation-fetch-20260728",
+      "sha256": "caa6badb41f579894af40a8f3dfeaf198f32c28de6bcf2bc508b830da60c4786",
+      "immutable_ref": "sha256:caa6badb41f579894af40a8f3dfeaf198f32c28de6bcf2bc508b830da60c4786",
+      "object_locator": "repo:backend/ai/dataset-specs/evidence-index/objects/sha256/caa6badb41f579894af40a8f3dfeaf198f32c28de6bcf2bc508b830da60c4786.json",
+      "retention": "content-addressed historical checkpoint; future runtime evidence belongs in object storage and PostgreSQL"
+    }
+  ]
+}

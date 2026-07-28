@@ -1,0 +1,55 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "vbench-public",
+  "title": "vbench.ai",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "vbench.ai",
+    "revision": "v2026.03.28",
+    "access": "public-test-only"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "public-test.jsonl",
+        "byte_size": 14023289,
+        "sha256": "5526c4394113ead003dde43331c2fc0e0da32d1ba82ad6326d24ff54417be5ef"
+      },
+      {
+        "path": "sample_submission.jsonl",
+        "byte_size": 306391,
+        "sha256": "e6bca22196a9111d144dbe59f91a02998c160dda50f207869c7c0b6937ba3256"
+      }
+    ],
+    "public_test_composition": {
+      "multiple_choice": 4141,
+      "safety": 4000,
+      "agentic_function_calling": 1000
+    },
+    "excluded": [
+      "professional-test",
+      "private answers",
+      "leaderboard submissions"
+    ],
+    "held_out_policy": "evaluation-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-vietnamese-capability-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["conversation-quality", "refusal-safety", "tool-use"]
+    }
+  ],
+  "declared_license": null,
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

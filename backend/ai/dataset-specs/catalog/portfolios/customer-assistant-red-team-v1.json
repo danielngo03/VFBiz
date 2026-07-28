@@ -1,0 +1,17 @@
+{
+  "schema_version": "vivi-source-portfolio/v2",
+  "portfolio_id": "customer-assistant-red-team-v1",
+  "portfolio_kind": "red-team",
+  "source_ids": [
+    "safepyramid"
+  ],
+  "product_bindings": [
+    {
+      "product_id": "vivi-redteam-v1",
+      "source_ids": [
+        "safepyramid"
+      ]
+    }
+  ],
+  "decision": "catalog-only-until-purpose-approved"
+}

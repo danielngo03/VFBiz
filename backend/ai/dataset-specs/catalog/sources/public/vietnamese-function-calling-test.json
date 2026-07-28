@@ -1,0 +1,40 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "vietnamese-function-calling-test",
+  "title": "phamhai/Vietnamese-Function-Calling-Test",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "phamhai/Vietnamese-Function-Calling-Test",
+    "revision": "6a06eb7f9fdcbacb7982450a404496795934ec65",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "vietnamese-function-calling-test.json",
+        "byte_size": 23294681,
+        "sha256": "6c6e9b3c6489040f494500ff68870773804ba2cbefc1d7c7930d3f35e500d311"
+      }
+    ],
+    "execution_policy": "inert-evaluation-data-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-tool-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["tool-use", "intent-ood"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

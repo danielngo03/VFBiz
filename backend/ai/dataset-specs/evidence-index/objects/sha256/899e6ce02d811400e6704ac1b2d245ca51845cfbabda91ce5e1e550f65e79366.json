@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "evidence_id": "vivi-public-evaluation-fetch-20260728",
+  "scope": "restricted-evaluation-quarantine-only",
+  "source_scope": ["vmlu-suite", "vbench-public"],
+  "artifacts": [
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-Dialog-1.0",
+      "selector": "dialog-1/vi_dialogue_question_only.json",
+      "sha256": "e057b5e2427c005cbacbad4e10e3650aa57c8e134ebcf02983cfd83030ec3844",
+      "byte_size": 118693,
+      "media_type": "application/json"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-DROP-1.0",
+      "selector": "drop-1/vi_drop_benchmark_3309_question_only.json",
+      "sha256": "b3e46758c9099a710141df2dddd5851b2f333123a5b2a835bdb2c23a7a658f42",
+      "byte_size": 3458765,
+      "media_type": "application/json"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-MQA-1.5",
+      "selector": "mqa-1.5/dev.jsonl",
+      "sha256": "e4eb5a51a75639bdcc080c96556b09fcfb875033aec867844c15d308ed3c1f0b",
+      "byte_size": 106148,
+      "media_type": "application/x-ndjson"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-MQA-1.5",
+      "selector": "mqa-1.5/test.jsonl",
+      "sha256": "f625e503b6e6713759d8f9ae259724a0b0ce2261fb1e0e0428724d52e184aa3e",
+      "byte_size": 3735483,
+      "media_type": "application/x-ndjson"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-MQA-1.5",
+      "selector": "mqa-1.5/valid.jsonl",
+      "sha256": "02082d081e8e57b5a1c4c91b11e3caefea2f0f92937d649f5cc61b065bae5e8c",
+      "byte_size": 273381,
+      "media_type": "application/x-ndjson"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "revision": "Vi-SQuAD-1.0",
+      "selector": "squad-1/vi_squad_benchmark_question_only.json",
+      "sha256": "bf92bb3da75caa246c236bb071d745be6f60f5ae01e2855f74d7c1ffaf8aa5d9",
+      "byte_size": 5944231,
+      "media_type": "application/json"
+    },
+    {
+      "source_id": "vbench-public",
+      "revision": "v2026.03.28",
+      "selector": "public-test.jsonl",
+      "sha256": "5526c4394113ead003dde43331c2fc0e0da32d1ba82ad6326d24ff54417be5ef",
+      "byte_size": 14023289,
+      "media_type": "application/x-ndjson"
+    },
+    {
+      "source_id": "vbench-public",
+      "revision": "v2026.03.28",
+      "selector": "sample_submission.jsonl",
+      "sha256": "e6bca22196a9111d144dbe59f91a02998c160dda50f207869c7c0b6937ba3256",
+      "byte_size": 306391,
+      "media_type": "application/x-ndjson"
+    }
+  ],
+  "promotion_blockers": [
+    "DLP candidate adjudication",
+    "independent benchmark quality review",
+    "purpose approval",
+    "held-out contamination fingerprint"
+  ]
+}

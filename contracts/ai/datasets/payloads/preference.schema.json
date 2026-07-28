@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/preference/v1",
+  "title": "ViVi Preference Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompt", "chosen", "rejected", "preference_reason"],
+  "properties": {
+    "prompt": {"type": "string", "minLength": 1},
+    "chosen": {"type": "string", "minLength": 1},
+    "rejected": {"type": "string", "minLength": 1},
+    "preference_reason": {"type": "string", "minLength": 1}
+  }
+}

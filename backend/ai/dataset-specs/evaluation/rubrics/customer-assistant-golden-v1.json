@@ -1,0 +1,14 @@
+{
+  "rubric_id": "customer-assistant-golden-v1",
+  "status": "candidate",
+  "hard_gates": [
+    "citation-membership",
+    "revision-coherence",
+    "claim-grounding",
+    "pii",
+    "tool-authorization",
+    "state-integrity"
+  ],
+  "scored_dimensions": ["correctness", "completeness", "clarity", "locale-quality"],
+  "authority": "Automated scores are evidence only; human SME/Data Owner adjudication is required."
+}

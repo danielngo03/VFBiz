@@ -1,0 +1,118 @@
+{
+  "schema_version": "vivi-source-catalog-index/v1",
+  "catalog_id": "public-source-catalog",
+  "entries": [
+    {
+      "source_id": "aya-collection-vi-en",
+      "path": "catalog/sources/public/aya-collection-vi-en.json"
+    },
+    {
+      "source_id": "aya-human-vi-en",
+      "path": "catalog/sources/public/aya-human-vi-en.json"
+    },
+    {
+      "source_id": "banking77",
+      "path": "catalog/sources/public/banking77.json"
+    },
+    {
+      "source_id": "belebele-vi-en",
+      "path": "catalog/sources/public/belebele-vi-en.json"
+    },
+    {
+      "source_id": "bfcl",
+      "path": "catalog/sources/public/bfcl.json"
+    },
+    {
+      "source_id": "bitext-customer-support",
+      "path": "catalog/sources/public/bitext-customer-support.json"
+    },
+    {
+      "source_id": "csconda-vietnamese-customer-support",
+      "path": "catalog/sources/public/csconda-vietnamese-customer-support.json"
+    },
+    {
+      "source_id": "helpsteer2",
+      "path": "catalog/sources/public/helpsteer2.json"
+    },
+    {
+      "source_id": "ifeval",
+      "path": "catalog/sources/public/ifeval.json"
+    },
+    {
+      "source_id": "massive-vi-en",
+      "path": "catalog/sources/public/massive-vi-en.json"
+    },
+    {
+      "source_id": "miracl-vietnamese-derived-triplets",
+      "path": "catalog/sources/public/miracl-vietnamese-derived-triplets.json"
+    },
+    {
+      "source_id": "miracl-vietnamese-official",
+      "path": "catalog/sources/public/miracl-vietnamese-official.json"
+    },
+    {
+      "source_id": "mkqa",
+      "path": "catalog/sources/public/mkqa.json"
+    },
+    {
+      "source_id": "nomiracl-vietnamese-official",
+      "path": "catalog/sources/public/nomiracl-vietnamese-official.json"
+    },
+    {
+      "source_id": "oasst2",
+      "path": "catalog/sources/public/oasst2.json"
+    },
+    {
+      "source_id": "ragtruth",
+      "path": "catalog/sources/public/ragtruth.json"
+    },
+    {
+      "source_id": "safepyramid",
+      "path": "catalog/sources/public/safepyramid.json"
+    },
+    {
+      "source_id": "seabench-vi",
+      "path": "catalog/sources/public/seabench-vi.json"
+    },
+    {
+      "source_id": "ultrachat-200k",
+      "path": "catalog/sources/public/ultrachat-200k.json"
+    },
+    {
+      "source_id": "vbench-public",
+      "path": "catalog/sources/public/vbench-public.json"
+    },
+    {
+      "source_id": "vianli-license-conflict",
+      "path": "catalog/sources/public/vianli-license-conflict.json"
+    },
+    {
+      "source_id": "viequad-retrieval",
+      "path": "catalog/sources/public/viequad-retrieval.json"
+    },
+    {
+      "source_id": "vietnamese-function-calling-test",
+      "path": "catalog/sources/public/vietnamese-function-calling-test.json"
+    },
+    {
+      "source_id": "vitosa",
+      "path": "catalog/sources/public/vitosa.json"
+    },
+    {
+      "source_id": "vmlu-suite",
+      "path": "catalog/sources/public/vmlu-suite.json"
+    },
+    {
+      "source_id": "xlam-function-calling-60k",
+      "path": "catalog/sources/public/xlam-function-calling-60k.json"
+    },
+    {
+      "source_id": "xquad-vi-en",
+      "path": "catalog/sources/public/xquad-vi-en.json"
+    },
+    {
+      "source_id": "xquad-vi",
+      "path": "catalog/sources/public/xquad-vi.json"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "evidence_id": "vivi-public-fetch-security-20260728",
+  "observed_at": "2026-07-28",
+  "scope": {
+    "artifact_count": 57,
+    "byte_size": 2227143867,
+    "record_count": 4376809
+  },
+  "integrity": {
+    "inspection_manifest_sha256": "53884848a053109c23d853644f6f55a95385e9f411d978d1b27a4a59b13a2dad",
+    "evaluation_fetch_evidence_sha256": "899e6ce02d811400e6704ac1b2d245ca51845cfbabda91ce5e1e550f65e79366",
+    "evaluation_reconciliation_sha256": "caa6badb41f579894af40a8f3dfeaf198f32c28de6bcf2bc508b830da60c4786",
+    "incremental_inspection_manifests": [
+      {
+        "scope": "vietnamese-function-calling-test",
+        "canonical_manifest_sha256": "6c272d8cd5258b569b2de0db97e4b3cacf143af0a074ebd8b92f0ebee5fc9b3c",
+        "file_sha256": "cbd77fe703c8216275a9442a4f3e6d035a46901fd8c283293ee12724da0b847f"
+      },
+      {
+        "scope": "vmlu-v1",
+        "canonical_manifest_sha256": "d95f46cf546eab369d8f9e6fd11d1e0909d46a2ee9356b39a54b2bee8f3f5511",
+        "file_sha256": "b9c15f3dcb6a9bd7495d89824d69e82ccab84729dc4de8eb04619a666bc80a72"
+      },
+      {
+        "scope": "vbench-v2026.03.28",
+        "canonical_manifest_sha256": "b1b100fda0bb077fac0fdcdacf93fdc0855a611be9af3b15004d3146d6c9edb3",
+        "file_sha256": "ab54d871e57705b0c8a1493d6f6efcb4546d51b68982e4b45dc9a3e8478962bc"
+      }
+    ],
+    "exact_upstream_hashes_verified": [
+      "aya-collection-vi-en",
+      "ultrachat-200k",
+      "xlam-function-calling-60k"
+    ],
+    "malformed_artifact_count": 0
+  },
+  "malware": {
+    "engine": "ClamAV",
+    "engine_version": "1.5.3",
+    "signature_revision": "28075",
+    "known_virus_count": 3627981,
+    "scanned_file_count": 57,
+    "infected_file_count": 0,
+    "scan_runs": [
+      {
+        "file_count": 45,
+        "log_sha256": "63aa1ac8d56f1755b13278bd27fa4c9dbbea1b890728befe342234f393ad11b0"
+      },
+      {
+        "file_count": 3,
+        "log_sha256": "122e9de2f11bf4bfc5abb6e49ffc148c50fc1b347c41ab01cc421e16fe120c82"
+      },
+      {
+        "file_count": 1,
+        "inspection_report_sha256": "92cdaf0a03cb1add7e1b490acd5a8f0d9a9d88cf15fe8cd572767ffb8c7d62ed"
+      },
+      {
+        "file_count": 6,
+        "inspection_manifest_sha256": "b9c15f3dcb6a9bd7495d89824d69e82ccab84729dc4de8eb04619a666bc80a72"
+      },
+      {
+        "file_count": 4,
+        "scope": "vmlu-transport-archives",
+        "log_sha256": "5aa7af93ba6b7263bd0e6bd0829aa8d43b3be1a65d137e438e7c34dd5524ea32"
+      },
+      {
+        "file_count": 2,
+        "inspection_manifest_sha256": "ab54d871e57705b0c8a1493d6f6efcb4546d51b68982e4b45dc9a3e8478962bc"
+      }
+    ]
+  },
+  "dlp": {
+    "full_file_secret_scan": true,
+    "full_parquet_schema_and_row_scan": true,
+    "pii_review_required_artifact_count": 25,
+    "secret_review_required_artifact_count": 1,
+    "decision": "quarantine",
+    "notes": [
+      "PII regex findings are candidates, not confirmed identifiers.",
+      "One HelpSteer2 artifact contains an AWS-shaped candidate and remains quarantined.",
+      "VMLU Vi-MQA test and V-Bench public test contain regex-shaped PII candidates and remain quarantined.",
+      "No source is purpose-approved or release-ready."
+    ]
+  },
+  "independent_review": {
+    "review_profile": "dataset-quality-reviewer",
+    "decision": "blocked-pending-dlp-adjudication-and-purpose-approval"
+  },
+  "prohibited_promotions": [
+    "knowledge-index",
+    "training release",
+    "synthetic seed",
+    "model release"
+  ]
+}

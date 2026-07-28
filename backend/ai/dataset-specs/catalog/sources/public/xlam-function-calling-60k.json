@@ -1,0 +1,40 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "xlam-function-calling-60k",
+  "title": "Salesforce/xlam-function-calling-60k",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "Salesforce/xlam-function-calling-60k",
+    "revision": "26d14ebfe18b1f7b524bd39b404b50af5dc97866",
+    "access": "gated"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "xlam_function_calling_60k.json",
+        "byte_size": 96116570,
+        "sha256": "4ef5c6f0dc552f2231f93f5853a9ef431e9e806d7aa514d0f6b615606ce576c6"
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-tool-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["tool-use"]
+    }
+  ],
+  "declared_license": "CC-BY-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

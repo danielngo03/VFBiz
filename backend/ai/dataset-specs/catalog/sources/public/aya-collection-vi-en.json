@@ -1,0 +1,47 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "aya-collection-vi-en",
+  "title": "CohereLabs/aya_collection_language_split",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "CohereLabs/aya_collection_language_split",
+    "revision": "a3af2fde4b4cb5b2775830b11244a1a20b5f004f",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "vietnamese/train-00000-of-00002.parquet",
+        "byte_size": 517415499,
+        "sha256": "45e044a5ba963c635ec2fade8bce48d491979de11ab6d994b25ae4337901251b"
+      },
+      {
+        "path": "vietnamese/train-00001-of-00002.parquet",
+        "byte_size": 466530689,
+        "sha256": "cae4a4ec789f3db639e1ce3c01750b65e089b30af3a665daab15d769d93ee47e"
+      }
+    ],
+    "excluded": ["english/**", "test/**", "validation/**"],
+    "post_fetch_selection": "deterministic-stratified-hash-sample"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["conversation-quality"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

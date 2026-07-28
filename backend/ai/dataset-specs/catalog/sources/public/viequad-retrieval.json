@@ -1,0 +1,46 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "viequad-retrieval",
+  "title": "mteb/VieQuADRetrieval",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "mteb/VieQuADRetrieval",
+    "revision": "f956535e394d5f2b4334de447151e3b237ef19d1",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      {
+        "path": "corpus/validation-00000-of-00001.parquet",
+        "byte_size": 395877
+      },
+      {
+        "path": "queries/validation-00000-of-00001.parquet",
+        "byte_size": 116612
+      },
+      {
+        "path": "qrels/validation-00000-of-00001.parquet",
+        "byte_size": 37617
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-embedding-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["retrieval", "factual-citation"]
+    }
+  ],
+  "declared_license": "MIT",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

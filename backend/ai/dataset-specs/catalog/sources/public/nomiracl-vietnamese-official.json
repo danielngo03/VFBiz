@@ -1,0 +1,51 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "nomiracl-vietnamese-official",
+  "title": "NoMIRACL Vietnamese no-evidence benchmark",
+  "catalog_status": "research-backlog",
+  "registry_status": "legal-hold",
+  "origin": {
+    "locator": "https://arxiv.org/abs/2312.11361",
+    "revision": "artifact-locator-pending",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "unknown",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "nomiracl-vietnamese-official",
+    "version": "candidate-2026-07-28",
+    "title": "NoMIRACL Vietnamese no-evidence benchmark",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://arxiv.org/abs/2312.11361",
+    "source_revision": "artifact-locator-pending",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["retrieval-evaluation", "refusal-safety"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": null,
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Paper is evidence only; exact official dataset artifact and license must be located and approved.",
+      "evidence_urls": ["https://arxiv.org/abs/2312.11361"],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Retain candidate metadata only; do not fetch without a licensed artifact.",
+    "review_date": "2026-08-28",
+    "notes": "Priority 2 no-evidence benchmark candidate; no download authorized."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

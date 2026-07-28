@@ -1,0 +1,36 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "oasst2",
+  "title": "OpenAssistant/oasst2",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "OpenAssistant/oasst2",
+    "revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["default"],
+    "splits": ["train", "validation"],
+    "languages": ["vi", "en"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": ["conversation-quality"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

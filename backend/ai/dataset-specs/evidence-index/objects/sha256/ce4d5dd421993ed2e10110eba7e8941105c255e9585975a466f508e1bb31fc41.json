@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "evidence_id": "vivi-wave-a-smoke-fetch-20260728",
+  "scope": "quarantine-only",
+  "scanner_revision": "vivi-quarantine-structural-v1",
+  "artifacts": [
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"vi-VN/train","sha256":"e360aeb04dd992873365c820e96b16b0783212407c5d935061807b3b2b7b0c7d","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"vi-VN/validation","sha256":"c693b12c3a3e52425cf9ed68df01e073d30546fcdfb7d821529914258bde72f5","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"vi-VN/test","sha256":"af38f1da3143d8ed44604158992d92daa0235201301da856b58ae38c7a1cb757","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"en-US/train","sha256":"9c8b3ce8a96ec3b0d4aee104d8778d9f6bacdbd18f2cea232f6d8333d24401b1","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"en-US/validation","sha256":"cf22bf142963c86ee164c5bb1fe22c67c1261df5c52dfd7217ea87b977c7bb43","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"massive-vi-en","revision":"ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740","selector":"en-US/test","sha256":"c418da9a5f3a7425b5cf44941bcea032a31040dbda2da85e0dd9323785c7731e","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"xquad-vi-en","revision":"7d30520c717524000f0d9d2f9c10a069acd9d285","selector":"xquad.vi.json","sha256":"f619a1eb11fb42d3ab0834259e488a65f585447ef6154437bfb7199d85161a04","media_type":"application/json"},
+    {"source_id":"xquad-vi-en","revision":"7d30520c717524000f0d9d2f9c10a069acd9d285","selector":"xquad.en.json","sha256":"e4c57d1c9143aaa1c5d265ba5987a65f4e69528d2a98f29d6e75019b10344f29","media_type":"application/json"},
+    {"source_id":"belebele-vi-en","revision":"7899cdfa4e1e0d733fd77c848e2c273cb1d32be2","selector":"vie_Latn/test","sha256":"674c0782072868033e78dc446c0e5c1ac60d9107084ef399a87d957270719e7a","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"belebele-vi-en","revision":"7899cdfa4e1e0d733fd77c848e2c273cb1d32be2","selector":"eng_Latn/test","sha256":"f4d5c512557fa897de908a8ff68bae7d502ce4f2f127a6ff2ea7db2647f858f3","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"aya-human-vi-en","revision":"f9ea04583f02a8f86404ff6c58bf75fe637df8a2","selector":"default/train","sha256":"51baa85043b569ba117f41516b32d1b0e4e2647fb203a08933f98a556fb1fb06","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"aya-human-vi-en","revision":"f9ea04583f02a8f86404ff6c58bf75fe637df8a2","selector":"default/test","sha256":"52bbb79461bff9887c9987a5737d9a06f5ec6c78c08d770828c37fc182ce2cca","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"aya-human-vi-en","revision":"f9ea04583f02a8f86404ff6c58bf75fe637df8a2","selector":"demographics/train","sha256":"6468cc56f1c115458507368381fd2b9e74d7b7a5dc0228f6b550146e5320bc2d","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"oasst2","revision":"179dd21fc55192153d94adb0e0ce8f69e222bf75","selector":"default/train","sha256":"21db1d1bbc8f705819f2913735a1a4f8fe08585944d7741534a1d83f908a3c16","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"oasst2","revision":"179dd21fc55192153d94adb0e0ce8f69e222bf75","selector":"default/validation","sha256":"fd46c63babc0756909a957ee40975bcf5610d58c5d1ab5ff2c57c0f57be1f273","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"bitext-customer-support","revision":"430d1a89bd93bd1fa23c16f29dd53e73f0087443","selector":"default/train","sha256":"b640524f835054627cf9eb0071f456cf3399b8cb7efe0712de426f33ed4bd8b4","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"helpsteer2","revision":"990b2711a36180dd19d9c94b8627844866f8982a","selector":"default/train","sha256":"246d731fc0b7aeef89841425a3e27abf5dc2dff6abeac9ee7ddd80bcc2194792","media_type":"application/vnd.apache.parquet"},
+    {"source_id":"helpsteer2","revision":"990b2711a36180dd19d9c94b8627844866f8982a","selector":"default/validation","sha256":"0add582523f049c233d4716d57a578b6a7b4ddee51bc8060e1598d9f26832c70","media_type":"application/vnd.apache.parquet"}
+  ],
+  "decisions": {
+    "structural_scan": "passed",
+    "malware_scan": "pending-production-scanner",
+    "dlp_scan": "pending-production-scanner",
+    "purpose_approval": "not-granted",
+    "release_approval": "not-granted"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/embedding/v1",
+  "title": "ViVi Embedding Pair Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query_id", "query", "corpus_id", "passage"],
+  "properties": {
+    "query_id": {"type": "string", "minLength": 1},
+    "query": {"type": "string", "minLength": 1},
+    "corpus_id": {"type": "string", "minLength": 1},
+    "passage": {"type": "string", "minLength": 1}
+  }
+}

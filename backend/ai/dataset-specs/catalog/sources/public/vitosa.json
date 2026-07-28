@@ -1,0 +1,54 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "vitosa",
+  "title": "ViToSA",
+  "catalog_status": "research-backlog",
+  "registry_status": "rejected",
+  "origin": {
+    "locator": "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+    "revision": "unfetched-candidate",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "CC-BY-NC-ND-4.0",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "vitosa",
+    "version": "candidate-2026-07-23",
+    "title": "ViToSA",
+    "status": "rejected",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+    "source_revision": "unfetched-candidate",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-NC-ND-4.0",
+      "commercial_use": "prohibited",
+      "derivatives": "prohibited",
+      "redistribution": "unknown",
+      "access_conditions": "Không phù hợp mục đích thương mại và derivative dataset.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+        "https://github.com/vitosa-research/ViToSA-Dataset"
+      ],
+      "legal_review": "rejected"
+    },
+    "retention": {
+      "policy_id": "rejected-source-metadata-v1",
+      "duration_days": 365
+    },
+    "deletion_method": "Không tải content; chỉ giữ metadata quyết định từ chối tới hết retention.",
+    "review_date": "2027-07-23",
+    "notes": "Rejected; không dùng thương mại."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

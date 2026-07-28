@@ -1,0 +1,18 @@
+{
+  "taxonomy_id": "customer-assistant-golden-v1",
+  "status": "candidate",
+  "allowed_use": "evaluation",
+  "target_total": 1000,
+  "suites": {
+    "factual-citation": 250,
+    "retrieval-hard-negative-no-evidence": 150,
+    "intent-ood-clarification": 120,
+    "multi-turn-context-entity": 120,
+    "safety-legal-privacy-refusal": 120,
+    "tool-schema-authorization-anomaly": 100,
+    "state-retry-cancellation-concurrency": 80,
+    "handoff-lifecycle": 30,
+    "locale-no-diacritics-code-switch": 30
+  },
+  "release_condition": "All cases must be human adjudicated; this file is a target taxonomy, not release evidence."
+}

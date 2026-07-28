@@ -1,0 +1,711 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/release-manifest/v3",
+  "title": "VFBiz Assistant Release Activation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "activation_id",
+    "candidate",
+    "automated_gate",
+    "approvals",
+    "effective_at",
+    "expires_at",
+    "rollback_target",
+    "kill_switch_registry_ref",
+    "kill_switch_registry_sha256",
+    "rollback_drill_evidence_ref",
+    "rollback_drill_evidence_sha256",
+    "promotion_evidence_ref",
+    "promotion_evidence_sha256",
+    "promotion_evidence_target_sha256",
+    "approval_set_sha256",
+    "activation_core_sha256",
+    "activation_envelope_sha256",
+    "digest_projection_version",
+    "static_safe_release",
+    "transaction_context",
+    "pointer_transition",
+    "activation_event",
+    "outbox_event"
+  ],
+  "properties": {
+    "schema_version": { "const": 3 },
+    "activation_id": { "$ref": "#/$defs/identifier" },
+    "candidate": { "$ref": "#/$defs/candidate" },
+    "automated_gate": { "$ref": "#/$defs/automatedGate" },
+    "approvals": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/approval" }
+    },
+    "effective_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "rollback_target": { "$ref": "#/$defs/rollbackTarget" },
+    "kill_switch_registry_ref": { "$ref": "#/$defs/toolsRef" },
+    "kill_switch_registry_sha256": { "$ref": "#/$defs/sha256" },
+    "rollback_drill_evidence_ref": { "$ref": "#/$defs/drillRef" },
+    "rollback_drill_evidence_sha256": { "$ref": "#/$defs/sha256" },
+    "promotion_evidence_ref": { "$ref": "#/$defs/approvalRef" },
+    "promotion_evidence_sha256": { "$ref": "#/$defs/sha256" },
+    "promotion_evidence_target_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "Must equal activation_core_sha256."
+    },
+    "approval_set_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 over approval records sorted by approval_id; each approval targets candidate.content_sha256."
+    },
+    "activation_core_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 over candidate.content_sha256, automated-gate evidence digest, approval_set_sha256, effective/expiry, rollback target identity, kill-switch and rollback-drill refs/digests, and static_safe_release.safe_release_envelope_sha256."
+    },
+    "activation_envelope_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "SHA-256 over activation_core_sha256 plus promotion evidence ref/digest/target; excludes this digest, transaction context, pointer transition, history and outbox."
+    },
+    "digest_projection_version": { "const": 1 },
+    "static_safe_release": { "$ref": "#/$defs/staticSafeRelease" },
+    "transaction_context": { "$ref": "#/$defs/transactionContext" },
+    "pointer_transition": { "$ref": "#/$defs/pointerTransition" },
+    "activation_event": { "$ref": "#/$defs/activationEvent" },
+    "outbox_event": { "$ref": "#/$defs/outboxEvent" }
+  },
+  "additionalProperties": false,
+  "$comment": "Digest order is candidate and static-safe core -> sorted approval sets -> static-safe envelope and activation core -> promotion evidence -> activation envelope -> history event -> outbox payload. Canonical JSON uses RFC 8785. Each projection excludes its own digest and all later projections. Cross-field equality, revision arithmetic, operation/event matrix, profile/environment consistency and lineage checks are enforced by the semantic validator and transactional repository.",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "opaqueRef": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 255,
+      "pattern": "^[a-z][a-z-]*://[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+    },
+    "modelRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^model://" }
+      ]
+    },
+    "promptRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^prompt://" }
+      ]
+    },
+    "schemaRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^schema://" }
+      ]
+    },
+    "graphRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^graph://" }
+      ]
+    },
+    "policyRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^policy://" }
+      ]
+    },
+    "validatorRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^validator://" }
+      ]
+    },
+    "knowledgeRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^knowledge://" }
+      ]
+    },
+    "retrieverRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^retriever://" }
+      ]
+    },
+    "datasetRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^dataset://" }
+      ]
+    },
+    "toolsRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^tools://" }
+      ]
+    },
+    "evaluatorRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^evaluator://" }
+      ]
+    },
+    "evaluationRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^evaluation://" }
+      ]
+    },
+    "approvalRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^approval://" }
+      ]
+    },
+    "drillRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^drill://" }
+      ]
+    },
+    "historyRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^history://" }
+      ]
+    },
+    "outboxRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^outbox://" }
+      ]
+    },
+    "safeReleaseRef": {
+      "allOf": [
+        { "$ref": "#/$defs/opaqueRef" },
+        { "type": "string", "pattern": "^safe-release://" }
+      ]
+    },
+    "priorActivationRollback": {
+      "type": "object",
+      "required": [
+        "kind",
+        "activation_id",
+        "activation_envelope_sha256",
+        "candidate_id",
+        "candidate_sha256",
+        "assistant_profile",
+        "environment",
+        "eligible_history_event_ref",
+        "eligible_history_event_sha256"
+      ],
+      "properties": {
+        "kind": { "const": "prior_activation" },
+        "activation_id": { "$ref": "#/$defs/identifier" },
+        "activation_envelope_sha256": { "$ref": "#/$defs/sha256" },
+        "candidate_id": { "$ref": "#/$defs/identifier" },
+        "candidate_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "eligible_history_event_ref": { "$ref": "#/$defs/historyRef" },
+        "eligible_history_event_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "staticSafeRollback": {
+      "type": "object",
+      "required": [
+        "kind",
+        "safe_release_id",
+        "safe_release_ref",
+        "safe_release_core_sha256",
+        "approval_set_sha256",
+        "safe_release_envelope_sha256",
+        "assistant_profile",
+        "environment"
+      ],
+      "properties": {
+        "kind": { "const": "static_safe_release" },
+        "safe_release_id": { "$ref": "#/$defs/identifier" },
+        "safe_release_ref": { "$ref": "#/$defs/safeReleaseRef" },
+        "safe_release_core_sha256": { "$ref": "#/$defs/sha256" },
+        "approval_set_sha256": { "$ref": "#/$defs/sha256" },
+        "safe_release_envelope_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "rollbackTarget": {
+      "oneOf": [
+        { "$ref": "#/$defs/priorActivationRollback" },
+        { "$ref": "#/$defs/staticSafeRollback" }
+      ]
+    },
+    "activationTarget": {
+      "type": "object",
+      "required": [
+        "kind",
+        "activation_id",
+        "activation_envelope_sha256",
+        "candidate_id",
+        "candidate_sha256",
+        "assistant_profile",
+        "environment"
+      ],
+      "properties": {
+        "kind": { "const": "activation" },
+        "activation_id": { "$ref": "#/$defs/identifier" },
+        "activation_envelope_sha256": { "$ref": "#/$defs/sha256" },
+        "candidate_id": { "$ref": "#/$defs/identifier" },
+        "candidate_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "authorityTarget": {
+      "oneOf": [
+        { "$ref": "#/$defs/activationTarget" },
+        { "$ref": "#/$defs/staticSafeRollback" }
+      ]
+    },
+    "safeReleaseApproval": {
+      "type": "object",
+      "required": [
+        "approval_id",
+        "authority_role",
+        "approver_subject",
+        "approved_at",
+        "evidence_ref",
+        "evidence_sha256",
+        "target_safe_release_core_sha256"
+      ],
+      "properties": {
+        "approval_id": { "$ref": "#/$defs/identifier" },
+        "authority_role": { "$ref": "#/$defs/identifier" },
+        "approver_subject": { "$ref": "#/$defs/identifier" },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "evidence_ref": { "$ref": "#/$defs/approvalRef" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "target_safe_release_core_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "staticSafeRelease": {
+      "type": "object",
+      "required": [
+        "safe_release_id",
+        "safe_release_ref",
+        "safe_release_core_sha256",
+        "approval_set_sha256",
+        "safe_release_envelope_sha256",
+        "template_ref",
+        "template_sha256",
+        "response_policy_ref",
+        "response_policy_sha256",
+        "assistant_profile",
+        "environment",
+        "effective_at",
+        "expires_at",
+        "approvals"
+      ],
+      "properties": {
+        "safe_release_id": { "$ref": "#/$defs/identifier" },
+        "safe_release_ref": { "$ref": "#/$defs/safeReleaseRef" },
+        "safe_release_core_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 over ID/ref, template, response policy, profile/environment and effective window; excludes digests and approvals."
+        },
+        "approval_set_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 over safe-release approvals sorted by approval_id; each approval targets safe_release_core_sha256."
+        },
+        "safe_release_envelope_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 over safe_release_core_sha256 and approval_set_sha256."
+        },
+        "template_ref": { "$ref": "#/$defs/promptRef" },
+        "template_sha256": { "$ref": "#/$defs/sha256" },
+        "response_policy_ref": { "$ref": "#/$defs/policyRef" },
+        "response_policy_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "effective_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "approvals": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/safeReleaseApproval" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "transactionContext": {
+      "type": "object",
+      "required": [
+        "idempotency_key",
+        "correlation_id",
+        "actor_subject",
+        "reason"
+      ],
+      "properties": {
+        "idempotency_key": { "$ref": "#/$defs/identifier" },
+        "correlation_id": { "$ref": "#/$defs/identifier" },
+        "actor_subject": { "$ref": "#/$defs/identifier" },
+        "reason": { "type": "string", "minLength": 8, "maxLength": 500 }
+      },
+      "additionalProperties": false
+    },
+    "pointerTransition": {
+      "type": "object",
+      "required": [
+        "operation",
+        "assistant_profile",
+        "environment",
+        "from_target",
+        "to_target",
+        "expected_pointer_revision",
+        "result_pointer_revision"
+      ],
+      "properties": {
+        "operation": {
+          "enum": ["activate", "revoke", "rollback"]
+        },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "from_target": {
+          "oneOf": [
+            { "$ref": "#/$defs/authorityTarget" },
+            { "type": "null" }
+          ]
+        },
+        "to_target": { "$ref": "#/$defs/authorityTarget" },
+        "expected_pointer_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "result_pointer_revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "activationEvent": {
+      "type": "object",
+      "required": [
+        "event_ref",
+        "sequence",
+        "previous_event_sha256",
+        "event_sha256",
+        "event_type",
+        "from_target",
+        "to_target",
+        "activation_envelope_sha256",
+        "pointer_revision",
+        "transaction_context",
+        "occurred_at"
+      ],
+      "properties": {
+        "event_ref": { "$ref": "#/$defs/historyRef" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "previous_event_sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "event_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 over canonical transition, previous event digest, activation envelope digest, transaction context and pointer revision; excludes itself and outbox."
+        },
+        "event_type": {
+          "enum": [
+            "activated",
+            "superseded",
+            "revoked",
+            "rolled_back",
+            "static_safe_activated"
+          ]
+        },
+        "from_target": {
+          "oneOf": [
+            { "$ref": "#/$defs/authorityTarget" },
+            { "type": "null" }
+          ]
+        },
+        "to_target": { "$ref": "#/$defs/authorityTarget" },
+        "activation_envelope_sha256": { "$ref": "#/$defs/sha256" },
+        "pointer_revision": { "type": "integer", "minimum": 1 },
+        "transaction_context": { "$ref": "#/$defs/transactionContext" },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "outboxEvent": {
+      "type": "object",
+      "required": [
+        "event_ref",
+        "schema_version",
+        "aggregate_id",
+        "assistant_profile",
+        "environment",
+        "correlation_id",
+        "idempotency_key",
+        "event_type",
+        "pointer_revision",
+        "history_event_sha256",
+        "occurred_at",
+        "payload_sha256"
+      ],
+      "properties": {
+        "event_ref": { "$ref": "#/$defs/outboxRef" },
+        "schema_version": { "const": 1 },
+        "aggregate_id": { "$ref": "#/$defs/identifier" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "correlation_id": { "$ref": "#/$defs/identifier" },
+        "idempotency_key": { "$ref": "#/$defs/identifier" },
+        "event_type": {
+          "enum": [
+            "activated",
+            "superseded",
+            "revoked",
+            "rolled_back",
+            "static_safe_activated"
+          ]
+        },
+        "pointer_revision": { "type": "integer", "minimum": 1 },
+        "history_event_sha256": { "$ref": "#/$defs/sha256" },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "payload_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 over canonical outbox payload including history event digest and pointer revision; excludes itself."
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "model_deployment",
+        "prompt",
+        "output_schema",
+        "graph",
+        "policy",
+        "validator",
+        "knowledge_profile",
+        "retriever",
+        "embedding_generation_sha256",
+        "dataset_releases",
+        "tool_registry",
+        "evaluator"
+      ],
+      "properties": {
+        "model_deployment": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/modelRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/promptRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/schemaRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "graph": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/graphRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/policyRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "validator": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/validatorRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "knowledge_profile": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/knowledgeRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "retriever": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/retrieverRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "embedding_generation_sha256": { "$ref": "#/$defs/sha256" },
+        "dataset_releases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "$ref": "#/$defs/artifact",
+            "properties": {
+              "ref": { "$ref": "#/$defs/datasetRef" },
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        },
+        "tool_registry": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/toolsRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "evaluator": {
+          "type": "object",
+          "$ref": "#/$defs/artifact",
+          "properties": {
+            "ref": { "$ref": "#/$defs/evaluatorRef" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "content_sha256",
+        "assistant_profile",
+        "environment",
+        "requested_by_subject",
+        "gate_policy_revision",
+        "gate_policy_sha256",
+        "artifacts"
+      ],
+      "properties": {
+        "candidate_id": { "$ref": "#/$defs/identifier" },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "requested_by_subject": { "$ref": "#/$defs/identifier" },
+        "gate_policy_revision": { "$ref": "#/$defs/identifier" },
+        "gate_policy_sha256": { "$ref": "#/$defs/sha256" },
+        "artifacts": { "$ref": "#/$defs/artifacts" }
+      },
+      "additionalProperties": false
+    },
+    "approval": {
+      "type": "object",
+      "required": [
+        "approval_id",
+        "authority_role",
+        "approver_subject",
+        "approved_at",
+        "evidence_ref",
+        "evidence_sha256",
+        "target_candidate_sha256",
+        "assistant_profile",
+        "environment"
+      ],
+      "properties": {
+        "approval_id": { "$ref": "#/$defs/identifier" },
+        "authority_role": { "$ref": "#/$defs/identifier" },
+        "approver_subject": { "$ref": "#/$defs/identifier" },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "evidence_ref": { "$ref": "#/$defs/approvalRef" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "target_candidate_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "automatedGate": {
+      "type": "object",
+      "required": [
+        "evidence_ref",
+        "evidence_sha256",
+        "target_candidate_sha256",
+        "assistant_profile",
+        "environment",
+        "gate_policy_revision",
+        "gate_policy_sha256"
+      ],
+      "properties": {
+        "evidence_ref": { "$ref": "#/$defs/evaluationRef" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "target_candidate_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        },
+        "gate_policy_revision": { "$ref": "#/$defs/identifier" },
+        "gate_policy_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

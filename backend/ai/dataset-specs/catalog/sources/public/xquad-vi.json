@@ -1,0 +1,53 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "xquad-vi",
+  "title": "XQuAD Vietnamese",
+  "catalog_status": "research-backlog",
+  "registry_status": "legal-hold",
+  "origin": {
+    "locator": "https://huggingface.co/datasets/google/xquad/tree/main",
+    "revision": "main-unfetched",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "CC-BY-SA-4.0",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "xquad-vi",
+    "version": "candidate-2026-07-23",
+    "title": "XQuAD Vietnamese",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/google/xquad/tree/main",
+    "source_revision": "main-unfetched",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["retrieval-evaluation"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-SA-4.0",
+      "commercial_use": "permitted",
+      "derivatives": "permitted",
+      "redistribution": "permitted",
+      "access_conditions": "Attribution và share-alike cần được Legal xác nhận cho artifact dẫn xuất.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/google/xquad/tree/main"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate artifact và tombstone source revision.",
+    "review_date": "2026-08-23",
+    "notes": "Benchmark QA, không phải automotive knowledge."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

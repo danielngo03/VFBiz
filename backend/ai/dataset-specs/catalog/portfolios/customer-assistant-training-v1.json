@@ -1,0 +1,46 @@
+{
+  "schema_version": "vivi-source-portfolio/v2",
+  "portfolio_id": "customer-assistant-training-v1",
+  "portfolio_kind": "training-candidate",
+  "source_ids": [
+    "aya-collection-vi-en",
+    "aya-human-vi-en",
+    "bitext-customer-support",
+    "helpsteer2",
+    "massive-vi-en",
+    "oasst2",
+    "ultrachat-200k",
+    "xlam-function-calling-60k"
+  ],
+  "product_bindings": [
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "source_ids": [
+        "aya-collection-vi-en",
+        "aya-human-vi-en",
+        "bitext-customer-support",
+        "oasst2",
+        "ultrachat-200k"
+      ]
+    },
+    {
+      "product_id": "vivi-preference-v1",
+      "source_ids": [
+        "helpsteer2"
+      ]
+    },
+    {
+      "product_id": "vivi-router-classifier-v1",
+      "source_ids": [
+        "massive-vi-en"
+      ]
+    },
+    {
+      "product_id": "vivi-tool-sft-v1",
+      "source_ids": [
+        "xlam-function-calling-60k"
+      ]
+    }
+  ],
+  "decision": "catalog-only-until-purpose-approved"
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/classifier/v1",
+  "title": "ViVi Classifier Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "intent", "slots", "out_of_domain"],
+  "properties": {
+    "text": {"type": "string", "minLength": 1},
+    "intent": {"type": "string", "minLength": 1},
+    "slots": {"type": "object"},
+    "out_of_domain": {"type": "boolean"}
+  }
+}

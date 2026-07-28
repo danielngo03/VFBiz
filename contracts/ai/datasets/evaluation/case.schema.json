@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/golden-case/v2",
+  "title": "VFBiz Golden Evaluation Case",
+  "type": "object",
+  "required": ["case_id", "suite_id", "suite_revision", "assistant_profile", "locale", "market", "risk_domain", "conversation", "initial_context", "knowledge_snapshot", "expected", "hard_gates", "rubric_revision", "review", "split_family_id", "lineage", "allowed_use"],
+  "properties": {
+    "case_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "suite_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "suite_revision": {"type": "string", "minLength": 1},
+    "assistant_profile": {"enum": ["public_customer", "authenticated_customer"]},
+    "locale": {"enum": ["vi-VN", "en-US", "vi-Latn-no-diacritics", "mixed"]},
+    "market": {"type": "string", "pattern": "^[A-Z]{2}$"},
+    "risk_domain": {"enum": ["general", "pricing", "safety", "legal", "privacy", "authorization", "prompt-injection", "resilience"]},
+    "conversation": {"type": "array", "minItems": 1, "maxItems": 30, "items": {"type": "object", "required": ["role", "content"], "properties": {"role": {"enum": ["user", "assistant", "tool"]}, "content": {"type": "string", "minLength": 1, "maxLength": 12000}}, "additionalProperties": false}},
+    "initial_context": {"type": "object"},
+    "knowledge_snapshot": {"type": ["object", "null"], "properties": {"release_id": {"type": "string"}, "revision": {"type": "string"}, "effective_at": {"type": "string", "format": "date-time"}, "evidence_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}}, "required": ["release_id", "revision", "effective_at", "evidence_ids"], "additionalProperties": false},
+    "expected": {
+      "type": "object",
+      "required": ["outcome", "required_claims", "forbidden_claims", "state_assertions"],
+      "properties": {
+        "outcome": {"enum": ["answer", "clarification_required", "refusal", "handoff_recommended", "tool_proposal", "cancelled", "failed_safely"]},
+        "required_claims": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+        "forbidden_claims": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "clarification_slots": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "reason_code": {"type": ["string", "null"]},
+        "tool": {"type": ["object", "null"], "properties": {"name": {"type": "string"}, "arguments": {"type": "object"}, "authorization_decision": {"enum": ["allow", "deny", "not_applicable"]}, "typed_error": {"type": ["string", "null"]}}, "required": ["name", "arguments", "authorization_decision", "typed_error"], "additionalProperties": false},
+        "state_assertions": {"type": "object", "required": ["required_delta", "forbidden_paths"], "properties": {"required_delta": {"type": "object"}, "forbidden_paths": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}}, "additionalProperties": false}
+      },
+      "additionalProperties": false
+    },
+    "hard_gates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["acl", "pii", "citation-membership", "revision-coherence", "claim-grounding", "tool-authorization", "rights", "state-integrity", "cancellation", "handoff-policy"]}},
+    "rubric_revision": {"type": "string", "minLength": 1},
+    "review": {"type": "object", "required": ["status", "human_label", "reviewer_role", "adjudication_evidence"], "properties": {"status": {"enum": ["pending", "reviewed", "adjudicated", "rejected"]}, "human_label": {"type": ["string", "null"]}, "reviewer_role": {"type": ["string", "null"]}, "adjudication_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}, "additionalProperties": false},
+    "split_family_id": {"type": "string", "minLength": 1},
+    "lineage": {"type": "object", "required": ["seed_refs", "source_refs"], "properties": {"seed_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}, "source_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}}, "additionalProperties": false},
+    "allowed_use": {"const": "evaluation"}
+  },
+  "$defs": {"claim": {"type": "object", "required": ["claim_id", "text", "citation_evidence_ids"], "properties": {"claim_id": {"type": "string", "minLength": 1}, "text": {"type": "string", "minLength": 1}, "citation_evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}}}, "additionalProperties": false}},
+  "allOf": [
+    {"if": {"properties": {"review": {"properties": {"status": {"const": "adjudicated"}}}}, "required": ["review"]}, "then": {"properties": {"review": {"properties": {"adjudication_evidence": {"minItems": 1}, "human_label": {"type": "string", "minLength": 1}, "reviewer_role": {"type": "string", "minLength": 1}}}}}},
+    {"if": {"properties": {"expected": {"properties": {"outcome": {"const": "answer"}}, "required": ["outcome"]}}, "required": ["expected"]}, "then": {"properties": {"knowledge_snapshot": {"type": "object"}, "expected": {"properties": {"required_claims": {"minItems": 1}}}, "hard_gates": {"allOf": [{"contains": {"const": "citation-membership"}}, {"contains": {"const": "revision-coherence"}}, {"contains": {"const": "claim-grounding"}}]}}}}
+  ],
+  "additionalProperties": false
+}

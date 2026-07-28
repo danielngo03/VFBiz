@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/generation-job/v3",
+  "title": "VFBiz Synthetic Dataset Generation Job",
+  "type": "object",
+  "required": ["job_id", "dataset_id", "assistant_profile", "candidate_schema_revision", "seed_refs", "generator", "budget", "coverage", "shard", "prohibited_inputs", "status"],
+  "properties": {
+    "job_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "dataset_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "allowed_use": {"enum": ["classifier-training", "sft", "preference", "embedding", "reranker", "evaluation", "red-team"]},
+    "task_families": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["factual-citation", "retrieval", "intent-ood", "conversation-quality", "tool-use", "refusal-safety", "state-resilience"]}},
+    "modalities": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["text", "document", "image", "audio"]}},
+    "trust_zone": {"const": "candidate"},
+    "processing_stage": {"enum": ["normalized", "filtered", "enriched", "adjudicated"]},
+    "purpose": {"deprecated": true, "enum": ["retrieval-evaluation", "intent-ood", "conversation-quality", "tool-evaluation", "refusal-safety", "red-team", "state-resilience"]},
+    "assistant_profile": {"enum": ["public_customer", "authenticated_customer"]},
+    "candidate_schema_revision": {"type": "string", "minLength": 1},
+    "seed_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "approved_source_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "held_out_split_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "synthetic_fact_namespaces": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^synthetic\\.[a-z0-9._-]+$"}},
+    "generator": {"type": "object", "required": ["model_revision", "prompt_revision", "policy_revision", "temperature", "seed"], "properties": {"model_revision": {"type": "string", "minLength": 1}, "prompt_revision": {"type": "string", "minLength": 1}, "policy_revision": {"type": "string", "minLength": 1}, "temperature": {"type": "number", "minimum": 0, "maximum": 2}, "seed": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
+    "budget": {"type": "object", "required": ["max_records", "max_input_tokens", "max_output_tokens", "max_cost_usd"], "properties": {"max_records": {"type": "integer", "minimum": 1, "maximum": 30000}, "max_input_tokens": {"type": "integer", "minimum": 1}, "max_output_tokens": {"type": "integer", "minimum": 1}, "max_cost_usd": {"type": "number", "minimum": 0}}, "additionalProperties": false},
+    "coverage": {"type": "object", "required": ["locales", "profiles", "intents", "risk_tiers", "failure_modes", "turn_lengths", "noise_profiles", "outcomes", "tools", "authorization_cases"], "properties": {"locales": {"$ref": "#/$defs/nonEmptyStrings"}, "profiles": {"$ref": "#/$defs/nonEmptyStrings"}, "intents": {"$ref": "#/$defs/nonEmptyStrings"}, "risk_tiers": {"$ref": "#/$defs/nonEmptyStrings"}, "failure_modes": {"$ref": "#/$defs/nonEmptyStrings"}, "turn_lengths": {"$ref": "#/$defs/nonEmptyStrings"}, "noise_profiles": {"$ref": "#/$defs/nonEmptyStrings"}, "outcomes": {"$ref": "#/$defs/nonEmptyStrings"}, "tools": {"$ref": "#/$defs/nonEmptyStrings"}, "authorization_cases": {"$ref": "#/$defs/nonEmptyStrings"}}, "additionalProperties": false},
+    "shard": {"type": "object", "required": ["shard_id", "output_prefix", "lease_id", "lease_expires_at"], "properties": {"shard_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"}, "output_prefix": {"type": "string", "pattern": "^candidate/[a-z0-9/_-]+/$"}, "lease_id": {"type": "string", "minLength": 1}, "lease_expires_at": {"type": "string", "format": "date-time"}}, "additionalProperties": false},
+    "prohibited_inputs": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"enum": ["production-pii", "customer-chat", "held-out-evaluation", "unapproved-source"]}, "allOf": [{"contains": {"const": "production-pii"}}, {"contains": {"const": "customer-chat"}}, {"contains": {"const": "held-out-evaluation"}}, {"contains": {"const": "unapproved-source"}}]},
+    "status": {"enum": ["approved", "running", "paused", "completed", "failed", "cancelled"]}
+  },
+  "$defs": {"nonEmptyStrings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}},
+  "anyOf": [
+    {"required": ["allowed_use", "task_families", "modalities", "trust_zone", "processing_stage"]},
+    {"required": ["purpose"]}
+  ],
+  "additionalProperties": false
+}

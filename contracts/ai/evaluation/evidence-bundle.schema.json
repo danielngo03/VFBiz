@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1",
+  "title": "VFBiz AI Evaluation Evidence Bundle",
+  "type": "object",
+  "required": [
+    "bundle_id",
+    "run_request_digest",
+    "run_result_digest",
+    "case_results_digest",
+    "baseline_policy_digest",
+    "benchmark_definition_digest",
+    "candidate_release",
+    "baseline_release",
+    "suite_revision",
+    "authority_class",
+    "required_grader_revisions",
+    "grader_calibrations",
+    "case_set_complete",
+    "hard_gate_failures",
+    "sanitized_report_digest",
+    "recommendation",
+    "human_approval_included",
+    "created_at",
+    "bundle_digest"
+  ],
+  "properties": {
+    "bundle_id": { "type": "string", "minLength": 3, "maxLength": 160 },
+    "run_request_digest": { "$ref": "#/$defs/sha256" },
+    "run_result_digest": { "$ref": "#/$defs/sha256" },
+    "case_results_digest": { "$ref": "#/$defs/sha256" },
+    "baseline_policy_digest": { "$ref": "#/$defs/sha256" },
+    "benchmark_definition_digest": { "$ref": "#/$defs/sha256" },
+    "candidate_release": { "$ref": "#/$defs/release" },
+    "baseline_release": {
+      "oneOf": [{ "$ref": "#/$defs/release" }, { "type": "null" }]
+    },
+    "suite_revision": { "$ref": "#/$defs/suite" },
+    "authority_class": {
+      "enum": ["vinfast-acceptance", "public-diagnostic"]
+    },
+    "required_grader_revisions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "grader_calibrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["grader_revision", "calibration_digest"],
+        "properties": {
+          "grader_revision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "calibration_digest": { "$ref": "#/$defs/sha256" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "case_set_complete": { "type": "boolean" },
+    "hard_gate_failures": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sanitized_report_digest": { "$ref": "#/$defs/sha256" },
+    "recommendation": {
+      "enum": ["recommend", "reject", "needs-human-decision"]
+    },
+    "human_approval_included": { "const": false },
+    "created_at": { "type": "string", "format": "date-time" },
+    "bundle_digest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "release": {
+      "type": "object",
+      "required": ["release_id", "manifest_digest"],
+      "properties": {
+        "release_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "manifest_digest": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "suite": {
+      "type": "object",
+      "required": ["suite_id", "suite_digest"],
+      "properties": {
+        "suite_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "suite_digest": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "recommendation": { "const": "recommend" } },
+        "required": ["recommendation"]
+      },
+      "then": {
+        "properties": {
+          "authority_class": { "const": "vinfast-acceptance" },
+          "grader_calibrations": { "type": "array", "minItems": 1 },
+          "case_set_complete": { "const": true },
+          "hard_gate_failures": { "type": "array", "maxItems": 0 }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

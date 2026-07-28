@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "vfbiz-ai-contract-registry/v1",
+  "compatibilityRevision": {
+    "status": "active",
+    "expiresOn": "2026-08-28",
+    "policy": "Legacy paths are repository-internal symlink aliases only; new consumers must resolve canonicalPath by contractId."
+  },
+  "contracts": [
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/execution-assertion/v1",
+      "canonicalPath": "contracts/ai/assistant/execution-assertion.schema.json",
+      "legacyPaths": ["contracts/ai/ai-execution-assertion.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/conversation-turn-protocol/v1",
+      "canonicalPath": "contracts/ai/assistant/turn-protocol.schema.json",
+      "legacyPaths": ["contracts/ai/conversation-turn-protocol.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/conversation-public-event/v1",
+      "canonicalPath": "contracts/ai/assistant/public-event.schema.json",
+      "legacyPaths": ["contracts/ai/conversation-public-event.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/release-manifest/v3",
+      "canonicalPath": "contracts/ai/releases/ai-release-manifest.schema.json",
+      "legacyPaths": [
+        "contracts/ai/ai-release-manifest.schema.json",
+        "contracts/json-schema/ai-release-manifest.schema.json"
+      ]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/source-register/v4",
+      "canonicalPath": "contracts/ai/datasets/sources/source-register.schema.json",
+      "legacyPaths": ["contracts/ai/source-register.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/source-catalog-entry/v1",
+      "canonicalPath": "contracts/ai/datasets/sources/catalog-entry.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/source-fetch-plan/v1",
+      "canonicalPath": "contracts/ai/datasets/sources/fetch-plan.schema.json",
+      "legacyPaths": ["contracts/ai/source-fetch-plan.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/source-fetch-manifest/v2",
+      "canonicalPath": "contracts/ai/datasets/sources/fetch-manifest.schema.json",
+      "legacyPaths": ["contracts/ai/source-fetch-manifest.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-card/v1",
+      "canonicalPath": "contracts/ai/datasets/products/card.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-card.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-example/v2",
+      "canonicalPath": "contracts/ai/datasets/products/example.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-example.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
+      "canonicalPath": "contracts/ai/datasets/products/release-manifest.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-manifest.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-record/v2",
+      "canonicalPath": "contracts/ai/datasets/products/record.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-record.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/generation-job/v3",
+      "canonicalPath": "contracts/ai/datasets/products/generation-job.schema.json",
+      "legacyPaths": ["contracts/ai/generation-job.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/classifier/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/classifier.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-classifier.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/conversation/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/conversation.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-conversation.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/embedding/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/embedding.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-embedding.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/preference/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/preference.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-preference.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/reranker/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/reranker.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-reranker.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-payload/tool/v1",
+      "canonicalPath": "contracts/ai/datasets/payloads/tool.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-payload-tool.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/golden-case/v2",
+      "canonicalPath": "contracts/ai/datasets/evaluation/case.schema.json",
+      "legacyPaths": ["contracts/ai/evaluation-case.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-export-profile/v1",
+      "canonicalPath": "contracts/ai/datasets/exports/profile.schema.json",
+      "legacyPaths": ["contracts/ai/dataset-export-profile.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v1",
+      "canonicalPath": "contracts/ai/evaluation/benchmark-definition.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/run-request/v1",
+      "canonicalPath": "contracts/ai/evaluation/run-request.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+      "canonicalPath": "contracts/ai/evaluation/case-result.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+      "canonicalPath": "contracts/ai/evaluation/run-result.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/grader-definition/v1",
+      "canonicalPath": "contracts/ai/evaluation/grader-definition.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+      "canonicalPath": "contracts/ai/evaluation/grader-calibration.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/baseline-policy/v1",
+      "canonicalPath": "contracts/ai/evaluation/baseline-policy.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1",
+      "canonicalPath": "contracts/ai/evaluation/evidence-bundle.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/drift-snapshot/v1",
+      "canonicalPath": "contracts/ai/evaluation/drift-snapshot.schema.json",
+      "legacyPaths": []
+    }
+  ]
+}

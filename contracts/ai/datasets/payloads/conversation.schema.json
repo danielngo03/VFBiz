@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/conversation/v1",
+  "title": "ViVi Conversation Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["messages"],
+  "properties": {
+    "messages": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "content"],
+        "properties": {
+          "role": {"enum": ["system", "user", "assistant", "model"]},
+          "content": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

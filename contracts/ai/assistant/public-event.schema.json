@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/conversation-public-event/v1",
+  "title": "VFBiz Durable Conversation Event",
+  "description": "Customer-safe durable conversation event. Connection-local progress frames are defined under $defs/SseFrame and are never persisted.",
+  "$ref": "#/$defs/DurableEvent",
+  "$defs": {
+    "EventId": { "type": "string", "format": "uuid" },
+    "SchemaVersion": { "const": 1 },
+    "SessionId": { "type": "string", "format": "uuid" },
+    "TurnId": { "type": "string", "format": "uuid" },
+    "Sequence": { "type": "integer", "minimum": 1 },
+    "OccurredAt": { "type": "string", "format": "date-time" },
+    "CorrelationId": { "type": "string", "format": "uuid" },
+    "Citation": {
+      "type": "object",
+      "required": ["sourceId", "title", "revision", "retrievedAt"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "uri": { "type": "string", "format": "uri", "maxLength": 1024 },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "retrievedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "MessageAcceptedEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "message.accepted" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["clientMessageId", "receivedSequence"],
+          "properties": {
+            "clientMessageId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "receivedSequence": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "TurnProcessingEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "turn.processing" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": { "type": "object", "additionalProperties": false }
+      },
+      "additionalProperties": false
+    },
+    "TurnCompletedEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "turn.completed" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["outcome", "message", "citations"],
+              "properties": {
+                "outcome": { "const": "answered" },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 12000
+                },
+                "citations": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "items": { "$ref": "#/$defs/Citation" }
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["outcome", "message", "citations"],
+              "properties": {
+                "outcome": { "enum": ["conversational", "refused"] },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 12000
+                },
+                "citations": { "type": "array", "maxItems": 0 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "HandoffRequestedEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "handoff.requested" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["handoffId", "reason", "status"],
+          "properties": {
+            "handoffId": { "type": "string", "format": "uuid" },
+            "reason": {
+              "enum": [
+                "customer_requested",
+                "policy_required",
+                "provider_unavailable"
+              ]
+            },
+            "status": { "const": "queued" },
+            "customerMessage": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "TurnCancelledEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "turn.cancelled" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["reason"],
+          "properties": {
+            "reason": {
+              "enum": [
+                "user_interrupt",
+                "budget_exhausted",
+                "deadline_exceeded"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "RetrievalStartedFrame": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "type": { "const": "retrieval.started" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["knowledgeRevision"],
+          "properties": {
+            "knowledgeRevision": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolStartedFrame": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "type": { "const": "tool.started" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["tool"],
+          "properties": {
+            "tool": {
+              "enum": [
+                "search_public_knowledge",
+                "get_vehicle_profile",
+                "get_customer_garage",
+                "list_charging_stations"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReconnectRequiredFrame": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sessionId",
+        "turnId",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "type": { "const": "stream.reconnect_required" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": ["reason", "retryAfterMs", "resumeFrom"],
+          "properties": {
+            "reason": { "enum": ["backpressure", "server_drain"] },
+            "retryAfterMs": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "resumeFrom": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "DurableEvent": {
+      "oneOf": [
+        { "$ref": "#/$defs/MessageAcceptedEvent" },
+        { "$ref": "#/$defs/TurnProcessingEvent" },
+        { "$ref": "#/$defs/TurnCompletedEvent" },
+        { "$ref": "#/$defs/HandoffRequestedEvent" },
+        { "$ref": "#/$defs/TurnCancelledEvent" }
+      ]
+    },
+    "TransientFrame": {
+      "oneOf": [
+        { "$ref": "#/$defs/RetrievalStartedFrame" },
+        { "$ref": "#/$defs/ToolStartedFrame" },
+        { "$ref": "#/$defs/ReconnectRequiredFrame" }
+      ]
+    },
+    "SseFrame": {
+      "oneOf": [
+        { "$ref": "#/$defs/DurableEvent" },
+        { "$ref": "#/$defs/TransientFrame" }
+      ]
+    }
+  }
+}

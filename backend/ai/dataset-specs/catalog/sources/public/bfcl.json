@@ -1,0 +1,60 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "bfcl",
+  "title": "gorilla-llm/Berkeley-Function-Calling-Leaderboard",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "gorilla-llm/Berkeley-Function-Calling-Leaderboard",
+    "revision": "61fc0608cfd831fcfbbaa676ebdfef0ed963eeda",
+    "access": "public"
+  },
+  "selectors": {
+    "files": [
+      "BFCL_v3_simple.json",
+      "BFCL_v3_multiple.json",
+      "BFCL_v3_parallel.json",
+      "BFCL_v3_parallel_multiple.json",
+      "BFCL_v3_irrelevance.json",
+      "BFCL_v3_chatable.json",
+      "BFCL_v3_multi_turn_base.json",
+      "BFCL_v3_multi_turn_miss_func.json",
+      "BFCL_v3_multi_turn_miss_param.json",
+      "possible_answer/BFCL_v3_simple.json",
+      "possible_answer/BFCL_v3_multiple.json",
+      "possible_answer/BFCL_v3_parallel.json",
+      "possible_answer/BFCL_v3_parallel_multiple.json",
+      "possible_answer/BFCL_v3_multi_turn_base.json",
+      "possible_answer/BFCL_v3_multi_turn_miss_func.json",
+      "possible_answer/BFCL_v3_multi_turn_miss_param.json"
+    ],
+    "excluded": [
+      "BFCL_v3_live_*",
+      "BFCL_v3_exec_*",
+      "BFCL_v3_java.json",
+      "BFCL_v3_javascript.json",
+      "BFCL_v3_rest.json",
+      "BFCL_v3_sql.json"
+    ],
+    "execution_policy": "inert-data-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-tool-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["tool-use"]
+    }
+  ],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

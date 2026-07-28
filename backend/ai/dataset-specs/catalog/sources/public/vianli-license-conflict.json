@@ -1,0 +1,54 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "vianli-license-conflict",
+  "title": "ViANLI",
+  "catalog_status": "research-backlog",
+  "registry_status": "legal-hold",
+  "origin": {
+    "locator": "https://huggingface.co/datasets/uitnlp/ViANLI",
+    "revision": "unfetched-candidate",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "conflicting-metadata",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "vianli-license-conflict",
+    "version": "candidate-2026-07-23",
+    "title": "ViANLI",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/uitnlp/ViANLI",
+    "source_revision": "unfetched-candidate",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "conflicting-metadata",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "License metadata mâu thuẫn; quarantine đến khi Legal xác minh upstream.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/uitnlp/ViANLI",
+        "https://huggingface.co/datasets/uitnlp/ViANLI/blob/main/README.md"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
+    "review_date": "2026-08-23",
+    "notes": "Không download khi license còn mâu thuẫn."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "vmlu-suite",
+  "title": "ZaloAI-Jaist/VMLU",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "ZaloAI-Jaist/VMLU",
+    "access": "public",
+    "artifact_set_digest": "09efdde8c22382ac628faf3556c862c09e5321753beb45eaa64f7e745f73072a"
+  },
+  "selectors": {
+    "releases": [
+      {
+        "name": "Vi-MQA",
+        "version": "1.5",
+        "transport_sha256": "677e78e4270777c4649b717184d9bca5bee79147462333f5c4e905311abff6ef",
+        "transport_byte_size": 869284,
+        "artifacts": [
+          {
+            "path": "mqa-1.5/dev.jsonl",
+            "byte_size": 106148,
+            "sha256": "e4eb5a51a75639bdcc080c96556b09fcfb875033aec867844c15d308ed3c1f0b"
+          },
+          {
+            "path": "mqa-1.5/valid.jsonl",
+            "byte_size": 273381,
+            "sha256": "02082d081e8e57b5a1c4c91b11e3caefea2f0f92937d649f5cc61b065bae5e8c"
+          },
+          {
+            "path": "mqa-1.5/test.jsonl",
+            "byte_size": 3735483,
+            "sha256": "f625e503b6e6713759d8f9ae259724a0b0ce2261fb1e0e0428724d52e184aa3e"
+          }
+        ]
+      },
+      {
+        "name": "Vi-SQuAD",
+        "version": "1.0",
+        "transport_sha256": "def8851fe51d3c26070105534a073a6fadf6b26050ac4fb99caeaa48e897dd11",
+        "transport_byte_size": 1872864,
+        "artifacts": [
+          {
+            "path": "squad-1/vi_squad_benchmark_question_only.json",
+            "byte_size": 5944231,
+            "sha256": "bf92bb3da75caa246c236bb071d745be6f60f5ae01e2855f74d7c1ffaf8aa5d9"
+          }
+        ]
+      },
+      {
+        "name": "Vi-DROP",
+        "version": "1.0",
+        "transport_sha256": "a5a4c8afa5d0aa0a0a0cafe0ae79cbc3843bd9cb59e193c650c2fdb8b235a867",
+        "transport_byte_size": 867221,
+        "artifacts": [
+          {
+            "path": "drop-1/vi_drop_benchmark_3309_question_only.json",
+            "byte_size": 3458765,
+            "sha256": "b3e46758c9099a710141df2dddd5851b2f333123a5b2a835bdb2c23a7a658f42"
+          }
+        ]
+      },
+      {
+        "name": "Vi-Dialog",
+        "version": "1.0",
+        "transport_sha256": "5123680a1f7f8c71249bd18fe8eb0326278c9544f1f168952b12fdba31d25dc4",
+        "transport_byte_size": 26528,
+        "artifacts": [
+          {
+            "path": "dialog-1/vi_dialogue_question_only.json",
+            "byte_size": 118693,
+            "sha256": "e057b5e2427c005cbacbad4e10e3650aa57c8e134ebcf02983cfd83030ec3844"
+          }
+        ]
+      }
+    ],
+    "archive_policy": "safe inert extraction; no source code execution",
+    "held_out_policy": "evaluation-only"
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-vietnamese-capability-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["factual-citation", "retrieval", "conversation-quality"]
+    }
+  ],
+  "declared_license": "MIT",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#evaluation-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#evaluation-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-evaluation-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

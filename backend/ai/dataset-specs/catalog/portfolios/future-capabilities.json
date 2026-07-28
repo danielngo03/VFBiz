@@ -1,0 +1,30 @@
+{
+  "schema_version": "vivi-capability-portfolio/v1",
+  "portfolio_id": "future-capabilities",
+  "decision": "catalog-only",
+  "capabilities": [
+    {
+      "capability_id": "assistant-multimodal-document",
+      "modalities": [
+        "document",
+        "image"
+      ],
+      "runtime_status": "not-implemented"
+    },
+    {
+      "capability_id": "assistant-voice",
+      "modalities": [
+        "audio"
+      ],
+      "runtime_status": "not-implemented"
+    },
+    {
+      "capability_id": "ev-journey-planner-data",
+      "modalities": [
+        "text",
+        "document"
+      ],
+      "runtime_status": "separate-program"
+    }
+  ]
+}

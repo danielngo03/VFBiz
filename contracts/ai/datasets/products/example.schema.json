@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-example/v2",
+  "title": "VFBiz Dataset Example",
+  "type": "object",
+  "required": [
+    "example_id",
+    "assistant_profile",
+    "locale",
+    "turns",
+    "expected",
+    "risk_labels",
+    "source_refs",
+    "synthetic_fact_namespace",
+    "requires_human_review"
+  ],
+  "properties": {
+    "example_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "asset_kind": {
+      "enum": [
+        "dataset-record",
+        "evaluation-case",
+        "synthetic-candidate"
+      ]
+    },
+    "dataset_class": {
+      "deprecated": true,
+      "enum": [
+        "knowledge",
+        "retrieval-evaluation",
+        "intent-ood",
+        "conversation-quality",
+        "tool-evaluation",
+        "refusal-safety",
+        "red-team",
+        "state-resilience",
+        "multimodal"
+      ]
+    },
+    "allowed_use": {
+      "enum": [
+        "knowledge-index",
+        "classifier-training",
+        "sft",
+        "preference",
+        "embedding",
+        "reranker",
+        "evaluation",
+        "red-team"
+      ]
+    },
+    "task_families": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "factual-citation",
+          "retrieval",
+          "intent-ood",
+          "conversation-quality",
+          "tool-use",
+          "refusal-safety",
+          "state-resilience"
+        ]
+      }
+    },
+    "modalities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["text", "document", "image", "audio"]}
+    },
+    "split_role": {"enum": ["train", "validation", "test", "golden", "red-team"]},
+    "split_family_id": {"type": "string", "minLength": 1},
+    "trust_zone": {
+      "enum": [
+        "quarantine",
+        "candidate",
+        "released",
+        "restricted-evaluation",
+        "red-team"
+      ]
+    },
+    "processing_stage": {
+      "enum": ["raw", "normalized", "filtered", "enriched", "adjudicated"]
+    },
+    "allowed_uses": {
+      "deprecated": true,
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {"enum": ["knowledge", "evaluation", "red-team", "training-candidate"]}
+    },
+    "assistant_profile": {
+      "enum": ["public_customer", "authenticated_customer"]
+    },
+    "locale": { "enum": ["vi-VN", "en-US", "vi-Latn-no-diacritics", "mixed"] },
+    "turns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": { "enum": ["user", "assistant", "tool"] },
+          "content": { "type": "string", "minLength": 1, "maxLength": 12000 }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 30
+    },
+    "expected": {
+      "type": "object",
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "answer",
+            "clarification",
+            "refusal",
+            "handoff",
+            "tool-proposal"
+          ]
+        },
+        "required_citation_source_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "tool_name": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "risk_labels": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "none",
+          "pricing",
+          "safety",
+          "legal",
+          "pii",
+          "tool-authorization",
+          "prompt-injection",
+          "stale-data",
+          "competitor",
+          "abuse"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "revision"],
+        "properties": {
+          "source_id": { "type": "string", "minLength": 1 },
+          "revision": { "type": "string", "minLength": 1 },
+          "locator": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "synthetic_fact_namespace": { "type": ["string", "null"] },
+    "requires_human_review": { "type": "boolean" },
+    "generator": {
+      "type": ["object", "null"],
+      "properties": {
+        "model_revision": { "type": "string" },
+        "prompt_revision": { "type": "string" },
+        "policy_revision": { "type": "string" },
+        "seed_id": { "type": "string" }
+      },
+      "required": [
+        "model_revision",
+        "prompt_revision",
+        "policy_revision",
+        "seed_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "required": [
+            "asset_kind",
+            "allowed_use",
+            "task_families",
+            "modalities",
+            "split_role",
+            "split_family_id"
+          ]
+        },
+        {"required": ["dataset_class", "allowed_uses"]}
+      ]
+    },
+    {
+      "if": {
+        "properties": {
+          "risk_labels": {
+            "contains": {
+              "enum": [
+                "pricing",
+                "safety",
+                "legal",
+                "pii",
+                "tool-authorization"
+              ]
+            }
+          }
+        }
+      },
+      "then": { "properties": { "requires_human_review": { "const": true } } }
+    },
+    {
+      "if": {
+        "properties": {"split_role": {"enum": ["test", "golden"]}},
+        "required": ["split_role"]
+      },
+      "then": {"properties": {"allowed_use": {"enum": ["evaluation", "red-team"]}}}
+    },
+    {
+      "if": {
+        "properties": {"asset_kind": {"const": "evaluation-case"}},
+        "required": ["asset_kind"]
+      },
+      "then": {"properties": {"allowed_use": {"enum": ["evaluation", "red-team"]}}}
+    }
+  ],
+  "additionalProperties": false
+}

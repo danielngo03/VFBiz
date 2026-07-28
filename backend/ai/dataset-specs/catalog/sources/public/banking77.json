@@ -1,0 +1,53 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "banking77",
+  "title": "BANKING77",
+  "catalog_status": "research-backlog",
+  "registry_status": "legal-hold",
+  "origin": {
+    "locator": "https://huggingface.co/datasets/PolyAI/banking77/tree/796a4623935746f71378f0ebd435635a8ce08e50",
+    "revision": "796a4623935746f71378f0ebd435635a8ce08e50",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "CC-BY-4.0",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "banking77",
+    "version": "candidate-2026-07-23",
+    "title": "BANKING77",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/PolyAI/banking77/tree/796a4623935746f71378f0ebd435635a8ce08e50",
+    "source_revision": "796a4623935746f71378f0ebd435635a8ce08e50",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "CC-BY-4.0",
+      "commercial_use": "permitted",
+      "derivatives": "permitted",
+      "redistribution": "permitted",
+      "access_conditions": "English banking taxonomy; chỉ nghiên cứu pattern, không chuyển domain label trực tiếp.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/PolyAI/banking77/tree/796a4623935746f71378f0ebd435635a8ce08e50"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate artifact và tombstone source revision.",
+    "review_date": "2026-08-23",
+    "notes": "Không dùng làm VinFast fact hoặc nhãn production trực tiếp."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

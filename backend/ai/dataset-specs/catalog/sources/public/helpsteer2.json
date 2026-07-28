@@ -1,0 +1,35 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "helpsteer2",
+  "title": "nvidia/HelpSteer2",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "nvidia/HelpSteer2",
+    "revision": "990b2711a36180dd19d9c94b8627844866f8982a",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["default"],
+    "splits": ["train", "validation"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-preference-v1",
+      "allowed_use": "preference",
+      "task_families": ["conversation-quality", "refusal-safety"]
+    }
+  ],
+  "declared_license": "CC-BY-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-payload/reranker/v1",
+  "title": "ViVi Reranker Triple Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "positive", "negative", "negative_kind"],
+  "properties": {
+    "query": {"type": "string", "minLength": 1},
+    "positive": {"type": "string", "minLength": 1},
+    "negative": {"type": "string", "minLength": 1},
+    "negative_kind": {
+      "enum": ["same-model", "same-policy-family", "stale-revision", "no-evidence"]
+    }
+  }
+}

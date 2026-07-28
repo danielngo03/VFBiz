@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v1",
+  "title": "VFBiz AI Benchmark Definition",
+  "type": "object",
+  "required": [
+    "benchmark_id",
+    "revision",
+    "evaluation_claim",
+    "suite_revision",
+    "subject_profile",
+    "runner_image_digest",
+    "harness_revision",
+    "metric_revisions",
+    "grader_revisions",
+    "profile",
+    "authority_class",
+    "definition_digest"
+  ],
+  "properties": {
+    "benchmark_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "revision": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "evaluation_claim": { "type": "string", "minLength": 8, "maxLength": 1000 },
+    "suite_revision": { "$ref": "#/$defs/suite" },
+    "subject_profile": {
+      "enum": [
+        "assistant-release",
+        "model",
+        "embedding",
+        "reranker",
+        "retriever",
+        "tool-registry"
+      ]
+    },
+    "runner_image_digest": { "$ref": "#/$defs/sha256" },
+    "harness_revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "metric_revisions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "grader_revisions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "profile": { "enum": ["local", "ci", "staging", "shadow"] },
+    "authority_class": {
+      "enum": ["vinfast-acceptance", "public-diagnostic"]
+    },
+    "definition_digest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "suite": {
+      "type": "object",
+      "required": ["suite_id", "suite_digest"],
+      "properties": {
+        "suite_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "suite_digest": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

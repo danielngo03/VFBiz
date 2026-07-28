@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation/baseline-policy/v1",
+  "title": "VFBiz AI Baseline Comparison Policy",
+  "type": "object",
+  "required": [
+    "policy_id",
+    "revision",
+    "protected_metrics",
+    "hard_gates",
+    "binary_interval",
+    "paired_comparison",
+    "operational_budgets",
+    "composite_score_authoritative",
+    "waiver_policy",
+    "policy_digest"
+  ],
+  "properties": {
+    "policy_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "protected_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "metric_revision",
+          "direction",
+          "non_inferiority_margin",
+          "required_slices",
+          "require_protected_95_bound"
+        ],
+        "properties": {
+          "metric_revision": { "type": "string", "minLength": 1 },
+          "direction": { "enum": ["higher-is-better", "lower-is-better"] },
+          "non_inferiority_margin": { "type": "number", "minimum": 0 },
+          "required_slices": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "require_protected_95_bound": { "const": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "hard_gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["gate_revision", "required_value"],
+        "properties": {
+          "gate_revision": { "type": "string", "minLength": 1 },
+          "required_value": { "const": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "binary_interval": { "const": "wilson-95" },
+    "paired_comparison": {
+      "type": "object",
+      "required": ["method", "samples", "confidence"],
+      "properties": {
+        "method": { "const": "paired-bootstrap" },
+        "samples": { "const": 10000 },
+        "confidence": { "const": 0.95 }
+      },
+      "additionalProperties": false
+    },
+    "operational_budgets": {
+      "type": "object",
+      "required": [
+        "latency_p95_ms",
+        "normalized_cost_usd",
+        "provider_failure_rate"
+      ],
+      "properties": {
+        "latency_p95_ms": { "type": "number", "exclusiveMinimum": 0 },
+        "normalized_cost_usd": { "type": "number", "minimum": 0 },
+        "provider_failure_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "composite_score_authoritative": { "const": false },
+    "waiver_policy": {
+      "type": "object",
+      "required": [
+        "requires_owner",
+        "requires_expiry",
+        "requires_mitigation",
+        "authority_contract_id"
+      ],
+      "properties": {
+        "requires_owner": { "const": true },
+        "requires_expiry": { "const": true },
+        "requires_mitigation": { "const": true },
+        "authority_contract_id": {
+          "type": "string",
+          "format": "uri",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "policy_digest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

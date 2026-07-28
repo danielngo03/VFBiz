@@ -1,0 +1,53 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "csconda-vietnamese-customer-support",
+  "title": "CSConDa Vietnamese Customer Support QA",
+  "catalog_status": "research-backlog",
+  "registry_status": "legal-hold",
+  "origin": {
+    "locator": "https://huggingface.co/datasets/ura-hcmut/Vietnamese-Customer-Support-QA",
+    "revision": "unfetched-candidate",
+    "access": "public-or-gated"
+  },
+  "selectors": null,
+  "bindings": [],
+  "declared_license": "Apache-2.0",
+  "evidence_refs": [],
+  "source_register_snapshot": {
+    "source_id": "csconda-vietnamese-customer-support",
+    "version": "candidate-2026-07-23",
+    "title": "CSConDa Vietnamese Customer Support QA",
+    "status": "legal-hold",
+    "source_type": "public-dataset",
+    "locator": "https://huggingface.co/datasets/ura-hcmut/Vietnamese-Customer-Support-QA",
+    "source_revision": "unfetched-candidate",
+    "upstream_checksum_sha256": null,
+    "proposed_purposes": ["conversation-quality", "intent-ood"],
+    "classification": "public",
+    "owner_role": "data-owner",
+    "rights": {
+      "license_id": "Apache-2.0",
+      "commercial_use": "unknown",
+      "derivatives": "unknown",
+      "redistribution": "unknown",
+      "access_conditions": "Dataset gated; cần duyệt điều kiện truy cập và mục đích sử dụng.",
+      "evidence_urls": [
+        "https://huggingface.co/datasets/ura-hcmut/Vietnamese-Customer-Support-QA"
+      ],
+      "legal_review": "pending"
+    },
+    "retention": {
+      "policy_id": "public-source-candidate-v1",
+      "duration_days": 90
+    },
+    "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage nếu bị từ chối.",
+    "review_date": "2026-08-23",
+    "notes": "Chưa download; không dùng làm VinFast factual knowledge."
+  },
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-public-source-register",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "not-observed"
+  }
+}

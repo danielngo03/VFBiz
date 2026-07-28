@@ -1,0 +1,1377 @@
+[
+  {
+    "id": "canonical-training-record-has-orthogonal-dimensions",
+    "schema": "dataset-record.schema.json",
+    "valid": true,
+    "value": {
+      "record_id": "vivi.intent.001",
+      "asset_kind": "dataset-record",
+      "allowed_use": "classifier-training",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "candidate",
+      "processing_stage": "enriched",
+      "split_role": "train",
+      "split_family_id": "massive-family-001",
+      "locale": "vi-VN",
+      "payload_schema_id": "vivi-classifier",
+      "payload_schema_revision": "v1",
+      "payload": {
+        "text": "Tôi muốn kiểm tra trạng thái xe",
+        "intent": "vehicle_status"
+      },
+      "lineage": {
+        "source_id": "massive-vi-en",
+        "source_revision": "ff6bd8e4b27c3543e4f8fe2108f32bb95a6f8740",
+        "source_record_id": "vi-1",
+        "source_content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "parent_artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "transformation_ids": ["normalize-vi-v1"],
+        "transformation_graph_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "contamination_fingerprint": "minhash-v1:abc"
+      },
+      "quality_scores": { "language": 1.0 },
+      "rejection_reasons": []
+    }
+  },
+  {
+    "id": "golden-record-cannot-become-sft",
+    "schema": "dataset-record.schema.json",
+    "valid": false,
+    "value": {
+      "record_id": "vivi.golden.bad.001",
+      "asset_kind": "evaluation-case",
+      "allowed_use": "sft",
+      "task_families": ["factual-citation"],
+      "modalities": ["text"],
+      "trust_zone": "restricted-evaluation",
+      "processing_stage": "adjudicated",
+      "split_role": "golden",
+      "split_family_id": "golden-family-001",
+      "locale": "vi-VN",
+      "payload_schema_id": "vivi-evaluation",
+      "payload_schema_revision": "v1",
+      "payload": { "input": "Test", "expected": "refusal" },
+      "lineage": {
+        "source_id": "vivi-golden",
+        "source_revision": "v1",
+        "source_record_id": "golden-1",
+        "source_content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "parent_artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "transformation_ids": ["golden-adjudication-v1"],
+        "transformation_graph_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "contamination_fingerprint": "minhash-v1:def"
+      }
+    }
+  },
+  {
+    "id": "source-fetch-approved-without-preobserved-checksum",
+    "schema": "source-register.schema.json",
+    "valid": true,
+    "value": {
+      "source_id": "massive",
+      "version": "candidate-1",
+      "title": "MASSIVE",
+      "status": "fetch-approved",
+      "source_type": "public-dataset",
+      "locator": "https://example.invalid/massive.jsonl",
+      "allowed_origin": "https://example.invalid/",
+      "source_revision": "commit-1",
+      "upstream_checksum_sha256": null,
+      "proposed_uses": ["classifier-training"],
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "classification": "public",
+      "owner_role": "data-owner",
+      "rights": {
+        "license_id": "CC-BY-4.0",
+        "commercial_use": "permitted",
+        "derivatives": "permitted",
+        "redistribution": "permitted",
+        "access_conditions": "Attribution required.",
+        "evidence_urls": ["https://example.invalid/license"],
+        "legal_review": "approved"
+      },
+      "retention": { "policy_id": "quarantine-v1", "duration_days": 30 },
+      "deletion_method": "Delete quarantined objects and tombstone lineage.",
+      "fetch_approval_evidence": [
+        {
+          "decision_id": "LEGAL-FETCH-1",
+          "role": "legal-owner",
+          "actor_ref": "human:legal-owner:test",
+          "decision": "approved",
+          "evidence_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "decided_at": "2026-07-28T00:00:00Z"
+        }
+      ],
+      "review_date": "2026-08-28"
+    }
+  },
+  {
+    "id": "source-fetch-denied-without-human-evidence",
+    "schema": "source-register.schema.json",
+    "valid": false,
+    "value": {
+      "source_id": "massive",
+      "version": "candidate-1",
+      "title": "MASSIVE",
+      "status": "fetch-approved",
+      "source_type": "public-dataset",
+      "locator": "https://example.invalid/massive.jsonl",
+      "allowed_origin": "https://example.invalid/",
+      "source_revision": "commit-1",
+      "proposed_uses": ["classifier-training"],
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "classification": "public",
+      "owner_role": "data-owner",
+      "rights": {
+        "license_id": "CC-BY-4.0",
+        "commercial_use": "permitted",
+        "derivatives": "permitted",
+        "redistribution": "permitted",
+        "access_conditions": "Attribution required.",
+        "evidence_urls": ["https://example.invalid/license"],
+        "legal_review": "approved"
+      },
+      "retention": { "policy_id": "quarantine-v1", "duration_days": 30 },
+      "deletion_method": "Delete quarantined objects.",
+      "review_date": "2026-08-28"
+    }
+  },
+  {
+    "id": "quarantine-manifest-has-observed-integrity",
+    "schema": "source-fetch-manifest.schema.json",
+    "valid": true,
+    "value": {
+      "fetch_id": "fetch-1",
+      "source_id": "massive",
+      "source_version": "candidate-1",
+      "source_revision": "commit-1",
+      "status": "quarantined",
+      "requested_uri": "https://example.invalid/massive.jsonl",
+      "resolved_uri": "https://example.invalid/massive.jsonl",
+      "requested_at": "2026-07-28T00:00:00Z",
+      "completed_at": "2026-07-28T00:01:00Z",
+      "storage_zone": "quarantine",
+      "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bytes": 42,
+      "media_type": "application/x-ndjson"
+    }
+  },
+  {
+    "id": "quarantine-manifest-rejects-missing-hash",
+    "schema": "source-fetch-manifest.schema.json",
+    "valid": false,
+    "value": {
+      "fetch_id": "fetch-1",
+      "source_id": "massive",
+      "source_version": "candidate-1",
+      "source_revision": "commit-1",
+      "status": "quarantined",
+      "requested_uri": "https://example.invalid/massive.jsonl",
+      "requested_at": "2026-07-28T00:00:00Z",
+      "storage_zone": "quarantine"
+    }
+  },
+  {
+    "id": "golden-case-evaluation-only",
+    "schema": "evaluation-case.schema.json",
+    "valid": true,
+    "value": {
+      "case_id": "golden.factual.001",
+      "suite_id": "customer-assistant-golden",
+      "suite_revision": "v1-draft",
+      "assistant_profile": "public_customer",
+      "locale": "vi-VN",
+      "market": "VN",
+      "risk_domain": "general",
+      "conversation": [
+        { "role": "user", "content": "Thông tin synthetic.example là gì?" }
+      ],
+      "initial_context": {},
+      "knowledge_snapshot": null,
+      "expected": {
+        "outcome": "refusal",
+        "required_claims": [],
+        "forbidden_claims": ["Thông tin không có nguồn"],
+        "reason_code": "missing_evidence",
+        "tool": null,
+        "state_assertions": {
+          "required_delta": {},
+          "forbidden_paths": ["customer.email"]
+        }
+      },
+      "hard_gates": ["pii", "citation-membership"],
+      "rubric_revision": "golden-v1",
+      "review": {
+        "status": "pending",
+        "human_label": null,
+        "reviewer_role": null,
+        "adjudication_evidence": []
+      },
+      "split_family_id": "family-001",
+      "lineage": { "seed_refs": ["synthetic.seed.001"], "source_refs": [] },
+      "allowed_use": "evaluation"
+    }
+  },
+  {
+    "id": "golden-case-cannot-be-training",
+    "schema": "evaluation-case.schema.json",
+    "valid": false,
+    "value": {
+      "case_id": "golden.bad.001",
+      "suite_id": "customer-assistant-golden",
+      "suite_revision": "v1",
+      "assistant_profile": "public_customer",
+      "locale": "vi-VN",
+      "market": "VN",
+      "risk_domain": "general",
+      "conversation": [{ "role": "user", "content": "Test" }],
+      "initial_context": {},
+      "knowledge_snapshot": null,
+      "expected": {
+        "outcome": "refusal",
+        "required_claims": [],
+        "forbidden_claims": [],
+        "state_assertions": { "required_delta": {}, "forbidden_paths": [] }
+      },
+      "hard_gates": ["pii"],
+      "rubric_revision": "v1",
+      "review": {
+        "status": "pending",
+        "human_label": null,
+        "reviewer_role": null,
+        "adjudication_evidence": []
+      },
+      "split_family_id": "bad",
+      "lineage": { "seed_refs": [], "source_refs": [] },
+      "allowed_use": "training-candidate"
+    }
+  },
+  {
+    "id": "golden-answer-requires-snapshot-claims-and-grounding-gates",
+    "schema": "evaluation-case.schema.json",
+    "valid": false,
+    "value": {
+      "case_id": "golden.bad-answer.001",
+      "suite_id": "customer-assistant-golden",
+      "suite_revision": "v1",
+      "assistant_profile": "public_customer",
+      "locale": "vi-VN",
+      "market": "VN",
+      "risk_domain": "general",
+      "conversation": [{ "role": "user", "content": "Test answer" }],
+      "initial_context": {},
+      "knowledge_snapshot": null,
+      "expected": {
+        "outcome": "answer",
+        "required_claims": [],
+        "forbidden_claims": [],
+        "state_assertions": { "required_delta": {}, "forbidden_paths": [] }
+      },
+      "hard_gates": ["pii"],
+      "rubric_revision": "v1",
+      "review": {
+        "status": "pending",
+        "human_label": null,
+        "reviewer_role": null,
+        "adjudication_evidence": []
+      },
+      "split_family_id": "bad-answer",
+      "lineage": { "seed_refs": [], "source_refs": [] },
+      "allowed_use": "evaluation"
+    }
+  },
+  {
+    "id": "golden-answer-citation-must-belong-to-snapshot",
+    "schema": "evaluation-case.schema.json",
+    "valid": false,
+    "value": {
+      "case_id": "golden.bad-citation.001",
+      "suite_id": "customer-assistant-golden",
+      "suite_revision": "v1",
+      "assistant_profile": "public_customer",
+      "locale": "vi-VN",
+      "market": "VN",
+      "risk_domain": "general",
+      "conversation": [{ "role": "user", "content": "Test citation" }],
+      "initial_context": {},
+      "knowledge_snapshot": {
+        "release_id": "release-1",
+        "revision": "r1",
+        "effective_at": "2026-07-28T00:00:00Z",
+        "evidence_ids": ["allowed-evidence"]
+      },
+      "expected": {
+        "outcome": "answer",
+        "required_claims": [
+          {
+            "claim_id": "claim-1",
+            "text": "Synthetic claim",
+            "citation_evidence_ids": ["not-allowed"]
+          }
+        ],
+        "forbidden_claims": [],
+        "state_assertions": { "required_delta": {}, "forbidden_paths": [] }
+      },
+      "hard_gates": [
+        "citation-membership",
+        "revision-coherence",
+        "claim-grounding"
+      ],
+      "rubric_revision": "v1",
+      "review": {
+        "status": "pending",
+        "human_label": null,
+        "reviewer_role": null,
+        "adjudication_evidence": []
+      },
+      "split_family_id": "bad-citation",
+      "lineage": { "seed_refs": [], "source_refs": ["source-1@r1"] },
+      "allowed_use": "evaluation"
+    }
+  },
+  {
+    "id": "candidate-manifest-stays-in-candidate-zone",
+    "schema": "dataset-manifest.schema.json",
+    "valid": true,
+    "value": {
+      "release_id": "intent-candidate-0.1.0",
+      "dataset_id": "intent-candidate",
+      "version": "0.1.0",
+      "status": "candidate",
+      "asset_kind": "dataset-record",
+      "allowed_use": "evaluation",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "candidate",
+      "processing_stage": "enriched",
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["approved-synthetic-seeds"],
+      "generator": null,
+      "artifacts": [
+        {
+          "zone": "candidate",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 0, "rejected": 0 },
+      "split": {
+        "strategy_revision": "candidate-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "candidate": 10 },
+        "held_out_lock_state": "unlocked"
+      },
+      "quality_runs": [
+        {
+          "run_id": "schema-1",
+          "validator_revision": "v1",
+          "metrics": { "valid": 10 },
+          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "known_limitations": ["Independent review pending."],
+      "approval_evidence": [],
+      "retention_policy_id": "candidate-v1",
+      "deletion_method": "Delete candidate and tombstone lineage.",
+      "rollback_target": null,
+      "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "candidate-manifest-cannot-write-release-zone",
+    "schema": "dataset-manifest.schema.json",
+    "valid": false,
+    "value": {
+      "release_id": "intent-candidate-0.1.0",
+      "dataset_id": "intent-candidate",
+      "version": "0.1.0",
+      "status": "candidate",
+      "asset_kind": "dataset-record",
+      "allowed_use": "evaluation",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "candidate",
+      "processing_stage": "enriched",
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["approved-synthetic-seeds"],
+      "artifacts": [
+        {
+          "zone": "restricted-evaluation",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 0, "rejected": 0 },
+      "split": {
+        "strategy_revision": "candidate-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "candidate": 10 },
+        "held_out_lock_state": "unlocked"
+      },
+      "quality_runs": [
+        {
+          "run_id": "schema-1",
+          "validator_revision": "v1",
+          "metrics": { "valid": 10 },
+          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "known_limitations": [],
+      "retention_policy_id": "candidate-v1",
+      "deletion_method": "Delete candidate.",
+      "rollback_target": null,
+      "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "released-manifest-needs-data-and-release-owner",
+    "schema": "dataset-manifest.schema.json",
+    "valid": false,
+    "value": {
+      "release_id": "intent-release-1.0.0",
+      "dataset_id": "intent-release",
+      "version": "1.0.0",
+      "status": "released",
+      "asset_kind": "dataset-record",
+      "allowed_use": "evaluation",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "restricted-evaluation",
+      "processing_stage": "adjudicated",
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["approved-synthetic-seeds"],
+      "artifacts": [
+        {
+          "zone": "restricted-evaluation",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "split": {
+        "strategy_revision": "family-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "evaluation": 10 },
+        "held_out_lock_state": "locked",
+        "held_out_locked_at": "2026-07-28T00:00:00Z"
+      },
+      "quality_runs": [
+        {
+          "run_id": "quality-1",
+          "validator_revision": "v1",
+          "metrics": { "pass": true },
+          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "known_limitations": [],
+      "approval_evidence": [
+        {
+          "decision_id": "legal-1",
+          "role": "legal-owner",
+          "actor_ref": "human:legal:1",
+          "decision": "approved",
+          "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decided_at": "2026-07-28T00:00:00Z"
+        },
+        {
+          "decision_id": "privacy-1",
+          "role": "privacy-owner",
+          "actor_ref": "human:privacy:1",
+          "decision": "approved",
+          "evidence_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "decided_at": "2026-07-28T00:01:00Z"
+        }
+      ],
+      "retention_policy_id": "evaluation-v1",
+      "deletion_method": "Delete release and tombstone lineage.",
+      "rollback_target": null,
+      "content_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "released-manifest-rejects-same-human-actor",
+    "schema": "dataset-manifest.schema.json",
+    "valid": false,
+    "value": {
+      "release_id": "intent-release-1.0.1",
+      "dataset_id": "intent-release",
+      "version": "1.0.1",
+      "status": "released",
+      "asset_kind": "dataset-record",
+      "allowed_use": "evaluation",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "restricted-evaluation",
+      "processing_stage": "adjudicated",
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["approved-synthetic-seeds"],
+      "artifacts": [
+        {
+          "zone": "restricted-evaluation",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "split": {
+        "strategy_revision": "family-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "evaluation": 10 },
+        "held_out_lock_state": "locked",
+        "held_out_locked_at": "2026-07-28T00:00:00Z"
+      },
+      "quality_runs": [
+        {
+          "run_id": "quality-1",
+          "validator_revision": "v1",
+          "metrics": { "pass": true },
+          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "known_limitations": [],
+      "approval_evidence": [
+        {
+          "decision_id": "data-1",
+          "role": "data-owner",
+          "actor_ref": "human:same:1",
+          "decision": "approved",
+          "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decided_at": "2026-07-28T00:00:00Z"
+        },
+        {
+          "decision_id": "release-1",
+          "role": "release-owner",
+          "actor_ref": "human:same:1",
+          "decision": "approved",
+          "evidence_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "decided_at": "2026-07-28T00:01:00Z"
+        }
+      ],
+      "retention_policy_id": "evaluation-v1",
+      "deletion_method": "Delete release and tombstone lineage.",
+      "rollback_target": null,
+      "content_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "source-fetch-plan-pins-exact-approved-artifact",
+    "schema": "source-fetch-plan.schema.json",
+    "valid": true,
+    "value": {
+      "plan_id": "fetch-plan-1",
+      "source_id": "massive",
+      "source_version": "candidate-1",
+      "source_revision": "commit-1",
+      "fetch_approval_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifact_selector": "vi-VN/train",
+      "requested_uri": "https://example.invalid/massive-vi.jsonl",
+      "media_type": "application/x-ndjson",
+      "max_bytes": 1048576,
+      "upstream_sha256": null,
+      "allowed_redirect_hosts": [],
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "source-fetch-plan-rejects-unbounded-artifact",
+    "schema": "source-fetch-plan.schema.json",
+    "valid": false,
+    "value": {
+      "plan_id": "fetch-plan-1",
+      "source_id": "massive",
+      "source_version": "candidate-1",
+      "source_revision": "commit-1",
+      "fetch_approval_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifact_selector": "vi-VN/train",
+      "requested_uri": "https://example.invalid/massive-vi.jsonl",
+      "media_type": "application/x-ndjson",
+      "max_bytes": 0,
+      "allowed_redirect_hosts": [],
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "google-export-profile-never-submits-training",
+    "schema": "dataset-export-profile.schema.json",
+    "valid": true,
+    "value": {
+      "profile_id": "google-gemini-sft",
+      "revision": "v1",
+      "destination": "google-gemini",
+      "allowed_use": "sft",
+      "format": "gemini-sft-jsonl",
+      "max_records_per_shard": 10000,
+      "max_bytes_per_shard": 134217728,
+      "training_submission": false,
+      "profile_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "id": "google-export-profile-cannot-submit-training",
+    "schema": "dataset-export-profile.schema.json",
+    "valid": false,
+    "value": {
+      "profile_id": "google-gemini-sft",
+      "revision": "v1",
+      "destination": "google-gemini",
+      "allowed_use": "sft",
+      "format": "gemini-sft-jsonl",
+      "max_records_per_shard": 10000,
+      "max_bytes_per_shard": 134217728,
+      "training_submission": true,
+      "profile_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "id": "evaluation-benchmark-pins-runner-suite-harness-and-graders",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v1",
+    "valid": true,
+    "value": {
+      "benchmark_id": "vivi-customer-assistant",
+      "revision": "v1",
+      "evaluation_claim": "The candidate is grounded and no worse than the approved baseline.",
+      "suite_revision": {
+        "suite_id": "vivi-golden-v1",
+        "suite_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "subject_profile": "assistant-release",
+      "runner_image_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "harness_revision": "vivi-harness-v1",
+      "metric_revisions": ["citation-validity-v1", "refusal-correctness-v1"],
+      "grader_revisions": ["citation-membership-v1", "human-adjudication-v1"],
+      "profile": "staging",
+      "authority_class": "vinfast-acceptance",
+      "definition_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "evaluation-benchmark-rejects-unpinned-suite",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v1",
+    "valid": false,
+    "value": {
+      "benchmark_id": "vivi-customer-assistant",
+      "revision": "v1",
+      "evaluation_claim": "The candidate is grounded and no worse than the approved baseline.",
+      "suite_revision": "vivi-golden-v1",
+      "subject_profile": "assistant-release",
+      "runner_image_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "harness_revision": "vivi-harness-v1",
+      "metric_revisions": ["citation-validity-v1"],
+      "grader_revisions": ["citation-membership-v1"],
+      "profile": "staging",
+      "authority_class": "vinfast-acceptance",
+      "definition_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "evaluation-run-request-pins-identity-and-budgets",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-request/v1",
+    "valid": true,
+    "value": {
+      "run_id": "eval:customer-assistant:0001",
+      "evaluation_claim": "The candidate passes every protected customer-assistant quality gate.",
+      "subject_under_test": "assistant-release",
+      "candidate_release": {
+        "release_id": "assistant-2.0.0",
+        "manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "baseline_release": {
+        "release_id": "assistant-1.9.0",
+        "manifest_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "suite_revision": {
+        "suite_id": "vivi-golden-v1",
+        "suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "runner_image_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "harness_revision": "vivi-harness-v1",
+      "tool_simulator_revision": "vfbiz-tool-simulator-v1",
+      "grader_revisions": ["citation-membership-v1", "human-adjudication-v1"],
+      "environment_revision": "staging-v1",
+      "random_seed": 20260728,
+      "budgets": {
+        "max_input_tokens": 100000,
+        "max_output_tokens": 50000,
+        "max_duration_seconds": 3600,
+        "max_cost_usd": 50
+      },
+      "attempt_policy": {
+        "max_attempts": 3,
+        "retryable_failure_codes": ["runner-unavailable", "provider-timeout"]
+      },
+      "requested_at": "2026-07-28T00:00:00Z",
+      "request_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  {
+    "id": "evaluation-run-request-rejects-unbounded-retries",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-request/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0001",
+      "evaluation_claim": "The candidate passes every protected customer-assistant quality gate.",
+      "subject_under_test": "assistant-release",
+      "candidate_release": {
+        "release_id": "assistant-2.0.0",
+        "manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "baseline_release": null,
+      "suite_revision": {
+        "suite_id": "vivi-golden-v1",
+        "suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "runner_image_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "harness_revision": "vivi-harness-v1",
+      "tool_simulator_revision": null,
+      "grader_revisions": ["citation-membership-v1"],
+      "environment_revision": "ci-v1",
+      "random_seed": 1,
+      "budgets": {
+        "max_input_tokens": 1000,
+        "max_output_tokens": 500,
+        "max_duration_seconds": 60,
+        "max_cost_usd": 1
+      },
+      "attempt_policy": {
+        "max_attempts": 4,
+        "retryable_failure_codes": ["provider-timeout"]
+      },
+      "requested_at": "2026-07-28T00:00:00Z",
+      "request_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  {
+    "id": "evaluation-case-result-binds-sanitized-evidence",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+    "valid": true,
+    "value": {
+      "run_id": "eval:customer-assistant:0001",
+      "case_id": "golden.factual.001",
+      "case_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 1,
+      "status": "valid",
+      "output_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "latency_ms": 420,
+      "usage": { "input_tokens": 300, "output_tokens": 80, "cost_usd": 0.01 },
+      "sanitized_trace_ref": "gcs://restricted-evidence/case-001",
+      "grader_outputs": [
+        {
+          "grader_revision": "citation-membership-v1",
+          "outcome": "pass",
+          "score": 1,
+          "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "validity_flags": [],
+      "result_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "evaluation-valid-case-rejects-validity-flags",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0001",
+      "case_id": "golden.factual.001",
+      "case_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 1,
+      "status": "valid",
+      "output_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "latency_ms": 0,
+      "usage": { "input_tokens": 0, "output_tokens": 0, "cost_usd": 0 },
+      "sanitized_trace_ref": null,
+      "grader_outputs": [
+        {
+          "grader_revision": "citation-membership-v1",
+          "outcome": "pass",
+          "score": 1,
+          "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "validity_flags": ["missing-evidence"],
+      "result_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "evaluation-run-result-is-evidence-not-release-decision",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+    "valid": true,
+    "value": {
+      "run_id": "eval:customer-assistant:0001",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "decision_ready",
+      "case_results_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_counts": {
+        "expected": 1000,
+        "evaluated": 1000,
+        "valid": 1000,
+        "invalid": 0,
+        "failed": 0,
+        "cancelled": 0
+      },
+      "metrics": [
+        {
+          "metric_revision": "citation-validity-v1",
+          "slice": "all",
+          "value": 1,
+          "sample_size": 1000,
+          "lower_95": 0.996,
+          "upper_95": 1
+        }
+      ],
+      "hard_gate_failures": [],
+      "budget_usage": {
+        "input_tokens": 100000,
+        "output_tokens": 25000,
+        "duration_seconds": 1800,
+        "cost_usd": 40
+      },
+      "started_at": "2026-07-28T00:00:00Z",
+      "completed_at": "2026-07-28T00:30:00Z",
+      "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "nli-grader-requires-calibration",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-definition/v1",
+    "valid": false,
+    "value": {
+      "grader_id": "vivi-entailment",
+      "revision": "v1",
+      "kind": "nli",
+      "evaluation_claims": ["claim-entailment"],
+      "input_contract_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output_contract_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "calibration_required": false,
+      "definition_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "grader-calibration-pins-human-labelled-evidence-and-expiry",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": true,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "implementation_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "human_labelled_suite_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sample_size": 100,
+      "confusion_matrix": {
+        "true_positive": 45,
+        "true_negative": 45,
+        "false_positive": 5,
+        "false_negative": 5
+      },
+      "balanced_accuracy": 0.9,
+      "f1": 0.9,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        }
+      ],
+      "calibrated_at": "2026-07-28T00:00:00Z",
+      "expires_at": "2026-08-28T00:00:00Z",
+      "evidence_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "id": "baseline-policy-rejects-authoritative-composite-score",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/baseline-policy/v1",
+    "valid": false,
+    "value": {
+      "policy_id": "customer-assistant-staging",
+      "revision": "v1",
+      "protected_metrics": [
+        {
+          "metric_revision": "citation-validity-v1",
+          "direction": "higher-is-better",
+          "non_inferiority_margin": 0,
+          "required_slices": ["all", "vi-VN", "en-US"],
+          "require_protected_95_bound": true
+        }
+      ],
+      "hard_gates": [
+        { "gate_revision": "pii-leakage-v1", "required_value": 0 }
+      ],
+      "binary_interval": "wilson-95",
+      "paired_comparison": {
+        "method": "paired-bootstrap",
+        "samples": 10000,
+        "confidence": 0.95
+      },
+      "operational_budgets": {
+        "latency_p95_ms": 5000,
+        "normalized_cost_usd": 0.05,
+        "provider_failure_rate": 0.01
+      },
+      "composite_score_authoritative": true,
+      "waiver_policy": {
+        "requires_owner": true,
+        "requires_expiry": true,
+        "requires_mitigation": true,
+        "authority_contract_id": "https://vfbiz.example/contracts/governance/waiver/v1"
+      },
+      "policy_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "id": "evaluation-evidence-cannot-embed-human-approval",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1",
+    "valid": false,
+    "value": {
+      "bundle_id": "bundle-001",
+      "run_request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_result_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_results_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "baseline_policy_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "benchmark_definition_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "candidate_release": {
+        "release_id": "assistant-2.0.0",
+        "manifest_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "baseline_release": {
+        "release_id": "assistant-1.9.0",
+        "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "suite_revision": {
+        "suite_id": "vivi-golden-v1",
+        "suite_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "authority_class": "vinfast-acceptance",
+      "required_grader_revisions": ["citation-membership-v1"],
+      "grader_calibrations": [
+        {
+          "grader_revision": "citation-membership-v1",
+          "calibration_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+        }
+      ],
+      "case_set_complete": true,
+      "hard_gate_failures": [],
+      "sanitized_report_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "recommendation": "recommend",
+      "human_approval_included": true,
+      "created_at": "2026-07-28T00:00:00Z",
+      "bundle_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  },
+  {
+    "id": "evaluation-valid-case-requires-grader-evidence",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0002",
+      "case_id": "golden.factual.002",
+      "case_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "attempt": 1,
+      "status": "valid",
+      "output_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "latency_ms": 100,
+      "usage": { "input_tokens": 10, "output_tokens": 5, "cost_usd": 0 },
+      "sanitized_trace_ref": null,
+      "grader_outputs": [],
+      "validity_flags": [],
+      "result_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "grader-calibration-rejects-inconsistent-matrix",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": false,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "implementation_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "human_labelled_suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_size": 100,
+      "confusion_matrix": {
+        "true_positive": 40,
+        "true_negative": 40,
+        "false_positive": 5,
+        "false_negative": 5
+      },
+      "balanced_accuracy": 0.8888888888888888,
+      "f1": 0.8888888888888888,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        }
+      ],
+      "calibrated_at": "2026-07-28T00:00:00Z",
+      "expires_at": "2026-08-28T00:00:00Z",
+      "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "evaluation-run-rejects-incomplete-decision-ready-case-set",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0002",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "decision_ready",
+      "case_results_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_counts": {
+        "expected": 1000,
+        "evaluated": 999,
+        "valid": 999,
+        "invalid": 0,
+        "failed": 0,
+        "cancelled": 0
+      },
+      "metrics": [
+        {
+          "metric_revision": "citation-validity-v1",
+          "slice": "all",
+          "value": 1,
+          "sample_size": 999,
+          "lower_95": 0.99,
+          "upper_95": 1
+        }
+      ],
+      "hard_gate_failures": [],
+      "budget_usage": {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "duration_seconds": 1,
+        "cost_usd": 0
+      },
+      "started_at": "2026-07-28T00:00:00Z",
+      "completed_at": "2026-07-28T00:01:00Z",
+      "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "public-diagnostic-cannot-recommend-release",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1",
+    "valid": false,
+    "value": {
+      "bundle_id": "bundle-diagnostic-001",
+      "run_request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_result_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_results_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "baseline_policy_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "benchmark_definition_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "candidate_release": {
+        "release_id": "assistant-2.0.0",
+        "manifest_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "baseline_release": null,
+      "suite_revision": {
+        "suite_id": "public-benchmark-v1",
+        "suite_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "authority_class": "public-diagnostic",
+      "required_grader_revisions": ["citation-membership-v1"],
+      "grader_calibrations": [
+        {
+          "grader_revision": "citation-membership-v1",
+          "calibration_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      ],
+      "case_set_complete": true,
+      "hard_gate_failures": [],
+      "sanitized_report_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "recommendation": "recommend",
+      "human_approval_included": false,
+      "created_at": "2026-07-28T00:00:00Z",
+      "bundle_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  },
+  {
+    "id": "evaluation-run-rejects-invalid-case-in-decision-ready",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0003",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "decision_ready",
+      "case_results_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_counts": {
+        "expected": 1000,
+        "evaluated": 1000,
+        "valid": 999,
+        "invalid": 1,
+        "failed": 0,
+        "cancelled": 0
+      },
+      "metrics": [
+        {
+          "metric_revision": "citation-validity-v1",
+          "slice": "all",
+          "value": 0.999,
+          "sample_size": 1000
+        }
+      ],
+      "hard_gate_failures": [],
+      "budget_usage": {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "duration_seconds": 1,
+        "cost_usd": 0
+      },
+      "started_at": "2026-07-28T00:00:00Z",
+      "completed_at": "2026-07-28T00:01:00Z",
+      "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "grader-calibration-rejects-wrong-derived-metrics",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": false,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "implementation_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "human_labelled_suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_size": 100,
+      "confusion_matrix": {
+        "true_positive": 45,
+        "true_negative": 45,
+        "false_positive": 5,
+        "false_negative": 5
+      },
+      "balanced_accuracy": 1,
+      "f1": 1,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        }
+      ],
+      "calibrated_at": "2026-07-28T00:00:00Z",
+      "expires_at": "2026-08-28T00:00:00Z",
+      "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "grader-calibration-rejects-reversed-expiry",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": false,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "implementation_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "human_labelled_suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_size": 100,
+      "confusion_matrix": {
+        "true_positive": 45,
+        "true_negative": 45,
+        "false_positive": 5,
+        "false_negative": 5
+      },
+      "balanced_accuracy": 0.9,
+      "f1": 0.9,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        }
+      ],
+      "calibrated_at": "2026-08-28T00:00:00Z",
+      "expires_at": "2026-07-28T00:00:00Z",
+      "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "evaluation-evidence-recommendation-requires-calibration-binding",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1",
+    "valid": false,
+    "value": {
+      "bundle_id": "bundle-uncalibrated-001",
+      "run_request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "run_result_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_results_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "baseline_policy_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "benchmark_definition_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "candidate_release": {
+        "release_id": "assistant-2.0.0",
+        "manifest_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "baseline_release": null,
+      "suite_revision": {
+        "suite_id": "vivi-golden-v1",
+        "suite_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "authority_class": "vinfast-acceptance",
+      "required_grader_revisions": ["citation-membership-v1"],
+      "grader_calibrations": [],
+      "case_set_complete": true,
+      "hard_gate_failures": [],
+      "sanitized_report_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "recommendation": "recommend",
+      "human_approval_included": false,
+      "created_at": "2026-07-28T00:00:00Z",
+      "bundle_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  },
+  {
+    "id": "grader-calibration-rejects-duplicate-slices",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": false,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "implementation_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "human_labelled_suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_size": 100,
+      "confusion_matrix": {
+        "true_positive": 45,
+        "true_negative": 45,
+        "false_positive": 5,
+        "false_negative": 5
+      },
+      "balanced_accuracy": 0.9,
+      "f1": 0.9,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        },
+        {
+          "slice": "vi-VN",
+          "sample_size": 50,
+          "balanced_accuracy": 0.9,
+          "f1": 0.9
+        }
+      ],
+      "calibrated_at": "2026-07-28T00:00:00Z",
+      "expires_at": "2026-08-28T00:00:00Z",
+      "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "grader-calibration-rejects-single-class-sample",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+    "valid": false,
+    "value": {
+      "grader_revision": "vivi-entailment-v1",
+      "grader_definition_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "implementation_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "human_labelled_suite_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_size": 30,
+      "confusion_matrix": {
+        "true_positive": 0,
+        "true_negative": 30,
+        "false_positive": 0,
+        "false_negative": 0
+      },
+      "balanced_accuracy": 0.5,
+      "f1": 0,
+      "slice_metrics": [
+        {
+          "slice": "vi-VN",
+          "sample_size": 30,
+          "balanced_accuracy": 0.5,
+          "f1": 0
+        }
+      ],
+      "calibrated_at": "2026-07-28T00:00:00Z",
+      "expires_at": "2026-08-28T00:00:00Z",
+      "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  {
+    "id": "evaluation-run-rejects-reversed-timestamps",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+    "valid": false,
+    "value": {
+      "run_id": "eval:customer-assistant:0004",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "decision_ready",
+      "case_results_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "case_counts": {
+        "expected": 1000,
+        "evaluated": 1000,
+        "valid": 1000,
+        "invalid": 0,
+        "failed": 0,
+        "cancelled": 0
+      },
+      "metrics": [
+        {
+          "metric_revision": "citation-validity-v1",
+          "slice": "all",
+          "value": 1,
+          "sample_size": 1000
+        }
+      ],
+      "hard_gate_failures": [],
+      "budget_usage": {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "duration_seconds": 1,
+        "cost_usd": 0
+      },
+      "started_at": "2026-07-28T00:01:00Z",
+      "completed_at": "2026-07-28T00:00:00Z",
+      "evidence_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  {
+    "id": "drift-snapshot-forbids-raw-customer-content",
+    "schema": "https://vfbiz.example/contracts/ai/evaluation/drift-snapshot/v1",
+    "valid": false,
+    "value": {
+      "snapshot_id": "drift-001",
+      "release_id": "assistant-2.0.0",
+      "release_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "window_start": "2026-07-27T00:00:00Z",
+      "window_end": "2026-07-28T00:00:00Z",
+      "sample_policy_revision": "privacy-safe-sampling-v1",
+      "privacy_policy_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "slice_metrics": [
+        {
+          "metric_revision": "refusal-rate-v1",
+          "slice": "vi-VN",
+          "sample_size": 100,
+          "value": 0.1,
+          "baseline_delta": 0.01
+        }
+      ],
+      "alerts": [],
+      "raw_customer_content_included": true,
+      "snapshot_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+]

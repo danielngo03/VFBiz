@@ -1,0 +1,147 @@
+{
+  "schema_version": "vivi-capability-catalog/v1",
+  "capability_catalog_id": "customer-assistant-v1",
+  "status": "candidate",
+  "products": [
+    {
+      "product_id": "vivi-conversation-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "conversation-quality",
+        "refusal-safety"
+      ],
+      "source_ids": [
+        "seabench-vi"
+      ]
+    },
+    {
+      "product_id": "vivi-conversation-sft-v1",
+      "allowed_use": "sft",
+      "task_families": [
+        "conversation-quality",
+        "intent-ood"
+      ],
+      "source_ids": [
+        "aya-collection-vi-en",
+        "aya-human-vi-en",
+        "bitext-customer-support",
+        "oasst2",
+        "ultrachat-200k"
+      ]
+    },
+    {
+      "product_id": "vivi-embedding-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "factual-citation",
+        "retrieval"
+      ],
+      "source_ids": [
+        "viequad-retrieval"
+      ]
+    },
+    {
+      "product_id": "vivi-golden-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "factual-citation",
+        "retrieval"
+      ],
+      "source_ids": [
+        "belebele-vi-en",
+        "xquad-vi-en"
+      ]
+    },
+    {
+      "product_id": "vivi-grounding-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "factual-citation",
+        "refusal-safety",
+        "retrieval"
+      ],
+      "source_ids": [
+        "ragtruth"
+      ]
+    },
+    {
+      "product_id": "vivi-instruction-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "conversation-quality"
+      ],
+      "source_ids": [
+        "ifeval"
+      ]
+    },
+    {
+      "product_id": "vivi-preference-v1",
+      "allowed_use": "preference",
+      "task_families": [
+        "conversation-quality",
+        "refusal-safety"
+      ],
+      "source_ids": [
+        "helpsteer2"
+      ]
+    },
+    {
+      "product_id": "vivi-redteam-v1",
+      "allowed_use": "red-team",
+      "task_families": [
+        "conversation-quality",
+        "refusal-safety"
+      ],
+      "source_ids": [
+        "safepyramid"
+      ]
+    },
+    {
+      "product_id": "vivi-router-classifier-v1",
+      "allowed_use": "classifier-training",
+      "task_families": [
+        "intent-ood"
+      ],
+      "source_ids": [
+        "massive-vi-en"
+      ]
+    },
+    {
+      "product_id": "vivi-tool-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "intent-ood",
+        "tool-use"
+      ],
+      "source_ids": [
+        "bfcl",
+        "vietnamese-function-calling-test"
+      ]
+    },
+    {
+      "product_id": "vivi-tool-sft-v1",
+      "allowed_use": "sft",
+      "task_families": [
+        "tool-use"
+      ],
+      "source_ids": [
+        "xlam-function-calling-60k"
+      ]
+    },
+    {
+      "product_id": "vivi-vietnamese-capability-eval-v1",
+      "allowed_use": "evaluation",
+      "task_families": [
+        "conversation-quality",
+        "factual-citation",
+        "refusal-safety",
+        "retrieval",
+        "tool-use"
+      ],
+      "source_ids": [
+        "vbench-public",
+        "vmlu-suite"
+      ]
+    }
+  ]
+}

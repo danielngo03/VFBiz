@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+  "title": "VFBiz AI Evaluation Case Result",
+  "type": "object",
+  "required": [
+    "run_id",
+    "case_id",
+    "case_digest",
+    "attempt",
+    "status",
+    "output_digest",
+    "latency_ms",
+    "usage",
+    "sanitized_trace_ref",
+    "grader_outputs",
+    "validity_flags",
+    "result_digest"
+  ],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 3, "maxLength": 160 },
+    "case_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "case_digest": { "$ref": "#/$defs/sha256" },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "status": { "enum": ["valid", "invalid", "failed", "cancelled"] },
+    "output_digest": {
+      "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+    },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "usage": {
+      "type": "object",
+      "required": ["input_tokens", "output_tokens", "cost_usd"],
+      "properties": {
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "cost_usd": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "sanitized_trace_ref": { "type": ["string", "null"], "maxLength": 500 },
+    "grader_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["grader_revision", "outcome", "evidence_digest"],
+        "properties": {
+          "grader_revision": { "type": "string", "minLength": 1 },
+          "outcome": { "enum": ["pass", "fail", "abstain", "invalid"] },
+          "score": { "type": ["number", "null"] },
+          "evidence_digest": { "$ref": "#/$defs/sha256" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "validity_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "broken-case",
+          "ambiguous-ground-truth",
+          "contamination",
+          "harness-mismatch",
+          "reward-hacking",
+          "format-avoidance",
+          "missing-evidence"
+        ]
+      }
+    },
+    "result_digest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "valid" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "output_digest": { "$ref": "#/$defs/sha256" },
+          "grader_outputs": { "type": "array", "minItems": 1 },
+          "validity_flags": { "type": "array", "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["failed", "cancelled"] } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "output_digest": { "type": "null" },
+          "grader_outputs": { "type": "array", "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "invalid" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "validity_flags": { "type": "array", "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "vivi-source-catalog-entry/v1",
+  "source_id": "belebele-vi-en",
+  "title": "facebook/belebele",
+  "catalog_status": "active-candidate",
+  "registry_status": "candidate",
+  "origin": {
+    "repository": "facebook/belebele",
+    "revision": "7899cdfa4e1e0d733fd77c848e2c273cb1d32be2",
+    "access": "public"
+  },
+  "selectors": {
+    "configs": ["vie_Latn", "eng_Latn"],
+    "splits": ["test"]
+  },
+  "bindings": [
+    {
+      "product_id": "vivi-golden-v1",
+      "allowed_use": "evaluation",
+      "task_families": ["factual-citation"]
+    }
+  ],
+  "declared_license": "CC-BY-SA-4.0",
+  "evidence_refs": [
+    "evidence-index:public-intake-checkpoints#training-smoke-fetch-checkpoint",
+    "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "evidence-index:public-intake-checkpoints#training-local-reconciliation-checkpoint"
+  ],
+  "provenance": {
+    "legacy_entry_superseded": false,
+    "catalog_origin": "legacy-training-portfolio",
+    "migration_evidence_ref": "evidence-index:public-intake-checkpoints#public-fetch-security-checkpoint",
+    "quarantine_observation": "fetched-unapproved"
+  }
+}
