@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, Protocol
@@ -21,6 +22,24 @@ WorkerResultKind = Literal[
     "policy_denied",
     "handoff_required",
 ]
+_REGISTERED_INTENTS = frozenset(
+    {
+        "public_knowledge",
+        "vehicle_question",
+        "financing_question",
+        "charging_question",
+        "unknown",
+    }
+)
+_REGISTERED_ABUSE_SIGNALS = frozenset(
+    {
+        "abusive_language",
+        "instruction_override",
+        "prompt_exfiltration",
+        "tool_injection",
+    }
+)
+_SLOT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,14 +58,31 @@ class RouteDecision:
     multi_intent: bool = False
     out_of_domain: bool = False
     abuse_signals: tuple[str, ...] = ()
+    routing_source: Literal["deterministic", "semantic"] = "deterministic"
+    fallback_reason: Literal["classifier_unavailable", "classifier_invalid"] | None = None
 
     def __post_init__(self) -> None:
+        if self.intent not in _REGISTERED_INTENTS:
+            raise ValueError("route intent is not registered")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("route confidence must be between zero and one")
         if len(self.required_arguments) > 16 or len(self.missing_slots) > 16:
             raise ValueError("route slot limit exceeded")
+        all_slots = (*self.required_arguments, *self.missing_slots)
+        if any(not _SLOT_NAME.fullmatch(slot) for slot in all_slots):
+            raise ValueError("route slot is not a canonical opaque name")
+        if len(set(self.required_arguments)) != len(self.required_arguments) or len(
+            set(self.missing_slots)
+        ) != len(self.missing_slots):
+            raise ValueError("route slots must be unique")
+        if not set(self.missing_slots).issubset(self.required_arguments):
+            raise ValueError("route missing slots must be required")
         if len(self.abuse_signals) > 16:
             raise ValueError("route abuse signal limit exceeded")
+        if len(set(self.abuse_signals)) != len(self.abuse_signals):
+            raise ValueError("route abuse signals must be unique")
+        if any(signal not in _REGISTERED_ABUSE_SIGNALS for signal in self.abuse_signals):
+            raise ValueError("route abuse signal is not registered")
 
 
 @dataclass(frozen=True, slots=True)

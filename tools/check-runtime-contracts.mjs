@@ -13,6 +13,8 @@ const datasetManifestV3ContractId =
   "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3";
 const datasetManifestV4ContractId =
   "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4";
+const assistantClassifierBindingContractId =
+  "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1";
 const contractPath = (contractId) => {
   const entry = contractRegistry.byId.get(contractId);
   if (!entry) throw new Error(`AI contract is not registered: ${contractId}`);
@@ -92,6 +94,8 @@ for (const vector of datasetVectors) {
       registryEntry.contractId,
     )
       ? datasetManifestSemanticErrors(vector.value)
+      : registryEntry.contractId === assistantClassifierBindingContractId
+        ? assistantClassifierBindingSemanticErrors(vector.value)
       : registryEntry.contractId ===
           "https://vfbiz.example/contracts/ai/golden-case/v2"
         ? goldenCaseSemanticErrors(vector.value)
@@ -106,9 +110,13 @@ for (const vector of datasetVectors) {
               ? evaluationEvidenceBundleSemanticErrors(vector.value)
               : [];
   const observed = schemaValid && semanticErrors.length === 0;
-  if (observed !== vector.valid) {
+  const expected =
+    typeof vector.semantic_valid === "boolean"
+      ? vector.semantic_valid
+      : vector.valid;
+  if (observed !== expected) {
     throw new Error(
-      `Dataset contract vector ${vector.id} expected valid=${vector.valid}: ${ajv.errorsText(validate.errors)} ${semanticErrors.join("; ")}`,
+      `Dataset contract vector ${vector.id} expected valid=${expected}: ${ajv.errorsText(validate.errors)} ${semanticErrors.join("; ")}`,
     );
   }
 }
@@ -339,6 +347,48 @@ function containsKeyword(value, keyword) {
       containsKeyword(candidate, keyword),
     )
   );
+}
+
+function assistantClassifierBindingSemanticErrors(binding) {
+  if (!isRecord(binding)) return ["classifier binding must be an object"];
+  const errors = [];
+  const evaluation = isRecord(binding.evaluation_evidence)
+    ? binding.evaluation_evidence
+    : {};
+  if (
+    evaluation.target_classification_stack_sha256 !==
+    binding.classification_stack_sha256
+  ) {
+    errors.push(
+      "evaluation evidence must target the classification stack digest",
+    );
+  }
+  const approval = isRecord(binding.approval_evidence)
+    ? binding.approval_evidence
+    : {};
+  if (approval.target_binding_core_sha256 !== binding.binding_core_sha256) {
+    errors.push("approval evidence must target the binding core digest");
+  }
+  const effectiveAt = Date.parse(binding.effective_at);
+  const expiresAt = Date.parse(binding.expires_at);
+  const evidenceValidUntil = Date.parse(evaluation.valid_until);
+  if (
+    !Number.isFinite(effectiveAt) ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt <= effectiveAt
+  ) {
+    errors.push("classifier binding effective window is invalid");
+  }
+  if (
+    !Number.isFinite(evidenceValidUntil) ||
+    !Number.isFinite(expiresAt) ||
+    evidenceValidUntil < expiresAt
+  ) {
+    errors.push(
+      "classifier evaluation evidence must cover the binding effective window",
+    );
+  }
+  return errors;
 }
 
 function datasetManifestSemanticErrors(manifest) {

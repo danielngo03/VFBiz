@@ -12,6 +12,7 @@ from app.modules.governance.infrastructure.postgres_trusted_release_registry imp
     PostgresTrustedReleaseRegistry,
 )
 from app.modules.governance.infrastructure.release_authority_schema import (
+    JsonSchemaAuthorityValidator,
     JsonSchemaReleaseAuthorityValidator,
 )
 from app.modules.governance.infrastructure.trusted_release_artifacts import (
@@ -30,6 +31,7 @@ __all__ = [
     "BoundedReleaseEvidenceVerifier",
     "EvidenceAuthenticityRequest",
     "EvidenceKind",
+    "JsonSchemaAuthorityValidator",
     "JsonSchemaReleaseAuthorityValidator",
     "PostgresActiveReleasePointerAdapter",
     "PostgresReleaseAuthorityResolver",

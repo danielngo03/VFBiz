@@ -30,6 +30,11 @@
       ]
     },
     {
+      "contractId": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+      "canonicalPath": "contracts/ai/releases/semantic-classifier-binding.schema.json",
+      "legacyPaths": []
+    },
+    {
       "contractId": "https://vfbiz.example/contracts/ai/source-register/v4",
       "canonicalPath": "contracts/ai/datasets/sources/source-register.schema.json",
       "legacyPaths": ["contracts/ai/source-register.schema.json"]

@@ -13,6 +13,10 @@ from app.modules.governance.domain.release_manifest import (
     StaticSafeRelease,
     StaticSafeReleaseRollbackTarget,
 )
+from app.modules.governance.domain.semantic_classifier_binding import (
+    SemanticClassifierBindingSchemaValidator,
+    SemanticClassifierReleaseBinding,
+)
 
 __all__ = [
     "AIReleaseCandidate",
@@ -25,5 +29,7 @@ __all__ = [
     "StaticSafeApprovalEvidence",
     "StaticSafeRelease",
     "StaticSafeReleaseRollbackTarget",
+    "SemanticClassifierBindingSchemaValidator",
+    "SemanticClassifierReleaseBinding",
     "canonical_sha256",
 ]

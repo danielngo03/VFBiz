@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+  "title": "VFBiz Assistant Release Semantic Classifier Binding",
+  "description": "Additive authority record required to enable semantic routing for an active Assistant Release v3. The base release alone remains deterministic-only.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "binding_id",
+    "target_activation",
+    "classifier_artifact",
+    "output_schema",
+    "routing_policy",
+    "classification_stack_sha256",
+    "evaluation_evidence",
+    "effective_at",
+    "expires_at",
+    "binding_core_sha256",
+    "approval_evidence",
+    "binding_envelope_sha256"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "binding_id": { "$ref": "#/$defs/identifier" },
+    "target_activation": { "$ref": "#/$defs/activationTarget" },
+    "classifier_artifact": { "$ref": "#/$defs/classifierArtifact" },
+    "output_schema": { "$ref": "#/$defs/outputSchema" },
+    "routing_policy": { "$ref": "#/$defs/routingPolicy" },
+    "classification_stack_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 projection over classifier_artifact, output_schema and routing_policy."
+    },
+    "evaluation_evidence": { "$ref": "#/$defs/evaluationEvidence" },
+    "effective_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "binding_core_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 projection over binding identity, target activation, classification stack, evaluation evidence and effective window."
+    },
+    "approval_evidence": { "$ref": "#/$defs/approvalEvidence" },
+    "binding_envelope_sha256": {
+      "$ref": "#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 projection over binding_core_sha256 and approval_evidence."
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Cross-field digest targets and temporal ordering are enforced by the canonical semantic validator. Runtime may enable the semantic classifier only when the active v3 activation ID/envelope match target_activation and this binding is current. Confidence thresholds remain in the code-owned routing policy artifact; numeric thresholds are intentionally forbidden here.",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 255,
+      "pattern": "^[a-z][a-z-]*://[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+    },
+    "classifierRef": {
+      "allOf": [
+        { "$ref": "#/$defs/ref" },
+        { "type": "string", "pattern": "^classifier://" }
+      ]
+    },
+    "schemaRef": {
+      "allOf": [
+        { "$ref": "#/$defs/ref" },
+        { "type": "string", "pattern": "^schema://" }
+      ]
+    },
+    "policyRef": {
+      "allOf": [
+        { "$ref": "#/$defs/ref" },
+        { "type": "string", "pattern": "^policy://" }
+      ]
+    },
+    "evaluationRef": {
+      "allOf": [
+        { "$ref": "#/$defs/ref" },
+        { "type": "string", "pattern": "^evaluation://" }
+      ]
+    },
+    "approvalRef": {
+      "allOf": [
+        { "$ref": "#/$defs/ref" },
+        { "type": "string", "pattern": "^approval://" }
+      ]
+    },
+    "activationTarget": {
+      "type": "object",
+      "required": [
+        "activation_id",
+        "activation_envelope_sha256",
+        "assistant_profile",
+        "environment"
+      ],
+      "properties": {
+        "activation_id": { "$ref": "#/$defs/identifier" },
+        "activation_envelope_sha256": { "$ref": "#/$defs/sha256" },
+        "assistant_profile": { "$ref": "#/$defs/identifier" },
+        "environment": {
+          "enum": ["development", "test", "staging", "production"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "classifierArtifact": {
+      "type": "object",
+      "required": ["ref", "sha256", "revision"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/classifierRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "revision": { "$ref": "#/$defs/revision" }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": ["ref", "sha256", "revision"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/schemaRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "revision": {
+          "$ref": "#/$defs/revision",
+          "description": "Pins the strict classifier output contract. Its code validator owns the closed intent, slot and abuse-signal registries; provider output cannot extend them."
+        }
+      },
+      "additionalProperties": false
+    },
+    "routingPolicy": {
+      "type": "object",
+      "required": ["ref", "sha256", "revision", "threshold_authority"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/policyRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "revision": { "$ref": "#/$defs/revision" },
+        "threshold_authority": { "const": "code-owned" }
+      },
+      "additionalProperties": false
+    },
+    "evaluationEvidence": {
+      "type": "object",
+      "required": [
+        "ref",
+        "sha256",
+        "suite_revision",
+        "target_classification_stack_sha256",
+        "valid_until"
+      ],
+      "properties": {
+        "ref": { "$ref": "#/$defs/evaluationRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "suite_revision": { "$ref": "#/$defs/revision" },
+        "target_classification_stack_sha256": { "$ref": "#/$defs/sha256" },
+        "valid_until": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "approvalEvidence": {
+      "type": "object",
+      "required": ["ref", "sha256", "target_binding_core_sha256"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/approvalRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "target_binding_core_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

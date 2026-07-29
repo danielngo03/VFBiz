@@ -71,6 +71,7 @@
 | VFBIZ-0166 | P0 | review | Agent Platform | root | — | — | [Register AI Quality PostgreSQL release gate](docs/work/items/VFBIZ-0166.md) |
 | VFBIZ-0167 | P0 | review | Data Governance | root | — | — | [Harden dataset release contract authority](docs/work/items/VFBIZ-0167.md) |
 | VFBIZ-0168 | P0 | review | Customer Engagement | api | — | — | [Add durable conversation task authority](docs/work/items/VFBIZ-0168.md) |
+| VFBIZ-0169 | P0 | blocked | AI Assistant Orchestration | ai | — | See checkpoint | [Add governed semantic routing](docs/work/items/VFBIZ-0169.md) |
 | VFBIZ-0176 | P0 | review | AI Knowledge Engineering | ai | — | — | [Adopt dataset manifest v4 in AI runtime](docs/work/items/VFBIZ-0176.md) |
 | VFBIZ-0177 | P0 | review | Agent Platform | root | — | — | [Enforce dataset v4 in runtime contract gate](docs/work/items/VFBIZ-0177.md) |
 | VFBIZ-0178 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python dataset contract parity with v4](docs/work/items/VFBIZ-0178.md) |

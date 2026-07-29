@@ -10,6 +10,15 @@ from app.modules.governance.application.release_resolver import (
     ReleaseManifestResolver,
     ReleaseManifestStore,
 )
+from app.modules.governance.application.semantic_classifier_binding import (
+    SemanticClassifierBindingRecord,
+    SemanticClassifierBindingResolutionError,
+    SemanticClassifierBindingResolver,
+    SemanticClassifierBindingState,
+    SemanticClassifierBindingStore,
+    SemanticClassifierEvidenceVerifier,
+    SemanticClassifierFreshnessFence,
+)
 
 __all__ = [
     "ActiveReleasePointer",
@@ -20,4 +29,11 @@ __all__ = [
     "ReleaseManifestResolver",
     "ReleaseManifestStore",
     "ReleasePointerTargetKind",
+    "SemanticClassifierBindingRecord",
+    "SemanticClassifierBindingResolutionError",
+    "SemanticClassifierBindingResolver",
+    "SemanticClassifierBindingState",
+    "SemanticClassifierBindingStore",
+    "SemanticClassifierEvidenceVerifier",
+    "SemanticClassifierFreshnessFence",
 ]

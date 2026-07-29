@@ -1682,5 +1682,241 @@
       "raw_customer_content_included": true,
       "snapshot_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     }
+  },
+  {
+    "id": "assistant-release-classifier-binding-pins-governed-stack",
+    "schema": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "binding_id": "classifier-binding.customer-assistant.staging.v1",
+      "target_activation": {
+        "activation_id": "activation.customer-assistant.staging.v3",
+        "activation_envelope_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assistant_profile": "customer-assistant",
+        "environment": "staging"
+      },
+      "classifier_artifact": {
+        "ref": "classifier://customer-assistant/semantic-router/v1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "revision": "semantic-router-v1"
+      },
+      "output_schema": {
+        "ref": "schema://customer-assistant/semantic-route/v1",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "revision": "semantic-route-schema-v1"
+      },
+      "routing_policy": {
+        "ref": "policy://customer-assistant/semantic-routing/v1",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "revision": "semantic-routing-policy-v1",
+        "threshold_authority": "code-owned"
+      },
+      "classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "evaluation_evidence": {
+        "ref": "evaluation://customer-assistant/semantic-router/v1",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "suite_revision": "semantic-router-golden-v1",
+        "target_classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "valid_until": "2026-08-29T00:00:00Z"
+      },
+      "effective_at": "2026-07-29T00:00:00Z",
+      "expires_at": "2026-08-29T00:00:00Z",
+      "binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_evidence": {
+        "ref": "approval://customer-assistant/semantic-router/v1",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "target_binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "binding_envelope_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  {
+    "id": "assistant-release-classifier-binding-rejects-missing-evaluation",
+    "schema": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "binding_id": "classifier-binding.customer-assistant.staging.v1",
+      "target_activation": {
+        "activation_id": "activation.customer-assistant.staging.v3",
+        "activation_envelope_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assistant_profile": "customer-assistant",
+        "environment": "staging"
+      },
+      "classifier_artifact": {
+        "ref": "classifier://customer-assistant/semantic-router/v1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "revision": "semantic-router-v1"
+      },
+      "output_schema": {
+        "ref": "schema://customer-assistant/semantic-route/v1",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "revision": "semantic-route-schema-v1"
+      },
+      "routing_policy": {
+        "ref": "policy://customer-assistant/semantic-routing/v1",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "revision": "semantic-routing-policy-v1",
+        "threshold_authority": "code-owned"
+      },
+      "classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "effective_at": "2026-07-29T00:00:00Z",
+      "expires_at": "2026-08-29T00:00:00Z",
+      "binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_evidence": {
+        "ref": "approval://customer-assistant/semantic-router/v1",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "target_binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "binding_envelope_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  {
+    "id": "assistant-release-classifier-binding-rejects-evaluation-target-mismatch",
+    "schema": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+    "valid": true,
+    "semantic_valid": false,
+    "value": {
+      "schema_version": 1,
+      "binding_id": "classifier-binding.customer-assistant.staging.v1",
+      "target_activation": {
+        "activation_id": "activation.customer-assistant.staging.v3",
+        "activation_envelope_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assistant_profile": "customer-assistant",
+        "environment": "staging"
+      },
+      "classifier_artifact": {
+        "ref": "classifier://customer-assistant/semantic-router/v1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "revision": "semantic-router-v1"
+      },
+      "output_schema": {
+        "ref": "schema://customer-assistant/semantic-route/v1",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "revision": "semantic-route-schema-v1"
+      },
+      "routing_policy": {
+        "ref": "policy://customer-assistant/semantic-routing/v1",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "revision": "semantic-routing-policy-v1",
+        "threshold_authority": "code-owned"
+      },
+      "classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "evaluation_evidence": {
+        "ref": "evaluation://customer-assistant/semantic-router/v1",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "suite_revision": "semantic-router-golden-v1",
+        "target_classification_stack_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "valid_until": "2026-08-29T00:00:00Z"
+      },
+      "effective_at": "2026-07-29T00:00:00Z",
+      "expires_at": "2026-08-29T00:00:00Z",
+      "binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_evidence": {
+        "ref": "approval://customer-assistant/semantic-router/v1",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "target_binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "binding_envelope_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  {
+    "id": "assistant-release-classifier-binding-rejects-stale-evidence",
+    "schema": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+    "valid": true,
+    "semantic_valid": false,
+    "value": {
+      "schema_version": 1,
+      "binding_id": "classifier-binding.customer-assistant.staging.v1",
+      "target_activation": {
+        "activation_id": "activation.customer-assistant.staging.v3",
+        "activation_envelope_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assistant_profile": "customer-assistant",
+        "environment": "staging"
+      },
+      "classifier_artifact": {
+        "ref": "classifier://customer-assistant/semantic-router/v1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "revision": "semantic-router-v1"
+      },
+      "output_schema": {
+        "ref": "schema://customer-assistant/semantic-route/v1",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "revision": "semantic-route-schema-v1"
+      },
+      "routing_policy": {
+        "ref": "policy://customer-assistant/semantic-routing/v1",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "revision": "semantic-routing-policy-v1",
+        "threshold_authority": "code-owned"
+      },
+      "classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "evaluation_evidence": {
+        "ref": "evaluation://customer-assistant/semantic-router/v1",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "suite_revision": "semantic-router-golden-v1",
+        "target_classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "valid_until": "2026-07-28T00:00:00Z"
+      },
+      "effective_at": "2026-07-29T00:00:00Z",
+      "expires_at": "2026-08-29T00:00:00Z",
+      "binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_evidence": {
+        "ref": "approval://customer-assistant/semantic-router/v1",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "target_binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "binding_envelope_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  {
+    "id": "assistant-release-classifier-binding-forbids-model-owned-threshold",
+    "schema": "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "binding_id": "classifier-binding.customer-assistant.staging.v1",
+      "target_activation": {
+        "activation_id": "activation.customer-assistant.staging.v3",
+        "activation_envelope_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assistant_profile": "customer-assistant",
+        "environment": "staging"
+      },
+      "classifier_artifact": {
+        "ref": "classifier://customer-assistant/semantic-router/v1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "revision": "semantic-router-v1"
+      },
+      "output_schema": {
+        "ref": "schema://customer-assistant/semantic-route/v1",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "revision": "semantic-route-schema-v1"
+      },
+      "routing_policy": {
+        "ref": "policy://customer-assistant/semantic-routing/v1",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "revision": "semantic-routing-policy-v1",
+        "threshold_authority": "model-owned",
+        "confidence_threshold": 0.7
+      },
+      "classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "evaluation_evidence": {
+        "ref": "evaluation://customer-assistant/semantic-router/v1",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "suite_revision": "semantic-router-golden-v1",
+        "target_classification_stack_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "valid_until": "2026-08-29T00:00:00Z"
+      },
+      "effective_at": "2026-07-29T00:00:00Z",
+      "expires_at": "2026-08-29T00:00:00Z",
+      "binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_evidence": {
+        "ref": "approval://customer-assistant/semantic-router/v1",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "target_binding_core_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "binding_envelope_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
   }
 ]
