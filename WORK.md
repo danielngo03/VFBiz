@@ -69,6 +69,20 @@
 | VFBIZ-0164 | P0 | review | Agent Platform | root | — | — | [Resolve canonical AI contract vectors](docs/work/items/VFBIZ-0164.md) |
 | VFBIZ-0165 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python AI contract vectors with canonical registry](docs/work/items/VFBIZ-0165.md) |
 | VFBIZ-0166 | P0 | review | Agent Platform | root | — | — | [Register AI Quality PostgreSQL release gate](docs/work/items/VFBIZ-0166.md) |
+| VFBIZ-0167 | P0 | review | Data Governance | root | — | — | [Harden dataset release contract authority](docs/work/items/VFBIZ-0167.md) |
+| VFBIZ-0168 | P0 | proposed | Customer Engagement | api | — | — | [Add durable conversation task authority](docs/work/items/VFBIZ-0168.md) |
+| VFBIZ-0176 | P0 | review | AI Knowledge Engineering | ai | — | — | [Adopt dataset manifest v4 in AI runtime](docs/work/items/VFBIZ-0176.md) |
+| VFBIZ-0177 | P0 | review | Agent Platform | root | — | — | [Enforce dataset v4 in runtime contract gate](docs/work/items/VFBIZ-0177.md) |
+| VFBIZ-0178 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python dataset contract parity with v4](docs/work/items/VFBIZ-0178.md) |
+| VFBIZ-0179 | P0 | review | AI Knowledge Engineering | ai | — | — | [Emit canonical dataset v4 candidate manifests](docs/work/items/VFBIZ-0179.md) |
+| VFBIZ-0180 | P0 | review | Data Governance | root | — | — | [Correct dataset v4 semantic vector authority](docs/work/items/VFBIZ-0180.md) |
+| VFBIZ-0181 | P0 | proposed | API Foundation | api | — | — | [Persist conversation task context schema](docs/work/items/VFBIZ-0181.md) |
+| VFBIZ-0182 | P0 | review | Data Governance | root | — | — | [Close dataset v4 authority gaps](docs/work/items/VFBIZ-0182.md) |
+| VFBIZ-0183 | P0 | active | AI Knowledge Engineering | ai | — | — | [Enforce dataset v4 semantic authority](docs/work/items/VFBIZ-0183.md) |
+| VFBIZ-0184 | P0 | review | Agent Platform | root | — | — | [Align Node dataset v4 semantic authority](docs/work/items/VFBIZ-0184.md) |
+| VFBIZ-0185 | P0 | active | AI Knowledge Engineering | ai | — | — | [Bind dataset release provenance to registry authority](docs/work/items/VFBIZ-0185.md) |
+| VFBIZ-0186 | P0 | review | AI Platform Foundation | ai | — | — | [Enforce atomic dataset release provenance at PostgreSQL boundary](docs/work/items/VFBIZ-0186.md) |
+| VFBIZ-0187 | P0 | review | AI Knowledge Engineering | ai | — | — | [Align Dataset Registry transactions with release authority](docs/work/items/VFBIZ-0187.md) |
 | VFBIZ-0036 | P1 | proposed | Product Management | root | VFBIZ-0035 | — | [Verified Vehicle Asset và customer association](docs/work/items/VFBIZ-0036.md) |
 | VFBIZ-0075 | P1 | review | Architecture & Integration | root | — | — | [Bộ báo cáo kiến trúc đích VFBiz](docs/work/items/VFBIZ-0075.md) |
 | VFBIZ-0083 | P1 | proposed | Mobility Platform | customer-portal | VFBIZ-0072, VFBIZ-0082 | — | [Customer EV Journey Planner experience](docs/work/items/VFBIZ-0083.md) |

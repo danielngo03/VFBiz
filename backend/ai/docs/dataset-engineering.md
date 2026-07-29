@@ -13,12 +13,22 @@ tags:
   - dataset
   - evaluation
   - synthetic-data
-revision: 4
+revision: 5
 review_date: 2026-08-28
 supersedes: []
 ---
 
 # Dataset Factory cho Customer Chatbot
+
+## Trạng thái triển khai
+
+| Hạng mục | Trạng thái |
+| --- | --- |
+| Dataset classification và Release Manifest v4 | Implemented |
+| Import-only compatibility từ v3 candidate | Implemented |
+| Durable fetch/scan/transformation workers | Candidate |
+| GCS production trust zones | Target-only |
+| First-party VinFast release | Human-blocked |
 
 ## Classification contract
 
@@ -32,6 +42,12 @@ classifier-training, SFT, preference, embedding, reranker, evaluation hoặc
 red-team. Một source có thể tạo nhiều artifact dẫn xuất với lineage riêng.
 Golden, held-out test, evaluation-case và red-team bị fail-closed khỏi training,
 knowledge index và synthetic seed.
+
+Dataset Release Manifest v4 là authority duy nhất cho `decision-ready` và
+`released`. Manifest v3 chỉ được nhận ở trạng thái `candidate` qua
+`LegacyDatasetManifestImporter`; importer tạo digest mới, loại bỏ approval cũ
+và bắt buộc independent v4 quality review. Không consumer nào được diễn giải
+field legacy `purpose` thành release authority.
 
 ## Source discovery
 

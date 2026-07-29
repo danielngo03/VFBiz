@@ -1,11 +1,15 @@
+import asyncio
+from collections.abc import Awaitable, Callable
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import CursorResult
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.modules.datasets.application.ports.registry import DatasetSourceProvenance
 from app.modules.datasets.domain import (
     AllowedUse,
     DatasetArtifact,
@@ -22,6 +26,9 @@ from app.modules.datasets.infrastructure.models import (
     DatasetFetchRecord,
     DatasetSourceRecord,
 )
+
+_SERIALIZATION_FAILURE = "40001"
+_SERIALIZABLE_ATTEMPTS = 3
 
 
 class PostgresDatasetRegistry:
@@ -54,10 +61,45 @@ class PostgresDatasetRegistry:
             record = await session.get(DatasetSourceRecord, source_id)
             return None if record is None else _source(record)
 
+    async def resolve_source_provenance(
+        self,
+        *,
+        source_key: str,
+        source_revision: str,
+        artifact_sha256: str,
+    ) -> DatasetSourceProvenance | None:
+        async with self._sessions() as session:
+            source_record = await session.scalar(
+                select(DatasetSourceRecord).where(
+                    DatasetSourceRecord.source_key == source_key,
+                    DatasetSourceRecord.source_revision == source_revision,
+                )
+            )
+            if source_record is None:
+                return None
+            fetch_record = await session.scalar(
+                select(DatasetFetchRecord)
+                .where(
+                    DatasetFetchRecord.source_id == source_record.id,
+                    DatasetFetchRecord.observed_sha256 == artifact_sha256,
+                    DatasetFetchRecord.state == FetchState.SCAN_PASSED.value,
+                )
+                .order_by(
+                    DatasetFetchRecord.created_at.desc(),
+                    DatasetFetchRecord.id.desc(),
+                )
+                .limit(1)
+            )
+            return DatasetSourceProvenance(
+                source=_source(source_record),
+                scan_passed_fetch=None if fetch_record is None else _fetch(fetch_record),
+            )
+
     async def save_source(self, source: DatasetSource, *, expected_version: int) -> None:
         if source.row_version != expected_version + 1:
             raise RegistryInvariantError("source transition version is inconsistent")
-        async with self._sessions() as session, session.begin():
+
+        async def operation(session: AsyncSession) -> None:
             result = cast(
                 CursorResult[object],
                 await session.execute(
@@ -78,6 +120,8 @@ class PostgresDatasetRegistry:
             )
             if result.rowcount != 1:
                 raise RegistryInvariantError("source update lost optimistic concurrency")
+
+        await _run_serializable(self._sessions, operation)
 
     async def add_fetch(self, fetch: DatasetFetch) -> None:
         async with self._sessions() as session, session.begin():
@@ -103,7 +147,8 @@ class PostgresDatasetRegistry:
     async def save_fetch(self, fetch: DatasetFetch, *, expected_version: int) -> None:
         if fetch.row_version != expected_version + 1:
             raise RegistryInvariantError("fetch transition version is inconsistent")
-        async with self._sessions() as session, session.begin():
+
+        async def operation(session: AsyncSession) -> None:
             result = cast(
                 CursorResult[object],
                 await session.execute(
@@ -125,6 +170,8 @@ class PostgresDatasetRegistry:
             )
             if result.rowcount != 1:
                 raise RegistryInvariantError("fetch update lost optimistic concurrency")
+
+        await _run_serializable(self._sessions, operation)
 
     async def add_artifact(
         self, artifact: DatasetArtifact, *, provenance: dict[str, object]
@@ -148,6 +195,28 @@ class PostgresDatasetRegistry:
             )
             if existing is None or not _same_artifact(existing, values):
                 raise RegistryInvariantError("artifact digest conflicts with registry")
+
+
+async def _run_serializable[T](
+    sessions: async_sessionmaker[AsyncSession],
+    operation: Callable[[AsyncSession], Awaitable[T]],
+) -> T:
+    for attempt in range(_SERIALIZABLE_ATTEMPTS):
+        try:
+            async with sessions() as session, session.begin():
+                await session.execute(
+                    text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+                )
+                return await operation(session)
+        except DBAPIError as error:
+            sqlstate = getattr(error.orig, "sqlstate", None)
+            if (
+                sqlstate != _SERIALIZATION_FAILURE
+                or attempt == _SERIALIZABLE_ATTEMPTS - 1
+            ):
+                raise
+            await asyncio.sleep(0.01 * (2**attempt))
+    raise AssertionError("serializable retry loop exhausted without result")
 
 
 def _source_values(source: DatasetSource) -> dict[str, object]:

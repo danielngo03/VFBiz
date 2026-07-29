@@ -343,16 +343,32 @@
       "dataset_id": "intent-candidate",
       "version": "0.1.0",
       "status": "candidate",
-      "asset_kind": "dataset-record",
+      "asset_kind": "evaluation-case",
       "allowed_use": "evaluation",
       "task_families": ["intent-ood"],
       "modalities": ["text"],
       "trust_zone": "candidate",
       "processing_stage": "enriched",
+      "payload_schema": {
+        "contract_id": "https://vfbiz.example/contracts/ai/golden-case/v2",
+        "revision": "v2",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
       "classification": "internal",
       "assistant_profiles": ["public_customer"],
       "source_ids": ["approved-synthetic-seeds"],
-      "generator": null,
+      "provenance": {
+        "sources": [
+          {
+            "source_id": "approved-synthetic-seeds",
+            "source_revision": "v1",
+            "artifact_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "transformation_recipe_revision": "intent-candidate-v1",
+        "transformation_recipe_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "lineage_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
       "artifacts": [
         {
           "zone": "candidate",
@@ -365,18 +381,21 @@
         }
       ],
       "record_counts": { "candidate": 10, "accepted": 0, "rejected": 0 },
-      "split": {
+      "split_lock": {
         "strategy_revision": "candidate-v1",
         "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         "partitions": { "candidate": 10 },
-        "held_out_lock_state": "unlocked"
+        "state": "unlocked"
       },
-      "quality_runs": [
+      "quality_evidence": [
         {
           "run_id": "schema-1",
           "validator_revision": "v1",
-          "metrics": { "valid": 10 },
-          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          "artifact_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "authority_ref": "dataset-quality:run:schema-1",
+          "state": "pending",
+          "observed_at": "2026-07-28T00:00:00Z"
         }
       ],
       "known_limitations": ["Independent review pending."],
@@ -384,7 +403,7 @@
       "retention_policy_id": "candidate-v1",
       "deletion_method": "Delete candidate and tombstone lineage.",
       "rollback_target": null,
-      "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "content_hash": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
       "created_at": "2026-07-28T00:00:00Z"
     }
   },
@@ -397,15 +416,32 @@
       "dataset_id": "intent-candidate",
       "version": "0.1.0",
       "status": "candidate",
-      "asset_kind": "dataset-record",
+      "asset_kind": "evaluation-case",
       "allowed_use": "evaluation",
       "task_families": ["intent-ood"],
       "modalities": ["text"],
       "trust_zone": "candidate",
       "processing_stage": "enriched",
+      "payload_schema": {
+        "contract_id": "https://vfbiz.example/contracts/ai/golden-case/v2",
+        "revision": "v2",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
       "classification": "internal",
       "assistant_profiles": ["public_customer"],
       "source_ids": ["approved-synthetic-seeds"],
+      "provenance": {
+        "sources": [
+          {
+            "source_id": "approved-synthetic-seeds",
+            "source_revision": "v1",
+            "artifact_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "transformation_recipe_revision": "intent-candidate-v1",
+        "transformation_recipe_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "lineage_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
       "artifacts": [
         {
           "zone": "restricted-evaluation",
@@ -418,25 +454,126 @@
         }
       ],
       "record_counts": { "candidate": 10, "accepted": 0, "rejected": 0 },
-      "split": {
+      "split_lock": {
         "strategy_revision": "candidate-v1",
         "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         "partitions": { "candidate": 10 },
-        "held_out_lock_state": "unlocked"
+        "state": "unlocked"
       },
-      "quality_runs": [
+      "quality_evidence": [
         {
           "run_id": "schema-1",
           "validator_revision": "v1",
-          "metrics": { "valid": 10 },
-          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          "artifact_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "authority_ref": "dataset-quality:run:schema-1",
+          "state": "pending",
+          "observed_at": "2026-07-28T00:00:00Z"
         }
       ],
       "known_limitations": [],
       "retention_policy_id": "candidate-v1",
       "deletion_method": "Delete candidate.",
       "rollback_target": null,
-      "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "content_hash": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "released-v4-manifest-binds-classification-lineage-and-quality-evidence",
+    "schema": "dataset-manifest.schema.json",
+    "valid": true,
+    "value": {
+      "release_id": "vivi-router-1.0.0",
+      "dataset_id": "vivi-router",
+      "version": "1.0.0",
+      "status": "released",
+      "asset_kind": "dataset-record",
+      "allowed_use": "classifier-training",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "released",
+      "processing_stage": "adjudicated",
+      "payload_schema": {
+        "contract_id": "https://vfbiz.example/contracts/ai/dataset-payload/classifier/v1",
+        "revision": "v1",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "export_profile": {
+        "profile_id": "vertex-classifier-jsonl",
+        "revision": "v1",
+        "digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
+      },
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["massive-vi-en"],
+      "provenance": {
+        "sources": [
+          {
+            "source_id": "massive-vi-en",
+            "source_revision": "pinned-revision-1",
+            "artifact_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "transformation_recipe_revision": "vivi-router-v1",
+        "transformation_recipe_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "lineage_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "artifacts": [
+        {
+          "zone": "released",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "split_lock": {
+        "state": "locked",
+        "strategy_revision": "family-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "train": 8, "validation": 2 },
+        "locked_at": "2026-07-28T00:00:00Z"
+      },
+      "quality_evidence": [
+        {
+          "run_id": "quality-router-1",
+          "validator_revision": "v1",
+          "artifact_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "authority_ref": "dataset-quality:run:quality-router-1",
+          "state": "verified",
+          "observed_at": "2026-07-28T00:00:00Z",
+          "expires_at": "2027-07-28T00:00:00Z",
+          "revoked_at": null
+        }
+      ],
+      "known_limitations": [],
+      "approval_evidence": [
+        {
+          "decision_id": "data-router-1",
+          "role": "data-owner",
+          "actor_ref": "human:data:router",
+          "decision": "approved",
+          "evidence_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decided_at": "2026-07-28T00:00:00Z"
+        },
+        {
+          "decision_id": "release-router-1",
+          "role": "release-owner",
+          "actor_ref": "human:release:router",
+          "decision": "approved",
+          "evidence_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "decided_at": "2026-07-28T00:01:00Z"
+        }
+      ],
+      "retention_policy_id": "training-v1",
+      "deletion_method": "Delete release payload and retain a lineage tombstone.",
+      "rollback_target": null,
+      "content_hash": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
       "created_at": "2026-07-28T00:00:00Z"
     }
   },
@@ -449,15 +586,37 @@
       "dataset_id": "intent-release",
       "version": "1.0.0",
       "status": "released",
-      "asset_kind": "dataset-record",
+      "asset_kind": "evaluation-case",
       "allowed_use": "evaluation",
       "task_families": ["intent-ood"],
       "modalities": ["text"],
       "trust_zone": "restricted-evaluation",
       "processing_stage": "adjudicated",
+      "payload_schema": {
+        "contract_id": "https://vfbiz.example/contracts/ai/golden-case/v2",
+        "revision": "v2",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "export_profile": {
+        "profile_id": "restricted-evaluation-jsonl",
+        "revision": "v1",
+        "digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
+      },
       "classification": "internal",
       "assistant_profiles": ["public_customer"],
       "source_ids": ["approved-synthetic-seeds"],
+      "provenance": {
+        "sources": [
+          {
+            "source_id": "approved-synthetic-seeds",
+            "source_revision": "v1",
+            "artifact_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "transformation_recipe_revision": "intent-release-v1",
+        "transformation_recipe_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "lineage_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
       "artifacts": [
         {
           "zone": "restricted-evaluation",
@@ -470,19 +629,24 @@
         }
       ],
       "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
-      "split": {
+      "split_lock": {
         "strategy_revision": "family-v1",
         "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         "partitions": { "evaluation": 10 },
-        "held_out_lock_state": "locked",
-        "held_out_locked_at": "2026-07-28T00:00:00Z"
+        "state": "locked",
+        "locked_at": "2026-07-28T00:00:00Z"
       },
-      "quality_runs": [
+      "quality_evidence": [
         {
           "run_id": "quality-1",
           "validator_revision": "v1",
-          "metrics": { "pass": true },
-          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          "artifact_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "authority_ref": "dataset-quality:run:quality-1",
+          "state": "verified",
+          "observed_at": "2026-07-28T00:00:00Z",
+          "expires_at": "2027-07-28T00:00:00Z",
+          "revoked_at": null
         }
       ],
       "known_limitations": [],
@@ -492,13 +656,181 @@
           "role": "legal-owner",
           "actor_ref": "human:legal:1",
           "decision": "approved",
-          "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "evidence_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
           "decided_at": "2026-07-28T00:00:00Z"
         },
         {
           "decision_id": "privacy-1",
           "role": "privacy-owner",
           "actor_ref": "human:privacy:1",
+          "decision": "approved",
+          "evidence_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "decided_at": "2026-07-28T00:01:00Z"
+        }
+      ],
+      "retention_policy_id": "evaluation-v1",
+      "deletion_method": "Delete release and tombstone lineage.",
+      "rollback_target": null,
+      "content_hash": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "released-manifest-rejects-same-human-actor",
+    "schema": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4",
+    "valid": false,
+    "value": {
+      "release_id": "intent-release-1.0.1",
+      "dataset_id": "intent-release",
+      "version": "1.0.1",
+      "status": "released",
+      "asset_kind": "evaluation-case",
+      "allowed_use": "evaluation",
+      "task_families": ["intent-ood"],
+      "modalities": ["text"],
+      "trust_zone": "restricted-evaluation",
+      "processing_stage": "adjudicated",
+      "payload_schema": {
+        "contract_id": "https://vfbiz.example/contracts/ai/golden-case/v2",
+        "revision": "v2",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "export_profile": {
+        "profile_id": "restricted-evaluation-jsonl",
+        "revision": "v1",
+        "digest": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
+      },
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["approved-synthetic-seeds"],
+      "provenance": {
+        "sources": [
+          {
+            "source_id": "approved-synthetic-seeds",
+            "source_revision": "v1",
+            "artifact_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ],
+        "transformation_recipe_revision": "intent-release-v1",
+        "transformation_recipe_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "lineage_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "artifacts": [
+        {
+          "zone": "restricted-evaluation",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "split_lock": {
+        "strategy_revision": "family-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "evaluation": 10 },
+        "state": "locked",
+        "locked_at": "2026-07-28T00:00:00Z"
+      },
+      "quality_evidence": [
+        {
+          "run_id": "quality-1",
+          "validator_revision": "v1",
+          "artifact_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "authority_ref": "dataset-quality:run:quality-1",
+          "state": "verified",
+          "observed_at": "2026-07-28T00:00:00Z",
+          "expires_at": "2027-07-28T00:00:00Z",
+          "revoked_at": null
+        }
+      ],
+      "known_limitations": [],
+      "approval_evidence": [
+        {
+          "decision_id": "data-1",
+          "role": "data-owner",
+          "actor_ref": "human:same:1",
+          "decision": "approved",
+          "evidence_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decided_at": "2026-07-28T00:00:00Z"
+        },
+        {
+          "decision_id": "release-1",
+          "role": "release-owner",
+          "actor_ref": "human:same:1",
+          "decision": "approved",
+          "evidence_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "decided_at": "2026-07-28T00:01:00Z"
+        }
+      ],
+      "retention_policy_id": "evaluation-v1",
+      "deletion_method": "Delete release and tombstone lineage.",
+      "rollback_target": null,
+      "content_hash": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+      "created_at": "2026-07-28T00:00:00Z"
+    }
+  },
+  {
+    "id": "released-manifest-rejects-legacy-purpose-bypass",
+    "schema": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
+    "valid": false,
+    "value": {
+      "release_id": "legacy-purpose-bypass-1.0.0",
+      "dataset_id": "legacy-purpose-bypass",
+      "version": "1.0.0",
+      "status": "released",
+      "purpose": "retrieval-evaluation",
+      "classification": "internal",
+      "assistant_profiles": ["public_customer"],
+      "source_ids": ["legacy-source"],
+      "payload_schema_id": "vivi-evaluation-case",
+      "payload_schema_revision": "v2",
+      "export_profile_id": "restricted-evaluation-jsonl",
+      "export_profile_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "artifacts": [
+        {
+          "zone": "candidate",
+          "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "records": 10,
+          "bytes": 100,
+          "media_type": "application/x-ndjson"
+        }
+      ],
+      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "split": {
+        "strategy_revision": "legacy-v1",
+        "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "partitions": { "evaluation": 10 },
+        "held_out_lock_state": "locked",
+        "held_out_locked_at": "2026-07-28T00:00:00Z"
+      },
+      "quality_runs": [
+        {
+          "run_id": "quality-legacy-1",
+          "validator_revision": "legacy-v1",
+          "metrics": { "pass": true },
+          "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "known_limitations": [],
+      "approval_evidence": [
+        {
+          "decision_id": "data-legacy-1",
+          "role": "data-owner",
+          "actor_ref": "human:data:legacy",
+          "decision": "approved",
+          "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decided_at": "2026-07-28T00:00:00Z"
+        },
+        {
+          "decision_id": "release-legacy-1",
+          "role": "release-owner",
+          "actor_ref": "human:release:legacy",
           "decision": "approved",
           "evidence_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
           "decided_at": "2026-07-28T00:01:00Z"
@@ -512,26 +844,21 @@
     }
   },
   {
-    "id": "released-manifest-rejects-same-human-actor",
-    "schema": "dataset-manifest.schema.json",
-    "valid": false,
+    "id": "legacy-v3-purpose-is-importable-only-as-candidate",
+    "schema": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
+    "valid": true,
     "value": {
-      "release_id": "intent-release-1.0.1",
-      "dataset_id": "intent-release",
-      "version": "1.0.1",
-      "status": "released",
-      "asset_kind": "dataset-record",
-      "allowed_use": "evaluation",
-      "task_families": ["intent-ood"],
-      "modalities": ["text"],
-      "trust_zone": "restricted-evaluation",
-      "processing_stage": "adjudicated",
+      "release_id": "legacy-import-candidate-0.1.0",
+      "dataset_id": "legacy-import-candidate",
+      "version": "0.1.0",
+      "status": "candidate",
+      "purpose": "intent-ood",
       "classification": "internal",
       "assistant_profiles": ["public_customer"],
-      "source_ids": ["approved-synthetic-seeds"],
+      "source_ids": ["legacy-source"],
       "artifacts": [
         {
-          "zone": "restricted-evaluation",
+          "zone": "candidate",
           "content_address": "sha256/aa/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -540,43 +867,25 @@
           "media_type": "application/x-ndjson"
         }
       ],
-      "record_counts": { "candidate": 10, "accepted": 10, "rejected": 0 },
+      "record_counts": { "candidate": 10, "accepted": 0, "rejected": 0 },
       "split": {
-        "strategy_revision": "family-v1",
+        "strategy_revision": "legacy-v1",
         "family_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        "partitions": { "evaluation": 10 },
-        "held_out_lock_state": "locked",
-        "held_out_locked_at": "2026-07-28T00:00:00Z"
+        "partitions": { "candidate": 10 },
+        "held_out_lock_state": "unlocked"
       },
       "quality_runs": [
         {
-          "run_id": "quality-1",
-          "validator_revision": "v1",
-          "metrics": { "pass": true },
+          "run_id": "legacy-schema-1",
+          "validator_revision": "legacy-v1",
+          "metrics": { "valid": 10 },
           "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
         }
       ],
-      "known_limitations": [],
-      "approval_evidence": [
-        {
-          "decision_id": "data-1",
-          "role": "data-owner",
-          "actor_ref": "human:same:1",
-          "decision": "approved",
-          "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-          "decided_at": "2026-07-28T00:00:00Z"
-        },
-        {
-          "decision_id": "release-1",
-          "role": "release-owner",
-          "actor_ref": "human:same:1",
-          "decision": "approved",
-          "evidence_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-          "decided_at": "2026-07-28T00:01:00Z"
-        }
-      ],
-      "retention_policy_id": "evaluation-v1",
-      "deletion_method": "Delete release and tombstone lineage.",
+      "known_limitations": ["Requires v4 migration before release processing."],
+      "approval_evidence": [],
+      "retention_policy_id": "candidate-v1",
+      "deletion_method": "Delete candidate and tombstone lineage.",
       "rollback_target": null,
       "content_hash": "9999999999999999999999999999999999999999999999999999999999999999",
       "created_at": "2026-07-28T00:00:00Z"

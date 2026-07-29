@@ -1,7 +1,24 @@
+from dataclasses import dataclass
 from typing import Protocol
 from uuid import UUID
 
 from app.modules.datasets.domain import DatasetArtifact, DatasetFetch, DatasetSource
+
+
+@dataclass(frozen=True, slots=True)
+class DatasetSourceProvenance:
+    source: DatasetSource
+    scan_passed_fetch: DatasetFetch | None
+
+
+class DatasetProvenanceRegistry(Protocol):
+    async def resolve_source_provenance(
+        self,
+        *,
+        source_key: str,
+        source_revision: str,
+        artifact_sha256: str,
+    ) -> DatasetSourceProvenance | None: ...
 
 
 class DatasetRegistry(Protocol):

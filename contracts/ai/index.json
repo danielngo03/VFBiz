@@ -61,6 +61,11 @@
     },
     {
       "contractId": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
+      "canonicalPath": "contracts/ai/datasets/products/legacy-release-manifest-v3.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4",
       "canonicalPath": "contracts/ai/datasets/products/release-manifest.schema.json",
       "legacyPaths": ["contracts/ai/dataset-manifest.schema.json"]
     },

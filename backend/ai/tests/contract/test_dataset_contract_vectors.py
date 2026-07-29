@@ -17,6 +17,10 @@ MANIFEST_VALIDATOR = (
 GOLDEN_VALIDATOR = MANIFEST_VALIDATOR.with_name("validate_golden_case.py")
 CONTRACT_REGISTRY = ROOT / "contracts/ai/index.json"
 DATASET_SPECS = ROOT / "backend/ai/dataset-specs"
+DATASET_MANIFEST_CONTRACT_IDS = {
+    "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
+    "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4",
+}
 
 
 def load_validator(path: Path, module_name: str) -> Any:
@@ -136,8 +140,7 @@ def test_dataset_contract_vectors_match_python_validator() -> None:
         schema_valid = validator.is_valid(vector["value"])
         semantic_valid = (
             not manifest_validator.semantic_errors(vector["value"])
-            if entry["contractId"]
-            == "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3"
+            if entry["contractId"] in DATASET_MANIFEST_CONTRACT_IDS
             else not golden_validator.semantic_errors(vector["value"])
             if entry["contractId"] == "https://vfbiz.example/contracts/ai/golden-case/v2"
             else not evaluation_semantic_errors(entry["contractId"], vector["value"])

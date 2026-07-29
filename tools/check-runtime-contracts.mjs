@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +9,10 @@ import yaml from "js-yaml";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contractRegistry = await loadContractRegistry();
+const datasetManifestV3ContractId =
+  "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3";
+const datasetManifestV4ContractId =
+  "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4";
 const contractPath = (contractId) => {
   const entry = contractRegistry.byId.get(contractId);
   if (!entry) throw new Error(`AI contract is not registered: ${contractId}`);
@@ -15,9 +20,7 @@ const contractPath = (contractId) => {
 };
 const schemaPaths = [
   "contracts/json-schema/citation.schema.json",
-  contractPath(
-    "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
-  ),
+  contractPath(datasetManifestV4ContractId),
   contractPath("https://vfbiz.example/contracts/ai/release-manifest/v3"),
   contractPath(
     "https://vfbiz.example/contracts/ai/conversation-turn-protocol/v1",
@@ -85,8 +88,9 @@ for (const vector of datasetVectors) {
   }
   const schemaValid = validate(vector.value);
   const semanticErrors =
-    registryEntry.contractId ===
-    "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3"
+    [datasetManifestV3ContractId, datasetManifestV4ContractId].includes(
+      registryEntry.contractId,
+    )
       ? datasetManifestSemanticErrors(vector.value)
       : registryEntry.contractId ===
           "https://vfbiz.example/contracts/ai/golden-case/v2"
@@ -127,7 +131,7 @@ assertReleasedClientExcludesOperationIds(
 if (process.argv.includes("--self-test")) runNegativeSelfTest();
 
 console.log(
-  `Runtime contracts verified: ${contractRegistry.byId.size} registered AI contracts, ${schemaPaths.length} runtime schemas, ${datasetVectors.length} dataset vectors, ${requiredConversationOperationIds.length} isolated candidate operations`,
+  `Runtime contracts verified: ${contractRegistry.byId.size} registered AI contracts, ${schemaPaths.length} runtime schemas, ${datasetVectors.length} dataset vectors, ${requiredConversationOperationIds.length} isolated candidate operations; active dataset manifest ${datasetManifestV4ContractId}`,
 );
 
 async function loadContractRegistry() {
@@ -340,15 +344,24 @@ function containsKeyword(value, keyword) {
 function datasetManifestSemanticErrors(manifest) {
   if (!isRecord(manifest)) return ["manifest must be an object"];
   const errors = [];
+  const isV4 = isRecord(manifest.split_lock);
   const counts = isRecord(manifest.record_counts) ? manifest.record_counts : {};
   const candidate = counts.candidate;
   const accepted = counts.accepted;
   const rejected = counts.rejected;
   if ([candidate, accepted, rejected].every(Number.isInteger)) {
     const decided = accepted + rejected;
-    if (manifest.status === "released" && candidate !== decided) {
-      errors.push("released candidate count must equal accepted plus rejected");
-    } else if (manifest.status !== "released" && decided > candidate) {
+    if (
+      ["decision-ready", "released"].includes(manifest.status) &&
+      candidate !== decided
+    ) {
+      errors.push(
+        "decision-ready or released candidate count must equal accepted plus rejected",
+      );
+    } else if (
+      !["decision-ready", "released"].includes(manifest.status) &&
+      decided > candidate
+    ) {
       errors.push("accepted plus rejected cannot exceed candidate count");
     }
   }
@@ -360,15 +373,54 @@ function datasetManifestSemanticErrors(manifest) {
         0,
       )
     : 0;
+  const artifactHashes = [];
+  const artifactDigests = new Set();
+  const artifactAddresses = new Set();
+  for (const artifact of Array.isArray(manifest.artifacts)
+    ? manifest.artifacts.filter(isRecord)
+    : []) {
+    if (typeof artifact.sha256 !== "string") continue;
+    artifactHashes.push(artifact.sha256);
+    artifactDigests.add(`sha256:${artifact.sha256}`);
+    const expectedAddress = `sha256/${artifact.sha256.slice(0, 2)}/${artifact.sha256}`;
+    if (isV4 && artifact.content_address !== expectedAddress) {
+      errors.push("artifact content address must match sha256");
+    }
+    if (
+      isV4 &&
+      artifactAddresses.has(artifact.content_address) ||
+      (isV4 && artifactHashes.slice(0, -1).includes(artifact.sha256))
+    ) {
+      errors.push("artifact digests and content addresses must be unique");
+    }
+    artifactAddresses.add(artifact.content_address);
+  }
+  const expectedContentHash = createHash("sha256")
+    .update(artifactHashes.join(""))
+    .digest("hex");
+  if (
+    isV4 &&
+    artifactHashes.length > 0 &&
+    manifest.content_hash !== expectedContentHash
+  ) {
+    errors.push("content_hash must bind the ordered artifact digests");
+  }
+  const split = isRecord(manifest.split_lock)
+    ? manifest.split_lock
+    : manifest.split;
   const partitions =
-    isRecord(manifest.split) && isRecord(manifest.split.partitions)
-      ? manifest.split.partitions
+    isRecord(split) && isRecord(split.partitions)
+      ? split.partitions
       : {};
   const partitionRecords = Object.values(partitions).reduce(
     (total, value) => total + (Number.isInteger(value) ? value : 0),
     0,
   );
-  const expectedRecords = manifest.status === "released" ? accepted : candidate;
+  const expectedRecords = ["decision-ready", "released"].includes(
+    manifest.status,
+  )
+    ? accepted
+    : candidate;
   if (Number.isInteger(expectedRecords)) {
     if (artifactRecords !== expectedRecords) {
       errors.push("artifact record total does not match manifest state");
@@ -385,6 +437,89 @@ function datasetManifestSemanticErrors(manifest) {
     : [];
   if (actors.length !== new Set(actors).size) {
     errors.push("approval decisions must use distinct human actors");
+  }
+  const decisionIds = Array.isArray(manifest.approval_evidence)
+    ? manifest.approval_evidence
+        .filter(isRecord)
+        .map((item) => item.decision_id)
+        .filter((value) => typeof value === "string")
+    : [];
+  if (isV4 && decisionIds.length !== new Set(decisionIds).size) {
+    errors.push("approval decision ids must be unique");
+  }
+  if (Array.isArray(manifest.quality_evidence)) {
+    const verifiedArtifactDigests = new Set();
+    for (const evidence of manifest.quality_evidence.filter(isRecord)) {
+      if (!artifactDigests.has(evidence.artifact_digest)) {
+        errors.push("quality evidence references artifact outside manifest");
+      }
+      if (
+        isV4 &&
+        ["decision-ready", "released"].includes(manifest.status)
+      ) {
+        let current = true;
+        if (evidence.state !== "verified") {
+          current = false;
+          errors.push(
+            "decision-ready or released quality evidence must be verified",
+          );
+        }
+        if (evidence.revoked_at !== null && evidence.revoked_at !== undefined) {
+          current = false;
+          errors.push(
+            "decision-ready or released quality evidence is revoked",
+          );
+        }
+        const expiry = Date.parse(evidence.expires_at);
+        if (!Number.isFinite(expiry) || expiry <= Date.now()) {
+          current = false;
+          errors.push(
+            "decision-ready or released quality evidence is expired",
+          );
+        }
+        if (current) verifiedArtifactDigests.add(evidence.artifact_digest);
+      }
+    }
+    if (
+      isV4 &&
+      ["decision-ready", "released"].includes(manifest.status) &&
+      [...artifactDigests].some(
+        (digest) => !verifiedArtifactDigests.has(digest),
+      )
+    ) {
+      errors.push("every released artifact requires current verified evidence");
+    }
+  }
+  if (
+    Array.isArray(manifest.source_ids) &&
+    isRecord(manifest.provenance) &&
+    Array.isArray(manifest.provenance.sources)
+  ) {
+    const sourceIds = new Set(manifest.source_ids);
+    const provenanceIds = new Set(
+      manifest.provenance.sources
+        .filter(isRecord)
+        .map((item) => item.source_id),
+    );
+    if (
+      sourceIds.size !== provenanceIds.size ||
+      [...sourceIds].some((sourceId) => !provenanceIds.has(sourceId))
+    ) {
+      errors.push("provenance sources must match source_ids exactly");
+    }
+    if (
+      isV4 &&
+      ["decision-ready", "released"].includes(manifest.status) &&
+      manifest.provenance.sources
+        .filter(isRecord)
+        .some((source) =>
+          ["candidate-input-unresolved", "unresolved", "unknown"].includes(
+            source.source_revision,
+          ),
+        )
+    ) {
+      errors.push("decision-ready or released provenance must be resolved");
+    }
   }
   return errors;
 }
@@ -658,6 +793,116 @@ function runNegativeSelfTest() {
       contractId: "contract:two",
     });
   }, "ambiguous canonical contract basename");
+  const canonicalRelease = datasetVectors.find(
+    ({ id }) =>
+      id ===
+      "released-v4-manifest-binds-classification-lineage-and-quality-evidence",
+  )?.value;
+  if (!canonicalRelease) {
+    throw new Error("Dataset v4 authority self-test fixture is missing");
+  }
+  const duplicateActorRelease = structuredClone(canonicalRelease);
+  duplicateActorRelease.approval_evidence[1].actor_ref =
+    duplicateActorRelease.approval_evidence[0].actor_ref;
+  if (
+    !datasetManifestSemanticErrors(duplicateActorRelease).some((error) =>
+      error.includes("distinct human actors"),
+    )
+  ) {
+    throw new Error(
+      "Runtime contract checker self-test failed: duplicate dataset approver",
+    );
+  }
+  const unboundQualityRelease = structuredClone(canonicalRelease);
+  unboundQualityRelease.quality_evidence[0].artifact_digest =
+    `sha256:${"7".repeat(64)}`;
+  if (
+    !datasetManifestSemanticErrors(unboundQualityRelease).some((error) =>
+      error.includes("artifact outside manifest"),
+    )
+  ) {
+    throw new Error(
+      "Runtime contract checker self-test failed: unbound quality evidence",
+    );
+  }
+  const semanticMutations = [
+    {
+      label: "artifact address binding",
+      expected: "content address",
+      mutate: (value) => {
+        value.artifacts[0].content_address = `sha256/${"7".repeat(2)}/${"7".repeat(64)}`;
+      },
+    },
+    {
+      label: "manifest content binding",
+      expected: "content_hash",
+      mutate: (value) => {
+        value.content_hash = "9".repeat(64);
+      },
+    },
+    {
+      label: "quality evidence expiry",
+      expected: "expired",
+      mutate: (value) => {
+        value.quality_evidence[0].expires_at = "2020-01-01T00:00:00Z";
+      },
+    },
+    {
+      label: "quality evidence coverage",
+      expected: "every released artifact",
+      mutate: (value) => {
+        value.artifacts.push({
+          ...structuredClone(value.artifacts[0]),
+          content_address: `sha256/bb/${"b".repeat(64)}`,
+          sha256: "b".repeat(64),
+          records: 0,
+        });
+        value.content_hash = createHash("sha256")
+          .update(`${"a".repeat(64)}${"b".repeat(64)}`)
+          .digest("hex");
+      },
+    },
+    {
+      label: "approval decision identity",
+      expected: "decision ids",
+      mutate: (value) => {
+        value.approval_evidence[1].decision_id =
+          value.approval_evidence[0].decision_id;
+      },
+    },
+    {
+      label: "resolved provenance",
+      expected: "provenance must be resolved",
+      mutate: (value) => {
+        value.provenance.sources[0].source_revision = "unresolved";
+      },
+    },
+    {
+      label: "unique artifact identity",
+      expected: "must be unique",
+      mutate: (value) => {
+        value.artifacts.push(structuredClone(value.artifacts[0]));
+        value.artifacts[1].records = 0;
+        value.content_hash = createHash("sha256")
+          .update("a".repeat(128))
+          .digest("hex");
+      },
+    },
+  ];
+  for (const { label, expected, mutate } of semanticMutations) {
+    const invalidRelease = structuredClone(canonicalRelease);
+    mutate(invalidRelease);
+    if (
+      !datasetManifestSemanticErrors(invalidRelease).some((error) =>
+        error.includes(expected),
+      )
+    ) {
+      throw new Error(
+        `Runtime contract checker self-test failed: ${label}`,
+      );
+    }
+  }
+  console.log("Dataset v4 authority self-test passed.");
 }
 
 function assertThrows(operation, label) {

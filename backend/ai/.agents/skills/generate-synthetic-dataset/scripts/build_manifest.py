@@ -71,6 +71,10 @@ def artifact(path: Path) -> dict[str, Any]:
     }
 
 
+def sha256_ref(value: bytes) -> str:
+    return f"sha256:{hashlib.sha256(value).hexdigest()}"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-id", required=True)
@@ -117,6 +121,38 @@ def main() -> int:
             seen_example_ids.add(example_id)
     total = sum(item["records"] for item in artifacts)
     combined = hashlib.sha256("".join(item["sha256"] for item in artifacts).encode()).hexdigest()
+    created_at = datetime.now(UTC).isoformat()
+    source_ids = sorted(set(args.source_id))
+    payload_contract_id = "https://vfbiz.example/contracts/ai/dataset-example/v2"
+    payload_revision = "v2"
+    payload_digest = sha256_ref(f"{payload_contract_id}@{payload_revision}".encode())
+    recipe_revision = "synthetic-candidate-normalization-v1"
+    recipe_digest = sha256_ref(
+        json.dumps(
+            {
+                "allowed_use": allowed_use,
+                "asset_kind": args.asset_kind,
+                "modalities": modalities,
+                "revision": recipe_revision,
+                "task_families": task_families,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+    )
+    lineage_digest = sha256_ref(
+        json.dumps(
+            {
+                "artifact_digests": [item["sha256"] for item in artifacts],
+                "dataset_id": args.dataset_id,
+                "recipe_digest": recipe_digest,
+                "source_ids": source_ids,
+                "version": args.version,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+    )
     manifest = {
         "release_id": f"{args.dataset_id}-{args.version}",
         "dataset_id": args.dataset_id,
@@ -126,33 +162,61 @@ def main() -> int:
         "allowed_use": allowed_use,
         "task_families": list(task_families),
         "modalities": list(modalities),
+        "trust_zone": "candidate",
+        "processing_stage": "normalized",
+        "payload_schema": {
+            "contract_id": payload_contract_id,
+            "revision": payload_revision,
+            "digest": payload_digest,
+        },
         "classification": "internal",
         "assistant_profiles": [args.profile],
-        "source_ids": sorted(set(args.source_id)),
-        "generator": None,
+        "source_ids": source_ids,
+        "provenance": {
+            "sources": [
+                {
+                    "source_id": source_id,
+                    "source_revision": "candidate-input-unresolved",
+                    "artifact_digest": f"sha256:{combined}",
+                }
+                for source_id in source_ids
+            ],
+            "transformation_recipe_revision": recipe_revision,
+            "transformation_recipe_digest": recipe_digest,
+            "lineage_digest": lineage_digest,
+        },
         "artifacts": artifacts,
         "record_counts": {"candidate": total, "accepted": 0, "rejected": 0},
-        "split": {
+        "split_lock": {
+            "state": "unlocked",
             "strategy_revision": "candidate-unassigned-v1",
             "family_hash": combined,
             "partitions": {"candidate": total},
-            "held_out_lock_state": "unlocked",
         },
-        "quality_runs": [
+        "quality_evidence": [
             {
-                "run_id": "candidate-schema-validation",
+                "run_id": f"candidate-schema-validation:{index}",
                 "validator_revision": "dataset-example-v10.1",
-                "metrics": {"schema_validated": True},
-                "evidence_digest": combined,
+                "artifact_digest": f"sha256:{item['sha256']}",
+                "evidence_digest": sha256_ref(
+                    f"candidate-schema-validation:{item['sha256']}".encode()
+                ),
+                "authority_ref": "dataset-candidate-validator",
+                "state": "pending",
+                "observed_at": created_at,
             }
+            for index, item in enumerate(artifacts, start=1)
         ],
-        "known_limitations": ["Independent quality and rights review pending."],
+        "known_limitations": [
+            "Independent quality and rights review pending.",
+            "Source revisions require resolution before decision-ready.",
+        ],
         "approval_evidence": [],
         "retention_policy_id": "candidate-dataset-v1",
         "deletion_method": "Delete candidate objects and tombstone lineage.",
         "rollback_target": None,
         "content_hash": combined,
-        "created_at": datetime.now(UTC).isoformat(),
+        "created_at": created_at,
     }
     contract_errors = validate_manifest(manifest)
     if contract_errors:

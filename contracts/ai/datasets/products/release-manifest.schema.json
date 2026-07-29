@@ -1,59 +1,784 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v3",
-  "title": "VFBiz Dataset Release Manifest",
+  "$id": "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4",
+  "title": "VFBiz Dataset Release Manifest v4",
   "type": "object",
-  "required": ["release_id", "dataset_id", "version", "status", "classification", "assistant_profiles", "source_ids", "artifacts", "record_counts", "split", "quality_runs", "known_limitations", "retention_policy_id", "deletion_method", "rollback_target", "content_hash", "created_at"],
+  "required": [
+    "release_id",
+    "dataset_id",
+    "version",
+    "status",
+    "asset_kind",
+    "allowed_use",
+    "task_families",
+    "modalities",
+    "trust_zone",
+    "processing_stage",
+    "payload_schema",
+    "classification",
+    "assistant_profiles",
+    "source_ids",
+    "provenance",
+    "artifacts",
+    "record_counts",
+    "split_lock",
+    "quality_evidence",
+    "known_limitations",
+    "retention_policy_id",
+    "deletion_method",
+    "rollback_target",
+    "content_hash",
+    "created_at"
+  ],
   "properties": {
-    "release_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
-    "dataset_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-    "version": {"type": "string", "minLength": 1},
-    "status": {"enum": ["candidate", "decision-ready", "released", "rejected", "rolled-back", "tombstoned"]},
-    "trust_zone": {"enum": ["quarantine", "candidate", "released", "restricted-evaluation", "red-team"]},
-    "processing_stage": {"enum": ["raw", "normalized", "filtered", "enriched", "adjudicated"]},
-    "asset_kind": {"enum": ["source-document", "dataset-record", "evaluation-case", "synthetic-candidate"]},
-    "allowed_use": {"enum": ["knowledge-index", "classifier-training", "sft", "preference", "embedding", "reranker", "evaluation", "red-team"]},
-    "task_families": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["factual-citation", "retrieval", "intent-ood", "conversation-quality", "tool-use", "refusal-safety", "state-resilience"]}},
-    "modalities": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["text", "document", "image", "audio"]}},
-    "payload_schema_id": {"type": "string", "minLength": 1},
-    "payload_schema_revision": {"type": "string", "minLength": 1},
-    "export_profile_id": {"type": ["string", "null"], "minLength": 1},
-    "export_profile_digest": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
-    "purpose": {"deprecated": true, "enum": ["knowledge", "retrieval-evaluation", "intent-ood", "conversation-quality", "tool-evaluation", "refusal-safety", "red-team", "state-resilience", "multimodal"]},
-    "classification": {"enum": ["public", "internal", "confidential", "restricted"]},
-    "assistant_profiles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["public_customer", "authenticated_customer", "employee"]}},
-    "source_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
-    "generator": {"type": ["object", "null"], "properties": {"model_revision": {"type": "string"}, "prompt_revision": {"type": "string"}, "policy_revision": {"type": "string"}, "job_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}}}, "required": ["model_revision", "prompt_revision", "policy_revision", "job_ids"], "additionalProperties": false},
-    "embedding": {"type": ["object", "null"], "properties": {"provider_revision": {"type": "string"}, "model_revision": {"type": "string"}, "dimensions": {"type": "integer", "minimum": 1}}, "required": ["provider_revision", "model_revision", "dimensions"], "additionalProperties": false},
-    "artifacts": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["zone", "content_address", "sha256", "tree_hash", "records", "bytes", "media_type"], "properties": {"zone": {"enum": ["candidate", "released", "restricted-evaluation", "red-team"]}, "content_address": {"type": "string", "pattern": "^sha256/[a-f0-9]{2}/[a-f0-9]{64}$"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "tree_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "records": {"type": "integer", "minimum": 0}, "bytes": {"type": "integer", "minimum": 0}, "media_type": {"enum": ["application/json", "application/x-ndjson", "text/csv", "application/vnd.apache.parquet"]}}, "additionalProperties": false}},
-    "record_counts": {"type": "object", "required": ["candidate", "accepted", "rejected"], "properties": {"candidate": {"type": "integer", "minimum": 0}, "accepted": {"type": "integer", "minimum": 0}, "rejected": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
-    "split": {"type": "object", "required": ["strategy_revision", "family_hash", "partitions", "held_out_lock_state"], "properties": {"strategy_revision": {"type": "string"}, "family_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "partitions": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "integer", "minimum": 0}}, "held_out_lock_state": {"enum": ["unlocked", "locked"]}, "held_out_locked_at": {"type": "string", "format": "date-time"}}, "allOf": [{"if": {"properties": {"held_out_lock_state": {"const": "locked"}}, "required": ["held_out_lock_state"]}, "then": {"required": ["held_out_locked_at"], "properties": {"held_out_locked_at": {"type": "string", "format": "date-time"}}}}], "additionalProperties": false},
-    "quality_runs": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["run_id", "validator_revision", "metrics", "evidence_digest"], "properties": {"run_id": {"type": "string"}, "validator_revision": {"type": "string"}, "metrics": {"type": "object", "minProperties": 1}, "evidence_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "additionalProperties": false}},
-    "known_limitations": {"type": "array", "items": {"type": "string"}},
-    "approval_evidence": {"type": "array", "items": {"$ref": "#/$defs/approval"}},
-    "retention_policy_id": {"type": "string", "minLength": 1},
-    "deletion_method": {"type": "string", "minLength": 1},
-    "rollback_target": {"type": ["string", "null"]},
-    "tombstone_revision": {"type": ["string", "null"]},
-    "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "created_at": {"type": "string", "format": "date-time"}
+    "release_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "dataset_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "candidate",
+        "decision-ready",
+        "released",
+        "rejected",
+        "rolled-back",
+        "tombstoned"
+      ]
+    },
+    "asset_kind": {
+      "enum": [
+        "source-document",
+        "dataset-record",
+        "evaluation-case",
+        "synthetic-candidate"
+      ]
+    },
+    "allowed_use": {
+      "enum": [
+        "knowledge-index",
+        "classifier-training",
+        "sft",
+        "preference",
+        "embedding",
+        "reranker",
+        "evaluation",
+        "red-team"
+      ]
+    },
+    "task_families": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "factual-citation",
+          "retrieval",
+          "intent-ood",
+          "conversation-quality",
+          "tool-use",
+          "refusal-safety",
+          "state-resilience"
+        ]
+      }
+    },
+    "modalities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["text", "document", "image", "audio"]
+      }
+    },
+    "trust_zone": {
+      "enum": [
+        "candidate",
+        "released",
+        "restricted-evaluation",
+        "red-team"
+      ]
+    },
+    "processing_stage": {
+      "enum": ["normalized", "filtered", "enriched", "adjudicated"]
+    },
+    "payload_schema": {
+      "type": "object",
+      "required": ["contract_id", "revision", "digest"],
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "export_profile": {
+      "type": ["object", "null"],
+      "required": ["profile_id", "revision", "digest"],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "classification": {
+      "enum": ["public", "internal", "confidential", "restricted"]
+    },
+    "assistant_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["public_customer", "authenticated_customer", "employee"]
+      }
+    },
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "sources",
+        "transformation_recipe_revision",
+        "transformation_recipe_digest",
+        "lineage_digest"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["source_id", "source_revision", "artifact_digest"],
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_revision": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifact_digest": {
+                "$ref": "#/$defs/digest"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "transformation_recipe_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transformation_recipe_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "lineage_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "zone",
+          "content_address",
+          "sha256",
+          "tree_hash",
+          "records",
+          "bytes",
+          "media_type"
+        ],
+        "properties": {
+          "zone": {
+            "enum": [
+              "candidate",
+              "released",
+              "restricted-evaluation",
+              "red-team"
+            ]
+          },
+          "content_address": {
+            "type": "string",
+            "pattern": "^sha256/[a-f0-9]{2}/[a-f0-9]{64}$"
+          },
+          "sha256": {
+            "$ref": "#/$defs/plain_digest"
+          },
+          "tree_hash": {
+            "$ref": "#/$defs/plain_digest"
+          },
+          "records": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "media_type": {
+            "enum": [
+              "application/json",
+              "application/x-ndjson",
+              "text/csv",
+              "application/vnd.apache.parquet"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "record_counts": {
+      "type": "object",
+      "required": ["candidate", "accepted", "rejected"],
+      "properties": {
+        "candidate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "split_lock": {
+      "type": "object",
+      "required": [
+        "state",
+        "strategy_revision",
+        "family_hash",
+        "partitions"
+      ],
+      "properties": {
+        "state": {
+          "enum": ["unlocked", "locked"]
+        },
+        "strategy_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "family_hash": {
+          "$ref": "#/$defs/plain_digest"
+        },
+        "partitions": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "locked_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "locked"
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["locked_at"],
+            "properties": {
+              "locked_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "quality_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "run_id",
+          "validator_revision",
+          "artifact_digest",
+          "evidence_digest",
+          "authority_ref",
+          "state",
+          "observed_at"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "validator_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact_digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "evidence_digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "authority_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "enum": ["pending", "verified", "rejected", "revoked"]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "known_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approval_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/approval"
+      }
+    },
+    "retention_policy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deletion_method": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rollback_target": {
+      "type": ["string", "null"]
+    },
+    "tombstone_revision": {
+      "type": ["string", "null"]
+    },
+    "content_hash": {
+      "$ref": "#/$defs/plain_digest"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
   },
   "$defs": {
-    "approval": {"type": "object", "required": ["decision_id", "role", "actor_ref", "decision", "evidence_digest", "decided_at"], "properties": {"decision_id": {"type": "string", "minLength": 1}, "role": {"enum": ["data-owner", "legal-owner", "privacy-owner", "release-owner"]}, "actor_ref": {"type": "string", "minLength": 1}, "decision": {"const": "approved"}, "evidence_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "decided_at": {"type": "string", "format": "date-time"}}, "additionalProperties": false}
+    "plain_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "approval": {
+      "type": "object",
+      "required": [
+        "decision_id",
+        "role",
+        "actor_ref",
+        "decision",
+        "evidence_digest",
+        "decided_at"
+      ],
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "data-owner",
+            "legal-owner",
+            "privacy-owner",
+            "release-owner"
+          ]
+        },
+        "actor_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "const": "approved"
+        },
+        "evidence_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "decided_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
   },
   "allOf": [
-    {"anyOf": [
-      {"required": ["asset_kind", "allowed_use", "task_families", "modalities", "trust_zone", "processing_stage"], "properties": {"asset_kind": {}, "allowed_use": {}, "task_families": {}, "modalities": {}, "trust_zone": {}, "processing_stage": {}}},
-      {"deprecated": true, "required": ["asset_kind", "allowed_use", "task_families", "modalities"], "properties": {"status": {"const": "candidate"}, "asset_kind": {"const": "synthetic-candidate"}}},
-      {"required": ["purpose"], "properties": {"purpose": {}}}
-    ]},
-    {"if": {"properties": {"status": {"enum": ["candidate", "decision-ready"]}}, "required": ["status"]}, "then": {"properties": {"trust_zone": {"const": "candidate"}, "artifacts": {"type": "array", "items": {"type": "object", "properties": {"zone": {"const": "candidate"}}}}}}},
-    {"if": {"properties": {"status": {"const": "released"}}, "required": ["status"]}, "then": {"required": ["approval_evidence"], "properties": {"approval_evidence": {"type": "array", "minItems": 2, "allOf": [{"contains": {"type": "object", "properties": {"role": {"const": "data-owner"}}, "required": ["role"]}, "minContains": 1}, {"contains": {"type": "object", "properties": {"role": {"const": "release-owner"}}, "required": ["role"]}, "minContains": 1}]}, "split": {"type": "object", "properties": {"held_out_lock_state": {"const": "locked"}}}}}},
-    {"if": {"properties": {"status": {"const": "released"}}, "required": ["status"]}, "then": {"required": ["payload_schema_id", "payload_schema_revision", "export_profile_id", "export_profile_digest"], "properties": {"payload_schema_id": {"type": "string"}, "payload_schema_revision": {"type": "string"}, "export_profile_id": {"type": "string"}, "export_profile_digest": {"type": "string"}}}},
-    {"if": {"properties": {"status": {"const": "released"}, "allowed_use": {"enum": ["knowledge-index", "classifier-training", "sft", "preference", "embedding", "reranker"]}}, "required": ["status", "allowed_use"]}, "then": {"properties": {"trust_zone": {"const": "released"}, "artifacts": {"type": "array", "items": {"type": "object", "properties": {"zone": {"const": "released"}}}}}}},
-    {"if": {"properties": {"status": {"const": "released"}, "allowed_use": {"const": "evaluation"}}, "required": ["status", "allowed_use"]}, "then": {"properties": {"trust_zone": {"const": "restricted-evaluation"}, "artifacts": {"type": "array", "items": {"type": "object", "properties": {"zone": {"const": "restricted-evaluation"}}}}}}},
-    {"if": {"properties": {"status": {"const": "released"}, "allowed_use": {"const": "red-team"}}, "required": ["status", "allowed_use"]}, "then": {"properties": {"trust_zone": {"const": "red-team"}, "artifacts": {"type": "array", "items": {"type": "object", "properties": {"zone": {"const": "red-team"}}}}}}},
-    {"if": {"properties": {"asset_kind": {"const": "evaluation-case"}}, "required": ["asset_kind"]}, "then": {"properties": {"allowed_use": {"enum": ["evaluation", "red-team"]}}}}
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["candidate", "decision-ready"]
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "trust_zone": {
+            "const": "candidate"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "zone": {
+                  "const": "candidate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["decision-ready", "released"]
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "processing_stage": {
+            "const": "adjudicated"
+          },
+          "split_lock": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "const": "locked"
+              }
+            }
+          },
+          "quality_evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["expires_at"],
+              "properties": {
+                "state": {
+                  "const": "verified"
+                },
+                "expires_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "revoked_at": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "released"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["approval_evidence", "export_profile"],
+        "properties": {
+          "approval_evidence": {
+            "type": "array",
+            "minItems": 2,
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "const": "data-owner"
+                    }
+                  },
+                  "required": ["role"]
+                },
+                "minContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "const": "release-owner"
+                    }
+                  },
+                  "required": ["role"]
+                },
+                "minContains": 1
+              }
+            ]
+          },
+          "export_profile": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "released"
+          },
+          "allowed_use": {
+            "enum": [
+              "knowledge-index",
+              "classifier-training",
+              "sft",
+              "preference",
+              "embedding",
+              "reranker"
+            ]
+          }
+        },
+        "required": ["status", "allowed_use"]
+      },
+      "then": {
+        "properties": {
+          "trust_zone": {
+            "const": "released"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "zone": {
+                  "const": "released"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "released"
+          },
+          "allowed_use": {
+            "const": "evaluation"
+          }
+        },
+        "required": ["status", "allowed_use"]
+      },
+      "then": {
+        "properties": {
+          "trust_zone": {
+            "const": "restricted-evaluation"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "zone": {
+                  "const": "restricted-evaluation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "released"
+          },
+          "allowed_use": {
+            "const": "red-team"
+          }
+        },
+        "required": ["status", "allowed_use"]
+      },
+      "then": {
+        "properties": {
+          "trust_zone": {
+            "const": "red-team"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "zone": {
+                  "const": "red-team"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "asset_kind": {
+            "const": "evaluation-case"
+          }
+        },
+        "required": ["asset_kind"]
+      },
+      "then": {
+        "properties": {
+          "allowed_use": {
+            "enum": ["evaluation", "red-team"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["decision-ready", "released"]
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_revision": {
+                      "not": {
+                        "const": "candidate-input-unresolved"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "rolled-back"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["rollback_target"],
+        "properties": {
+          "rollback_target": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "tombstoned"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["tombstone_revision"],
+        "properties": {
+          "tombstone_revision": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
   ],
   "additionalProperties": false
 }

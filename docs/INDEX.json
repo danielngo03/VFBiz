@@ -64,11 +64,11 @@
         "evaluation",
         "synthetic-data"
       ],
-      "revision": 4,
+      "revision": 5,
       "review_date": "2026-08-28T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/dataset-engineering.md",
-      "source_hash": "f67cbef6d346299a812083009326b2c791e2817d62be56c80081f5a3a4e7c65c"
+      "source_hash": "e5223cb2c613d680ed12526cf10a95e2aa75f4bfb69740f63540a1cf8fe2b85f"
     },
     {
       "id": "ai-evaluation-release",

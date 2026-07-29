@@ -11,50 +11,24 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+AI_ROOT = Path(__file__).resolve().parents[4]
+if str(AI_ROOT) not in sys.path:
+    sys.path.insert(0, str(AI_ROOT))
+
+from app.modules.datasets.application.curation.release_manifest import (  # noqa: E402
+    DatasetManifestV4SemanticValidator,
+    LegacyDatasetManifestV3SemanticValidator,
+)
+
 
 def repository_root() -> Path:
     return Path(__file__).resolve().parents[6]
 
 
 def semantic_errors(manifest: dict[str, Any]) -> list[str]:
-    errors: list[str] = []
-    counts = manifest.get("record_counts", {})
-    candidate = counts.get("candidate")
-    accepted = counts.get("accepted")
-    rejected = counts.get("rejected")
-    if all(isinstance(value, int) for value in (candidate, accepted, rejected)):
-        decided = accepted + rejected
-        if manifest.get("status") == "released" and candidate != decided:
-            errors.append("released candidate count must equal accepted plus rejected")
-        elif manifest.get("status") != "released" and decided > candidate:
-            errors.append("accepted plus rejected cannot exceed candidate count")
-
-    artifact_records = sum(
-        item.get("records", 0)
-        for item in manifest.get("artifacts", [])
-        if isinstance(item, dict) and isinstance(item.get("records"), int)
-    )
-    partition_records = sum(
-        value
-        for value in manifest.get("split", {}).get("partitions", {}).values()
-        if isinstance(value, int)
-    )
-    expected_records = accepted if manifest.get("status") == "released" else candidate
-    if isinstance(expected_records, int):
-        if artifact_records != expected_records:
-            errors.append("artifact record total does not match manifest state")
-        if partition_records != expected_records:
-            errors.append("partition total does not match manifest state")
-
-    approvals = manifest.get("approval_evidence", [])
-    actors = [
-        item.get("actor_ref")
-        for item in approvals
-        if isinstance(item, dict) and isinstance(item.get("actor_ref"), str)
-    ]
-    if len(actors) != len(set(actors)):
-        errors.append("approval decisions must use distinct human actors")
-    return errors
+    if "split_lock" in manifest:
+        return DatasetManifestV4SemanticValidator().errors(manifest)
+    return LegacyDatasetManifestV3SemanticValidator().errors(manifest)
 
 
 def validate_manifest(manifest: dict[str, Any]) -> list[str]:
