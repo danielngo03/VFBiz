@@ -59,6 +59,7 @@ def turn_body(*, conversation_version: int = 1, fencing_token: int = 7) -> dict[
         "turnId": str(uuid4()),
         "conversationVersion": conversation_version,
         "fencingToken": fencing_token,
+        "authorizationContextDigest": "d" * 64,
         "locale": "vi",
         "message": "Thông tin bảo hành nào đã được xác minh?",
         "confirmedEntities": [
@@ -115,6 +116,7 @@ def assertion_claims(
             cast(int, body["fencingToken"]) if fencing_token is None else fencing_token
         ),
         "assistantProfile": assistant_profile,
+        "authorizationContextDigest": body.get("authorizationContextDigest", "d" * 64),
         "authorization": authorization
         or {
             "kind": "public_capability",

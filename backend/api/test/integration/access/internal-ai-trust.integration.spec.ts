@@ -86,6 +86,7 @@ describe('InternalAiTrustModule integration', () => {
       action: 'turn.cancel',
       activationId: '00000000-0000-4000-8000-000000000010',
       assistantProfile: 'public_customer',
+      authorizationContextDigest: 'f'.repeat(64),
       authorization: {
         allowedTools: ['search_public_knowledge'],
         capabilityHash: 'c'.repeat(64),

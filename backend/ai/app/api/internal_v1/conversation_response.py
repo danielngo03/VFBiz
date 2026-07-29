@@ -118,6 +118,48 @@ class HandoffResponse(BaseModel):
     usage: ExecutionUsage
 
 
+class OpaqueTaskSlotResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    kind: Literal["opaque_reference"] = "opaque_reference"
+    reference: str
+    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+
+
+class TaskReleaseBindingResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    activation_id: UUID = Field(alias="activationId")
+    graph_revision: str = Field(alias="graphRevision")
+    knowledge_revision: str = Field(alias="knowledgeRevision")
+    manifest_sha256: str = Field(alias="manifestSha256", pattern=r"^[a-f0-9]{64}$")
+    policy_revision: str = Field(alias="policyRevision")
+
+
+class ConversationTaskDeltaResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    authorization_context_digest: str = Field(
+        alias="authorizationContextDigest", pattern=r"^[a-f0-9]{64}$"
+    )
+    collected_slots: dict[str, OpaqueTaskSlotResponse] = Field(
+        alias="collectedSlots", max_length=16
+    )
+    expected_task_version: int = Field(alias="expectedTaskVersion", ge=0)
+    expires_at: datetime = Field(alias="expiresAt")
+    intent: str
+    intent_revision: str = Field(alias="intentRevision")
+    next_state: Literal["awaiting_clarification"] = Field(
+        default="awaiting_clarification", alias="nextState"
+    )
+    operation: Literal["upsert"] = "upsert"
+    pending_slots: tuple[str, ...] = Field(alias="pendingSlots", max_length=16)
+    provenance_digest: str = Field(alias="provenanceDigest", pattern=r"^[a-f0-9]{64}$")
+    release: TaskReleaseBindingResponse
+    source_turn_id: UUID = Field(alias="sourceTurnId")
+    task_id: UUID = Field(alias="taskId")
+
+
 class ClarificationResponse(BaseModel):
     """A terminal turn outcome; continuation is a new customer message.
 
@@ -131,6 +173,7 @@ class ClarificationResponse(BaseModel):
     outcome: Literal["clarification_required"] = "clarification_required"
     message: str
     pending_slots: tuple[str, ...] = Field(alias="pendingSlots", max_length=16)
+    task_delta: ConversationTaskDeltaResponse = Field(alias="taskDelta")
     release_revision: str = Field(alias="releaseRevision")
     release_commit_receipt: ReleaseCommitReceipt = Field(alias="releaseCommitReceipt")
     revisions: ExecutionRevisions
@@ -193,6 +236,7 @@ def build_execution_response(
     usage: ExecutionUsage,
     release_revision: str,
     release_commit_receipt: ReleaseCommitReceipt,
+    task_delta: ConversationTaskDeltaResponse | None = None,
 ) -> ExecutionResponse:
     revisions = ExecutionRevisions(
         graph=control.graph_version,
@@ -229,9 +273,12 @@ def build_execution_response(
             usage=usage,
         )
     if outcome.kind == "needs_clarification":
+        if task_delta is None:
+            raise ValueError("a clarification outcome must carry a durable task delta")
         return ClarificationResponse(
             message="Vui lòng cung cấp thêm thông tin để tôi có thể hỗ trợ chính xác.",
             pendingSlots=outcome.pending_slots,
+            taskDelta=task_delta,
             releaseRevision=release_revision,
             releaseCommitReceipt=release_commit_receipt,
             revisions=revisions,

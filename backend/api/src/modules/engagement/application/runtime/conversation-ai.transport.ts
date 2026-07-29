@@ -1,4 +1,5 @@
 import type { ConversationAccessScope } from '../../domain/runtime/conversation-runtime';
+import type { ConversationTaskDelta } from '../../domain/runtime/conversation-task-context';
 import type { ConversationTurnExecutionContext } from './conversation-runtime.repository';
 
 export type ConversationAiTransportFailureCode =
@@ -29,6 +30,7 @@ export interface ConversationAiExecutionRequest extends ConversationTurnExecutio
 export interface ConversationAiCancellationRequest {
   readonly accessScope: ConversationAccessScope;
   readonly assistantProfile: 'authenticated_customer' | 'public_customer';
+  readonly authorizationContextDigest: string;
   readonly budget: {
     readonly maxCostMicros: number;
     readonly maxModelTokens: number;
@@ -102,6 +104,7 @@ export type ConversationAiExecutionResult =
       readonly message: string;
       readonly outcome: 'clarification_required';
       readonly pendingSlots: readonly string[];
+      readonly taskDelta: ConversationTaskDelta;
     })
   | (ConversationAiResultBase & {
       readonly customerMessage: string;

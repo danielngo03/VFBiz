@@ -1,30 +1,31 @@
 model ConversationSession {
-  id                                String                    @id @default(uuid()) @db.Uuid
-  customerProfileId                 String?                   @db.Uuid
-  ownerSubjectKeyHash               String?                   @db.Char(64)
-  customerProfile                   CustomerProfile?          @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
-  assistantProfile                  String                    @db.VarChar(40)
-  locale                            String                    @default("vi") @db.VarChar(8)
-  status                            String                    @db.VarChar(40)
-  policyRevision                    String                    @db.VarChar(160)
-  assistantReleaseActivationId      String?                   @db.VarChar(160)
-  assistantReleaseGraphRevision     String?                   @db.VarChar(160)
-  assistantReleaseKnowledgeRevision String?                   @db.VarChar(160)
-  assistantReleaseManifestSha256    String?                   @db.Char(64)
-  assistantReleaseEnvelopeSha256    String?                   @db.Char(64)
+  id                                String                      @id @default(uuid()) @db.Uuid
+  customerProfileId                 String?                     @db.Uuid
+  ownerSubjectKeyHash               String?                     @db.Char(64)
+  customerProfile                   CustomerProfile?            @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  assistantProfile                  String                      @db.VarChar(40)
+  locale                            String                      @default("vi") @db.VarChar(8)
+  status                            String                      @db.VarChar(40)
+  policyRevision                    String                      @db.VarChar(160)
+  assistantReleaseActivationId      String?                     @db.VarChar(160)
+  assistantReleaseGraphRevision     String?                     @db.VarChar(160)
+  assistantReleaseKnowledgeRevision String?                     @db.VarChar(160)
+  assistantReleaseManifestSha256    String?                     @db.Char(64)
+  assistantReleaseEnvelopeSha256    String?                     @db.Char(64)
   assistantReleasePointerRevision   BigInt?
-  assistantReleaseEffectiveAt       DateTime?                 @db.Timestamptz(6)
-  assistantReleaseExpiresAt         DateTime?                 @db.Timestamptz(6)
-  accessCapabilityHash              String?                   @unique @db.Char(64)
-  expiresAt                         DateTime                  @db.Timestamptz(6)
-  retentionUntil                    DateTime                  @db.Timestamptz(6)
-  createdAt                         DateTime                  @default(now()) @db.Timestamptz(6)
-  updatedAt                         DateTime                  @updatedAt @db.Timestamptz(6)
+  assistantReleaseEffectiveAt       DateTime?                   @db.Timestamptz(6)
+  assistantReleaseExpiresAt         DateTime?                   @db.Timestamptz(6)
+  accessCapabilityHash              String?                     @unique @db.Char(64)
+  expiresAt                         DateTime                    @db.Timestamptz(6)
+  retentionUntil                    DateTime                    @db.Timestamptz(6)
+  createdAt                         DateTime                    @default(now()) @db.Timestamptz(6)
+  updatedAt                         DateTime                    @updatedAt @db.Timestamptz(6)
   messages                          ConversationMessage[]
   runtime                           ConversationRuntime?
   runtimeEvents                     ConversationPublicEvent[]
   runtimeTurns                      ConversationTurn[]
   contextEntities                   ConversationContextEntity[]
+  taskContext                       ConversationTaskContext?
   supportHandoffs                   SupportHandoff[]
 
   @@index([customerProfileId, updatedAt])
@@ -53,6 +54,37 @@ model ConversationContextEntity {
   @@index([conversationSessionId, validationState, expiresAt], map: "conversation_context_entity_conversationSessionId_validationSta")
   @@index([subjectKeyHash, expiresAt])
   @@map("conversation_context_entity")
+}
+
+model ConversationTaskContext {
+  conversationSessionId          String              @id @db.Uuid
+  conversationSession            ConversationSession @relation(fields: [conversationSessionId], references: [id], onDelete: Cascade)
+  taskId                         String              @unique @db.Uuid
+  intent                         String              @db.VarChar(120)
+  intentRevision                 String              @db.VarChar(160)
+  pendingSlots                   Json
+  collectedSlots                 Json
+  sourceTurnId                   String?             @db.Uuid
+  sourceTurn                     ConversationTurn?   @relation("ConversationTaskSourceTurn", fields: [sourceTurnId, conversationSessionId], references: [id, conversationSessionId], onDelete: Cascade)
+  taskVersion                    BigInt              @default(1)
+  lastFencingToken               BigInt              @default(0)
+  taskState                      String              @db.VarChar(32)
+  authorizationContextDigest     String              @db.Char(64)
+  assistantReleaseActivationId   String              @db.VarChar(160)
+  assistantReleaseManifestSha256 String              @db.Char(64)
+  graphRevision                  String              @db.VarChar(160)
+  policyRevision                 String              @db.VarChar(160)
+  knowledgeRevision              String              @db.VarChar(160)
+  classification                 String              @default("non_sensitive") @db.VarChar(40)
+  provenanceDigest               String              @db.Char(64)
+  expiresAt                      DateTime            @db.Timestamptz(6)
+  closedAt                       DateTime?           @db.Timestamptz(6)
+  createdAt                      DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt                      DateTime            @updatedAt @db.Timestamptz(6)
+
+  @@index([taskState, expiresAt])
+  @@index([assistantReleaseActivationId, assistantReleaseManifestSha256])
+  @@map("conversation_task_context")
 }
 
 model ActiveAssistantReleaseProjection {
@@ -168,9 +200,11 @@ model ConversationTurn {
   createdAt                           DateTime                  @default(now()) @db.Timestamptz(6)
   updatedAt                           DateTime                  @updatedAt @db.Timestamptz(6)
   events                              ConversationPublicEvent[]
+  sourceTaskContexts                  ConversationTaskContext[] @relation("ConversationTaskSourceTurn")
 
   @@unique([conversationSessionId, clientMessageId])
   @@unique([conversationSessionId, receivedSequence])
+  @@unique([id, conversationSessionId])
   @@index([status, dispatchAvailableAt, receivedSequence], map: "conversation_turn_status_dispatchAvailableAt_receivedSequence_i")
   @@index([conversationSessionId, status, receivedSequence])
   @@map("conversation_turn")

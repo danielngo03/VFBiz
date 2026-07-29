@@ -1,4 +1,6 @@
 import type { ConversationRuntimeService } from './conversation-runtime.service';
+import { createHash } from 'node:crypto';
+import type { ConversationAiExecutionResult } from './conversation-ai.transport';
 import type {
   ConversationRuntimeRepository,
   ConversationTurnExecutionContext,
@@ -27,6 +29,7 @@ const release = {
 const context: ConversationTurnExecutionContext = {
   accessScope,
   assistantProfile: 'public_customer',
+  authorizationContextDigest: 'e'.repeat(64),
   budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
   confirmedEntities: [],
   content: 'Chính sách là gì?',
@@ -36,6 +39,7 @@ const context: ConversationTurnExecutionContext = {
   release,
   policyRevision: 'policy-r1',
   sessionId: '123e4567-e89b-42d3-a456-426614174000',
+  taskContext: null,
   turnId: '223e4567-e89b-42d3-a456-426614174000',
 };
 const releaseCommitReceipt = {
@@ -52,6 +56,95 @@ const releaseCommitReceipt = {
   sessionId: context.sessionId,
   turnId: context.turnId,
 } as const;
+const taskDelta = {
+  authorizationContextDigest: context.authorizationContextDigest,
+  collectedSlots: {},
+  expectedTaskVersion: 0,
+  expiresAt: new Date('2026-07-25T09:00:00.000Z'),
+  intent: 'vehicle_question',
+  intentRevision: 'router-v1',
+  nextState: 'awaiting_clarification',
+  operation: 'upsert',
+  pendingSlots: ['vehicle_variant'],
+  provenanceDigest: 'f'.repeat(64),
+  release: {
+    activationId: release.activationId,
+    graphRevision: release.graphRevision,
+    knowledgeRevision: release.knowledgeRevision,
+    manifestSha256: release.manifestSha256,
+    policyRevision: release.policyRevision,
+  },
+  sourceTurnId: context.turnId,
+  taskId: '423e4567-e89b-42d3-a456-426614174000',
+} as const;
+const activeTaskContext = {
+  authorizationContextDigest: context.authorizationContextDigest,
+  closedAt: null,
+  collectedSlots: taskDelta.collectedSlots,
+  expiresAt: taskDelta.expiresAt,
+  intent: taskDelta.intent,
+  intentRevision: taskDelta.intentRevision,
+  lastFencingToken: 8,
+  pendingSlots: taskDelta.pendingSlots,
+  provenanceDigest: taskDelta.provenanceDigest,
+  release: taskDelta.release,
+  sourceTurnId: taskDelta.sourceTurnId,
+  state: 'awaiting_clarification' as const,
+  taskId: taskDelta.taskId,
+  taskVersion: 3,
+};
+const terminalCases: readonly {
+  readonly aiResult: ConversationAiExecutionResult;
+  readonly expectedOutcome: 'answered' | 'handed_off' | 'refused';
+}[] = [
+  {
+    aiResult: {
+      citations: [],
+      message: 'Đã trả lời yêu cầu.',
+      outcome: 'answered',
+      releaseCommitReceipt,
+      releaseRevision: release.activationId,
+      revisions: {
+        graph: release.graphRevision,
+        knowledge: release.knowledgeRevision,
+        policy: release.policyRevision,
+      },
+      usage: { costMicros: 25, modelTokens: 10 },
+    },
+    expectedOutcome: 'answered',
+  },
+  {
+    aiResult: {
+      message: 'Không thể trả lời yêu cầu này.',
+      outcome: 'refused',
+      releaseCommitReceipt,
+      releaseRevision: release.activationId,
+      revisions: {
+        graph: release.graphRevision,
+        knowledge: release.knowledgeRevision,
+        policy: release.policyRevision,
+      },
+      usage: { costMicros: 25, modelTokens: 10 },
+    },
+    expectedOutcome: 'refused',
+  },
+  {
+    aiResult: {
+      customerMessage: 'Tôi sẽ chuyển yêu cầu tới tư vấn viên.',
+      outcome: 'handoff_recommended',
+      reason: 'policy_required',
+      releaseCommitReceipt,
+      releaseRevision: release.activationId,
+      revisions: {
+        graph: release.graphRevision,
+        knowledge: release.knowledgeRevision,
+        policy: release.policyRevision,
+      },
+      usage: { costMicros: 25, modelTokens: 10 },
+    },
+    expectedOutcome: 'handed_off',
+  },
+];
 
 describe('ExecuteConversationTurnService', () => {
   it('commits a grounded result using the exact version and fence', async () => {
@@ -101,8 +194,56 @@ describe('ExecuteConversationTurnService', () => {
     );
   });
 
+  it.each(terminalCases)(
+    'atomically closes durable task context after $aiResult.outcome',
+    async ({ aiResult, expectedOutcome }) => {
+      const fixture = createFixture({
+        ...context,
+        taskContext: activeTaskContext,
+      });
+      fixture.transport.execute.mockResolvedValue(aiResult);
+      fixture.runtime.completeTurn.mockResolvedValue({
+        conversationVersion: 5,
+        eventCursor: 'event-v1:3',
+        outcome: expectedOutcome,
+        turnId: context.turnId,
+      });
+
+      await fixture.service.execute(executionInput());
+
+      const closeMaterial = {
+        authorizationContextDigest: context.authorizationContextDigest,
+        collectedSlots: taskDelta.collectedSlots,
+        expectedTaskVersion: 3,
+        expiresAt: taskDelta.expiresAt.toISOString(),
+        intent: taskDelta.intent,
+        intentRevision: taskDelta.intentRevision,
+        nextState: 'closed',
+        operation: 'close',
+        pendingSlots: [],
+        release: taskDelta.release,
+        sourceTurnId: context.turnId,
+        taskId: taskDelta.taskId,
+      } as const;
+      expect(fixture.runtime.completeTurn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taskDelta: {
+            ...closeMaterial,
+            expiresAt: taskDelta.expiresAt,
+            provenanceDigest: createHash('sha256')
+              .update(JSON.stringify(closeMaterial), 'utf8')
+              .digest('hex'),
+          },
+        }),
+      );
+    },
+  );
+
   it('fails closed without creating a handoff while tool execution is unavailable', async () => {
-    const fixture = createFixture();
+    const fixture = createFixture({
+      ...context,
+      taskContext: activeTaskContext,
+    });
     fixture.transport.execute.mockResolvedValue({
       arguments: { model: 'VF 8' },
       argumentsHash: 'b'.repeat(64),
@@ -133,6 +274,12 @@ describe('ExecuteConversationTurnService', () => {
       turnId: context.turnId,
     });
     expect(fixture.runtime.completeTurn).toHaveBeenCalledTimes(1);
+    const toolCompletion = fixture.runtime.completeTurn.mock.calls[0]?.[0];
+    expect(toolCompletion?.taskDelta).toMatchObject({
+      nextState: 'closed',
+      operation: 'close',
+      taskId: activeTaskContext.taskId,
+    });
   });
 
   it('commits terminal clarification without converting it to handoff', async () => {
@@ -148,6 +295,7 @@ describe('ExecuteConversationTurnService', () => {
         knowledge: 'knowledge-r1',
         policy: 'policy-r1',
       },
+      taskDelta,
       usage: { costMicros: 20, modelTokens: 8 },
     });
     fixture.runtime.completeTurn.mockResolvedValue({
@@ -169,12 +317,16 @@ describe('ExecuteConversationTurnService', () => {
           message: 'Vui lòng cho biết phiên bản xe.',
           pendingSlots: ['vehicle_variant'],
         },
+        taskDelta,
       }),
     );
   });
 
   it('persists failed-safely incurred usage as a refusal', async () => {
-    const fixture = createFixture();
+    const fixture = createFixture({
+      ...context,
+      taskContext: activeTaskContext,
+    });
     fixture.transport.execute.mockResolvedValue({
       code: 'RELEASE_SUPPRESSED',
       message: 'Câu trả lời đã được chặn an toàn.',
@@ -198,6 +350,7 @@ describe('ExecuteConversationTurnService', () => {
           message: 'Câu trả lời đã được chặn an toàn.',
         },
         usage: { costMicros: 250, modelTokens: 75 },
+        taskDelta: undefined,
       }),
     );
   });
@@ -238,17 +391,24 @@ function executionInput() {
   };
 }
 
-function createFixture() {
+function createFixture(
+  executionContext: ConversationTurnExecutionContext = context,
+) {
   const repository = {
-    getTurnExecutionContext: jest.fn().mockResolvedValue(context),
+    getTurnExecutionContext: jest.fn().mockResolvedValue(executionContext),
   };
   const runtime = {
-    completeTurn: jest.fn().mockResolvedValue({
-      conversationVersion: 5,
-      eventCursor: 'cursor',
-      outcome: 'handed_off',
-      turnId: context.turnId,
-    }),
+    completeTurn: jest
+      .fn<
+        ReturnType<ConversationRuntimeService['completeTurn']>,
+        Parameters<ConversationRuntimeService['completeTurn']>
+      >()
+      .mockResolvedValue({
+        conversationVersion: 5,
+        eventCursor: 'cursor',
+        outcome: 'handed_off',
+        turnId: context.turnId,
+      }),
   };
   const transport = {
     cancel: jest.fn(),

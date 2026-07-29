@@ -235,6 +235,59 @@ async def test_locale_mismatch_is_rejected_after_signature_validation() -> None:
 
 
 @pytest.mark.asyncio
+async def test_authorization_context_mismatch_is_rejected_after_signature_validation() -> None:
+    body = turn_body()
+    claims = assertion_claims(body=body)
+    claims["authorizationContextDigest"] = "e" * 64
+
+    async with application_client() as http:
+        response = await http.post(
+            "/internal/v1/conversation/turns",
+            json=body,
+            headers={"X-VFBiz-AI-Assertion": sign(claims)},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "ASSERTION_MISMATCH"
+
+
+@pytest.mark.asyncio
+async def test_task_context_must_share_the_turn_authorization_binding() -> None:
+    body = turn_body()
+    body["taskContext"] = {
+        "authorizationContextDigest": "e" * 64,
+        "collectedSlots": {},
+        "expiresAt": "2099-07-25T12:30:00Z",
+        "intent": "vehicle_question",
+        "intentRevision": "router-r1",
+        "lastFencingToken": 6,
+        "pendingSlots": ["vehicle_variant"],
+        "provenanceDigest": "f" * 64,
+        "release": {
+            "activationId": "00000000-0000-4000-8000-000000000010",
+            "graphRevision": "graph-r1",
+            "knowledgeRevision": "knowledge-active-r1",
+            "manifestSha256": "c" * 64,
+            "policyRevision": "policy-r1",
+        },
+        "sourceTurnId": None,
+        "state": "awaiting_clarification",
+        "taskId": str(uuid4()),
+        "taskVersion": 1,
+    }
+    claims = assertion_claims(body=body)
+
+    async with application_client() as http:
+        response = await http.post(
+            "/internal/v1/conversation/turns",
+            json=body,
+            headers={"X-VFBiz-AI-Assertion": sign(claims)},
+        )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_valid_cancel_assertion_is_accepted() -> None:
     turn = turn_body(conversation_version=2, fencing_token=8)
     body = {
@@ -286,9 +339,7 @@ async def test_real_postgres_cancellation_adapter_accepts_a_valid_cancel_end_to_
     sessions = create_session_factory(engine)
     async with sessions() as session, session.begin():
         await session.execute(text("TRUNCATE TABLE ai_conversation_execution_fence"))
-    cancellation_port = PostgresExecutionCancellationAdapter(
-        PostgresExecutionFenceStore(sessions)
-    )
+    cancellation_port = PostgresExecutionCancellationAdapter(PostgresExecutionFenceStore(sessions))
 
     turn = turn_body(conversation_version=2, fencing_token=8)
     body = {
@@ -358,9 +409,7 @@ async def test_real_conversation_graph_rejects_turn_without_release_authority() 
     payload = response.json()
     assert payload["code"] == "RELEASE_UNAVAILABLE"
     assert payload["retryable"] is True
-    assert payload["detail"] == (
-        "The approved assistant runtime is temporarily unavailable."
-    )
+    assert payload["detail"] == ("The approved assistant runtime is temporarily unavailable.")
 
 
 @pytest.mark.asyncio

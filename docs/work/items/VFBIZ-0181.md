@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0181
 title: Persist conversation task context schema
-status: proposed
+status: review
 mode: controlled
 priority: P0
 owner_team: api-foundation
@@ -19,8 +19,9 @@ exclusive_resources:
   - database-migration
 required_checks:
   - npm run prisma:validate --workspace @vfbiz/api
-revision: 2
+revision: 8
 review_date: "2026-08-29"
+updated_at: "2026-07-29T08:20:54.000Z"
 ---
 
 # Outcome
@@ -44,9 +45,33 @@ Add a forward-only PostgreSQL migration for one versioned
 
 ## Checkpoint
 
-- Exact next action: coordinate the Prisma model with VFBIZ-0168, then add the
-  additive migration under an exclusive lease.
+- Additive migration and owning Prisma model are implemented under separate
+  owner-team claims.
+- Clean and legacy migration replay are drift-free.
+- The first independent review found two P1 gaps. Both are now closed with a
+  same-session composite foreign key and a database-enforced opaque slot
+  envelope.
+- Follow-up PostgreSQL evidence now covers update, close, active topic switch
+  and terminal/stale replacement with a new task ID/version plus typed
+  `replacedTaskId` and `replacementReason` audit evidence.
+- Exact next action: final independent P0/P1 review, then checkpoint with
+  VFBIZ-0168.
 
 ## Evidence
 
-- [ ] `npm run prisma:validate --workspace @vfbiz/api` — add evidence reference
+- [x] `npm run prisma:validate --workspace @vfbiz/api`
+  — schema valid.
+- [x] `npm run test:migrations --workspace @vfbiz/api`
+  — clean replay, zero schema drift, 42 PostgreSQL tests and legacy replay
+  passed; negative cases cover cross-session provenance, raw text, PII-shaped
+  reference and nested prompt injection.
+
+### review — 2026-07-29T08:20:54.000Z
+
+The migration and owning repository now cover both active intent replacement
+and terminal task closure without weakening same-session, OCC or fencing
+constraints.
+
+### active — 2026-07-29T07:14:57.858Z
+
+Dataset provenance gates checkpointed; begin additive conversation task authority migration with public Chat API still disabled.

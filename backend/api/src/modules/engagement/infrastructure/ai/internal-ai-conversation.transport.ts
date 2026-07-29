@@ -15,6 +15,10 @@ import {
   type ConversationAiExecutionResult,
 } from '../../application/runtime/conversation-ai.transport';
 import { InternalAiResponseVerifier } from './internal-ai-response-verifier';
+import {
+  assertConversationTaskDelta,
+  type ConversationTaskDelta,
+} from '../../domain/runtime/conversation-task-context';
 export {
   ConversationAiTransportError,
   type ConversationAiTransportFailureCode,
@@ -54,6 +58,7 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
     signal?: AbortSignal,
   ): Promise<ConversationAiExecutionResult> {
     const body = {
+      authorizationContextDigest: request.authorizationContextDigest,
       confirmedEntities: request.confirmedEntities.map((entity) => ({
         authority: entity.authority,
         authorityDigest: entity.provenanceDigest,
@@ -71,6 +76,25 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
       message: request.content,
       requestId: request.requestId,
       sessionId: request.sessionId,
+      taskContext:
+        request.taskContext === null
+          ? null
+          : {
+              authorizationContextDigest:
+                request.taskContext.authorizationContextDigest,
+              collectedSlots: request.taskContext.collectedSlots,
+              expiresAt: request.taskContext.expiresAt.toISOString(),
+              intent: request.taskContext.intent,
+              intentRevision: request.taskContext.intentRevision,
+              lastFencingToken: request.taskContext.lastFencingToken,
+              pendingSlots: request.taskContext.pendingSlots,
+              provenanceDigest: request.taskContext.provenanceDigest,
+              release: request.taskContext.release,
+              sourceTurnId: request.taskContext.sourceTurnId,
+              state: request.taskContext.state,
+              taskId: request.taskContext.taskId,
+              taskVersion: request.taskContext.taskVersion,
+            },
       turnId: request.turnId,
     };
     const authorization = authorizationFor(
@@ -198,6 +222,7 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
     policyRevision: string;
     request: {
       readonly assistantProfile: 'authenticated_customer' | 'public_customer';
+      readonly authorizationContextDigest: string;
       readonly conversationVersion: number;
       readonly fencingToken: number;
       readonly locale: 'en' | 'vi';
@@ -238,6 +263,7 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
         const assertion = await this.signer.sign({
           action: input.action,
           assistantProfile: input.request.assistantProfile,
+          authorizationContextDigest: input.request.authorizationContextDigest,
           authorization: input.authorization,
           budget: {
             deadlineAt: input.deadlineAt.toISOString(),
@@ -559,6 +585,7 @@ function parseExecutionResult(
     readonly policy: string;
   },
   expectedBinding: {
+    readonly authorizationContextDigest: string;
     readonly release: ConversationAiExecutionRequest['release'];
     readonly conversationVersion: number;
     readonly fencingToken: number;
@@ -652,6 +679,7 @@ function parseExecutionResult(
         'releaseRevision',
         'releaseCommitReceipt',
         'revisions',
+        'taskDelta',
         'usage',
       ]) ||
       !requiredMessage(value.message) ||
@@ -671,6 +699,7 @@ function parseExecutionResult(
       releaseRevision,
       releaseCommitReceipt,
       revisions,
+      taskDelta: parseConversationTaskDelta(value.taskDelta, expectedBinding),
       usage,
     };
   }
@@ -766,6 +795,100 @@ function parseExecutionResult(
     };
   }
   throw new ConversationAiTransportError('invalid_response', false);
+}
+
+function parseConversationTaskDelta(
+  value: unknown,
+  expected: {
+    readonly authorizationContextDigest: string;
+    readonly release: ConversationAiExecutionRequest['release'];
+    readonly turnId: string;
+  },
+): ConversationTaskDelta {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      'authorizationContextDigest',
+      'collectedSlots',
+      'expectedTaskVersion',
+      'expiresAt',
+      'intent',
+      'intentRevision',
+      'nextState',
+      'operation',
+      'pendingSlots',
+      'provenanceDigest',
+      'release',
+      'sourceTurnId',
+      'taskId',
+    ]) ||
+    value.authorizationContextDigest !== expected.authorizationContextDigest ||
+    !isRecord(value.collectedSlots) ||
+    !Array.isArray(value.pendingSlots) ||
+    typeof value.expiresAt !== 'string' ||
+    typeof value.intent !== 'string' ||
+    typeof value.intentRevision !== 'string' ||
+    (value.nextState !== 'active' &&
+      value.nextState !== 'awaiting_clarification' &&
+      value.nextState !== 'closed') ||
+    (value.operation !== 'close' && value.operation !== 'upsert') ||
+    typeof value.provenanceDigest !== 'string' ||
+    !isRecord(value.release) ||
+    !hasExactKeys(value.release, [
+      'activationId',
+      'graphRevision',
+      'knowledgeRevision',
+      'manifestSha256',
+      'policyRevision',
+    ]) ||
+    value.release.activationId !== expected.release.activationId ||
+    value.release.graphRevision !== expected.release.graphRevision ||
+    value.release.knowledgeRevision !== expected.release.knowledgeRevision ||
+    value.release.manifestSha256 !== expected.release.manifestSha256 ||
+    value.release.policyRevision !== expected.release.policyRevision ||
+    value.sourceTurnId !== expected.turnId ||
+    typeof value.taskId !== 'string' ||
+    !Number.isSafeInteger(value.expectedTaskVersion)
+  ) {
+    throw new ConversationAiTransportError('invalid_response', false);
+  }
+  const expiresAt = new Date(value.expiresAt);
+  const delta: ConversationTaskDelta = {
+    authorizationContextDigest: value.authorizationContextDigest,
+    collectedSlots: value.collectedSlots as Readonly<
+      Record<
+        string,
+        {
+          readonly authorityDigest: string;
+          readonly kind: 'opaque_reference';
+          readonly reference: string;
+        }
+      >
+    >,
+    expectedTaskVersion: value.expectedTaskVersion as number,
+    expiresAt,
+    intent: value.intent,
+    intentRevision: value.intentRevision,
+    nextState: value.nextState,
+    operation: value.operation,
+    pendingSlots: value.pendingSlots as readonly string[],
+    provenanceDigest: value.provenanceDigest,
+    release: {
+      activationId: value.release.activationId,
+      graphRevision: value.release.graphRevision,
+      knowledgeRevision: value.release.knowledgeRevision,
+      manifestSha256: value.release.manifestSha256,
+      policyRevision: value.release.policyRevision,
+    },
+    sourceTurnId: value.sourceTurnId,
+    taskId: value.taskId,
+  };
+  try {
+    assertConversationTaskDelta(delta);
+  } catch {
+    throw new ConversationAiTransportError('invalid_response', false);
+  }
+  return delta;
 }
 
 function parseReleaseCommitReceipt(

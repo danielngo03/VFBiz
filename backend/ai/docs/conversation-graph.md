@@ -13,7 +13,7 @@ tags:
   - langgraph
   - state-machine
   - assistant
-revision: 4
+revision: 5
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -41,9 +41,9 @@ ConversationGraphState
 - `global_entities`: opaque entity do API business authority xác nhận; mỗi field
   pin authority digest, source revision, timestamp, expiry và sensitivity. Chỉ
   promoted field mới được dùng qua intent khác.
-- `active_task`: intent, slots, current node, attempt và pending clarification.
-  Task mới thay active task trước đó, được đọc global entity
-  nhưng không tự promote output.
+- `active_task`: execution projection của durable task context do NestJS sở
+  hữu; chỉ gồm intent, pending slot và bounded retry state. FastAPI không tự
+  persist task hoặc biến model extraction thành confirmed slot.
 - `control`: graph/policy/prompt/knowledge revision, profile, budget, event
   sequence và cancellation/fencing ID.
 - `evidence`: citation/tool result reference đã sanitize; không chứa raw secret,
@@ -94,11 +94,13 @@ Global Entities vẫn tồn tại nếu chưa expired/revoked. Pronoun như “x
 chỉ resolve từ entity đã confirmed, không từ draft. Task-stack/resume nhiều tác
 vụ chỉ được thêm khi có use case và contract rõ, không được tuyên bố ngầm.
 
-Durable entity projection thuộc API PostgreSQL. Internal request chỉ mang
-allowlisted non-sensitive reference; FastAPI map vào `ConfirmedGlobalEntity`
-và Knowledge Worker đưa intent/reference vào bounded retrieval query. Public
-retrieval không nhận customer subject. Customer-private facts phải đi qua
-NestJS read-only tool có object authorization, không đi qua public RAG.
+Durable entity và task projection đều thuộc API PostgreSQL. Internal request
+pin `authorizationContextDigest`, release binding, task version, expiry và chỉ
+mang allowlisted opaque slot reference. FastAPI map task hợp lệ vào
+`ActiveTaskState`; terminal clarification trả `ConversationTaskDelta` có kiểu.
+NestJS mới được kiểm OCC/fencing rồi commit delta cùng public event và outbox.
+Public retrieval không nhận customer subject. Customer-private facts phải đi
+qua NestJS read-only tool có object authorization, không đi qua public RAG.
 
 ## Checkpoint migration
 
@@ -167,9 +169,14 @@ khi vào active task. Observation không bao giờ là system instruction.
   còn late result vẫn bị fencing chặn và không thể commit.
 - `retryable_failure` được chạy lại tối đa ba lần. `policy_denied` và
   `non_retryable_failure` kết thúc ngay, không đổi model để né policy.
-- Clarification là terminal outcome của turn hiện tại, chỉ mang message code và
-  opaque slot name; baseline không dùng native cross-turn `interrupt()`. Tin
-  nhắn kế tiếp tạo turn mới và kế thừa duy nhất global entity đã được xác nhận.
+- Clarification là terminal outcome của turn hiện tại, mang message, opaque slot
+  name và signed task delta; baseline không dùng native cross-turn
+  `interrupt()`. Tin nhắn kế tiếp tạo turn mới, nhận lại confirmed entity và
+  task context đã được NestJS commit. Clarification có intent mới tạo task ID
+  mới với `expectedTaskVersion = 0`; clarification `unknown` giữ task hiện tại
+  để multi-intent ambiguity không vô tình hủy authority. FastAPI không đóng
+  task: NestJS tự tạo close delta cho answer, refusal, handoff hoặc tool-refusal
+  terminal và commit atomically với event/outbox.
 - Cancellation/deadline được kiểm trước route và worker; result có fencing token
   cũ bị chuyển thành `cancelled`, không được dùng làm final answer.
 

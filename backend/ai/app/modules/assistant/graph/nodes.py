@@ -56,31 +56,38 @@ class ConversationNodes:
                 )
             }
         if decision.abuse_signals:
-            return {
-                "outcome": GraphOutcome(kind="refused", code="ABUSE_SIGNAL_DETECTED")
-            }
+            return {"outcome": GraphOutcome(kind="refused", code="ABUSE_SIGNAL_DETECTED")}
         if decision.out_of_domain:
             return {"outcome": GraphOutcome(kind="refused", code="OUT_OF_DOMAIN")}
         if decision.multi_intent:
             return {
+                "active_task": ActiveTaskState(
+                    intent="unknown",
+                    required_arguments=("primary_intent",),
+                    retry_count=0,
+                ),
                 "outcome": GraphOutcome(
                     kind="needs_clarification",
                     code="MULTIPLE_INTENTS_REQUIRE_CLARIFICATION",
                     pending_slots=("primary_intent",),
-                )
+                ),
             }
         if decision.missing_slots:
             return {
+                "active_task": ActiveTaskState(
+                    intent=decision.intent,
+                    required_arguments=decision.missing_slots,
+                    retry_count=0,
+                ),
                 "outcome": GraphOutcome(
                     kind="needs_clarification",
                     code="MISSING_REQUIRED_ARGUMENTS",
                     pending_slots=decision.missing_slots,
-                )
+                ),
             }
         retry_count = (
             state["active_task"].retry_count
-            if state["active_task"] is not None
-            and state["active_task"].intent == decision.intent
+            if state["active_task"] is not None and state["active_task"].intent == decision.intent
             else 0
         )
         return {
@@ -99,11 +106,7 @@ class ConversationNodes:
             return {"outcome": terminal}
         task = state["active_task"]
         if task is None:
-            return {
-                "outcome": GraphOutcome(
-                    kind="handoff_required", code="MISSING_ACTIVE_TASK"
-                )
-            }
+            return {"outcome": GraphOutcome(kind="handoff_required", code="MISSING_ACTIVE_TASK")}
         result = await self._execute_bounded(state, task)
         if isinstance(result, GraphOutcome):
             return {"outcome": result}
@@ -113,17 +116,11 @@ class ConversationNodes:
                 self._execution_control.is_current(state["control"]), state
             )
         except TimeoutError:
-            return {
-                "outcome": GraphOutcome(
-                    kind="cancelled", code="EXECUTION_CONTROL_TIMEOUT"
-                )
-            }
+            return {"outcome": GraphOutcome(kind="cancelled", code="EXECUTION_CONTROL_TIMEOUT")}
         if terminal is not None:
             return {"outcome": terminal}
         if not execution_is_current or result.fencing_token != state["control"].fencing_token:
-            return {
-                "outcome": GraphOutcome(kind="cancelled", code="STALE_FENCING_TOKEN")
-            }
+            return {"outcome": GraphOutcome(kind="cancelled", code="STALE_FENCING_TOKEN")}
         return await self._map_worker_result(state, task, result)
 
     async def _execute_bounded(
@@ -154,11 +151,7 @@ class ConversationNodes:
             if worker_task in done:
                 return worker_task.result()
             await _cancel_with_grace(worker_task)
-            code = (
-                "STALE_FENCING_TOKEN"
-                if invalidated_task in done
-                else "TURN_DEADLINE_EXCEEDED"
-            )
+            code = "STALE_FENCING_TOKEN" if invalidated_task in done else "TURN_DEADLINE_EXCEEDED"
             return GraphOutcome(kind="cancelled", code=code)
         finally:
             await _cancel_with_grace(invalidated_task)
@@ -179,9 +172,7 @@ class ConversationNodes:
                     "active_task": task.model_copy(
                         update={"retry_count": _MAX_ATTEMPTS, "last_failure": result.code}
                     ),
-                    "outcome": GraphOutcome(
-                        kind="handoff_required", code="RETRY_EXHAUSTED"
-                    ),
+                    "outcome": GraphOutcome(kind="handoff_required", code="RETRY_EXHAUSTED"),
                 }
             return {
                 "worker_attempts": attempts,
@@ -272,6 +263,7 @@ class ConversationNodes:
             "model_tokens": result.model_tokens,
             "outcome": GraphOutcome(kind="refused", code=code),
         }
+
 
 def terminal_control_outcome(state: ConversationGraphState) -> GraphOutcome | None:
     if state["control"].cancelled:

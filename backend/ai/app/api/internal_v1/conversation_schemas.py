@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -28,6 +28,72 @@ class ConfirmedEntityReference(BaseModel):
         return self
 
 
+class ConversationTaskReleaseBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    activation_id: UUID = Field(alias="activationId")
+    graph_revision: str = Field(alias="graphRevision", min_length=1, max_length=160)
+    knowledge_revision: str = Field(alias="knowledgeRevision", min_length=1, max_length=160)
+    manifest_sha256: str = Field(alias="manifestSha256", pattern=r"^[a-f0-9]{64}$")
+    policy_revision: str = Field(alias="policyRevision", min_length=1, max_length=160)
+
+
+class OpaqueTaskSlotReference(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: Literal["opaque_reference"]
+    reference: str = Field(
+        pattern=(
+            r"^(vehicle|market|locale|profile|garage|policy|product|account):"
+            r"[a-z0-9][a-z0-9._/-]{0,143}$"
+        )
+    )
+    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+
+
+class ConversationTaskContextRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    authorization_context_digest: str = Field(
+        alias="authorizationContextDigest", pattern=r"^[a-f0-9]{64}$"
+    )
+    collected_slots: dict[
+        Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")],
+        OpaqueTaskSlotReference,
+    ] = Field(alias="collectedSlots", max_length=16)
+    expires_at: datetime = Field(alias="expiresAt")
+    intent: Literal[
+        "public_knowledge",
+        "vehicle_question",
+        "financing_question",
+        "charging_question",
+        "unknown",
+    ]
+    intent_revision: str = Field(alias="intentRevision", min_length=1, max_length=160)
+    last_fencing_token: int = Field(
+        alias="lastFencingToken", strict=True, ge=1, le=_MAX_SAFE_INTEGER
+    )
+    pending_slots: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")], ...] = Field(
+        alias="pendingSlots", max_length=16
+    )
+    provenance_digest: str = Field(alias="provenanceDigest", pattern=r"^[a-f0-9]{64}$")
+    release: ConversationTaskReleaseBinding
+    source_turn_id: UUID | None = Field(alias="sourceTurnId")
+    state: Literal["active", "awaiting_clarification"]
+    task_id: UUID = Field(alias="taskId")
+    task_version: int = Field(alias="taskVersion", strict=True, ge=1, le=_MAX_SAFE_INTEGER)
+
+    @model_validator(mode="after")
+    def validate_task_context(self) -> "ConversationTaskContextRequest":
+        if self.expires_at.tzinfo is None:
+            raise ValueError("task expiresAt must include a timezone")
+        if len(set(self.pending_slots)) != len(self.pending_slots):
+            raise ValueError("pendingSlots must not contain duplicates")
+        if set(self.pending_slots).intersection(self.collected_slots):
+            raise ValueError("pending and collected slots must be disjoint")
+        return self
+
+
 class ConversationTurnRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -39,6 +105,9 @@ class ConversationTurnRequest(BaseModel):
         alias="conversationVersion", strict=True, ge=1, le=_MAX_SAFE_INTEGER
     )
     fencing_token: int = Field(alias="fencingToken", strict=True, ge=1, le=_MAX_SAFE_INTEGER)
+    authorization_context_digest: str = Field(
+        alias="authorizationContextDigest", pattern=r"^[a-f0-9]{64}$"
+    )
     locale: Literal["vi", "en"]
     message: str = Field(min_length=1, max_length=12_000)
     confirmed_entities: tuple[ConfirmedEntityReference, ...] = Field(
@@ -46,6 +115,16 @@ class ConversationTurnRequest(BaseModel):
         alias="confirmedEntities",
         max_length=16,
     )
+    task_context: ConversationTaskContextRequest | None = Field(default=None, alias="taskContext")
+
+    @model_validator(mode="after")
+    def validate_task_binding(self) -> "ConversationTurnRequest":
+        if (
+            self.task_context is not None
+            and self.task_context.authorization_context_digest != self.authorization_context_digest
+        ):
+            raise ValueError("task context authorization binding does not match the request")
+        return self
 
 
 class ConversationTurnCancellation(BaseModel):

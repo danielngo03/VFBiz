@@ -41,11 +41,11 @@
         "state-machine",
         "assistant"
       ],
-      "revision": 4,
+      "revision": 5,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/conversation-graph.md",
-      "source_hash": "ddb0b0afb3a8c54f16c6c25191b4e57be95bb73fb70e12fec0717c2b409202e2"
+      "source_hash": "3692f9d011a1e6ec27cc31d0889e48cd3474f10bbcbec996aca65c92e645aa32"
     },
     {
       "id": "ai-dataset-engineering",
@@ -300,11 +300,11 @@
         "concurrency",
         "privacy"
       ],
-      "revision": 4,
+      "revision": 5,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/api/docs/conversation-runtime.md",
-      "source_hash": "a27ad7d8f3647441e45600cc8debd4c1696367fc85a23e113ef0343e2d99f4c8"
+      "source_hash": "c4a16b8421fce15e739886dfc3cf5d45a8da66b816fc8d094bdd86e474ba11ba"
     },
     {
       "id": "api-data-model",

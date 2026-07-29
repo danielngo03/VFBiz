@@ -75,6 +75,7 @@ describe('InternalAiAssertionSigner', () => {
     expect(payload).toMatchObject({
       action: 'turn.execute',
       assistantProfile: 'authenticated_customer',
+      authorizationContextDigest: 'd'.repeat(64),
       activationId: '00000000-0000-4000-8000-000000000010',
       graphRevision: 'graph-r1',
       knowledgeRevision: 'knowledge-r1',
@@ -182,6 +183,20 @@ describe('InternalAiAssertionSigner', () => {
     ).rejects.toThrow('budget is invalid');
   });
 
+  it('rejects an invalid authorization context binding before signing', async () => {
+    const config = trustConfig('api-ai-current');
+    const signer = new InternalAiAssertionSigner(
+      config,
+      new InternalAiAssertionKeyring(config),
+    );
+    await expect(
+      signer.sign({
+        ...validInput(),
+        authorizationContextDigest: 'not-a-digest',
+      }),
+    ).rejects.toThrow('authorization context digest is invalid');
+  });
+
   it('keeps the module startup-safe but signing fail-closed when disabled', async () => {
     const service = new ConfigService<EnvironmentVariables, true>({
       VFBIZ_INTERNAL_AI_ENABLED: false,
@@ -253,6 +268,7 @@ function validInput(): InternalAiExecutionAssertionInput {
     action: 'turn.execute',
     activationId: '00000000-0000-4000-8000-000000000010',
     assistantProfile: 'authenticated_customer',
+    authorizationContextDigest: 'd'.repeat(64),
     authorization: {
       allowedTools: ['search_public_knowledge', 'get_customer_garage'],
       kind: 'authenticated_customer',

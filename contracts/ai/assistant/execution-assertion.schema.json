@@ -20,6 +20,7 @@
     "conversationVersion",
     "fencingToken",
     "assistantProfile",
+    "authorizationContextDigest",
     "authorization",
     "locale",
     "budget",
@@ -58,6 +59,11 @@
     },
     "assistantProfile": {
       "enum": ["public_customer", "authenticated_customer"]
+    },
+    "authorizationContextDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Digest of the API-authoritative subject/capability context. It binds durable task state to the same authorization context as this signed execution."
     },
     "authorization": {
       "oneOf": [

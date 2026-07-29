@@ -93,6 +93,9 @@ class AIExecutionAssertionClaims(BaseModel):
     )
     fencing_token: int = Field(alias="fencingToken", strict=True, ge=1, le=_MAX_SAFE_INTEGER)
     assistant_profile: AssistantProfile = Field(alias="assistantProfile")
+    authorization_context_digest: str = Field(
+        alias="authorizationContextDigest", pattern=r"^[a-f0-9]{64}$"
+    )
     authorization: PublicCapabilityAuthorization | AuthenticatedCustomerAuthorization = Field(
         discriminator="kind"
     )
@@ -435,6 +438,7 @@ def assert_request_matches_claims(
     conversation_version: int,
     fencing_token: int,
     locale: Literal["vi", "en"] | None = None,
+    authorization_context_digest: str | None = None,
 ) -> None:
     claims = context.claims
     received = (
@@ -464,6 +468,15 @@ def assert_request_matches_claims(
             status.HTTP_403_FORBIDDEN,
             "ASSERTION_MISMATCH",
             "Request locale does not match the signed assertion.",
+        )
+    if authorization_context_digest is not None and not hmac.compare_digest(
+        authorization_context_digest,
+        claims.authorization_context_digest,
+    ):
+        raise assertion_error(
+            status.HTTP_403_FORBIDDEN,
+            "ASSERTION_MISMATCH",
+            "Authorization context does not match the signed assertion.",
         )
 
 

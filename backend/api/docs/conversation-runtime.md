@@ -13,7 +13,7 @@ tags:
   - handoff
   - concurrency
   - privacy
-revision: 4
+revision: 5
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -76,6 +76,30 @@ Hiện đây là **Candidate foundation**: chưa có production business-tool wr
 và chưa có authority adapter để thu hồi/revalidate `sourceRevision`. Cho tới khi
 hai phần đó được triển khai, public Chat API vẫn disabled và không được tuyên bố
 multi-turn factual capability.
+
+## Durable task context
+
+API PostgreSQL đồng thời sở hữu một `ConversationTaskContext` cho task đang
+active hoặc chờ clarification. Context pin task/version, pending slot, opaque
+collected slot, source turn, expiry, authorization digest và toàn bộ Assistant
+Release binding. Không lưu raw prompt, chain-of-thought, VIN, email, số điện
+thoại hoặc model confidence như authority.
+
+Internal AI request và JWT assertion cùng pin `authorizationContextDigest`.
+FastAPI chỉ trả typed `ConversationTaskDelta`; repository API kiểm source turn,
+release, subject/capability, OCC và fencing trước khi commit delta trong cùng
+transaction với completion event và outbox. Task đã đóng, hết hạn hoặc mất
+authority không được resume; topic mới phải dùng task ID mới và version khởi
+tạo bằng 1. FastAPI đề xuất task mới khi clarification cho thấy một intent khác;
+repository chỉ cho phép thay task active khi cả task ID và intent đều đổi, rồi
+ghi `replacedTaskId` và `replacementReason=topic_switch` vào outbox. Với answer,
+refusal, handoff hoặc tool-refusal terminal, NestJS tự tạo close delta từ task
+đang được pin thay vì giao model quyền quyết định vòng đời. Việc đóng/thay task,
+completion event và outbox vẫn là một transaction.
+
+Đây vẫn là **Candidate foundation** cho tới khi semantic router, slot authority
+adapter và factual multi-turn staging test đạt. Public Chat API tiếp tục
+disabled.
 
 ## Cancellation
 

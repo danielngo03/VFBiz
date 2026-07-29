@@ -25,6 +25,14 @@ import {
   type ConversationTurn,
 } from '../../domain/runtime/conversation-runtime';
 import {
+  applyConversationTaskDelta,
+  assertConversationTaskContext,
+  createConversationTaskContext,
+  type ConversationTaskContext,
+  type ConversationTaskDelta,
+  type ConversationTaskSlotReference,
+} from '../../domain/runtime/conversation-task-context';
+import {
   type ConversationContextConfirmationResult,
   ConversationRuntimeRepository,
   type AcceptedMessageReplay,
@@ -409,6 +417,8 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
           accessScope: copyAccessScope(accessScope),
           assistantProfile: session.assistantProfile as
             'authenticated_customer' | 'public_customer',
+          authorizationContextDigest:
+            conversationAuthorizationContextDigest(accessScope),
           attempts: row.attempts + 1,
           budget: {
             maxCostMicros: safeNumber(turn.maxCostMicros),
@@ -692,6 +702,7 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
           },
         },
         runtime: { select: { version: true } },
+        taskContext: true,
         runtimeTurns: {
           include: {
             customerMessage: { select: { contentEnvelope: true } },
@@ -732,6 +743,8 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
       accessScope: copyAccessScope(accessScope),
       assistantProfile: session.assistantProfile as
         'authenticated_customer' | 'public_customer',
+      authorizationContextDigest:
+        conversationAuthorizationContextDigest(accessScope),
       budget: {
         maxCostMicros: safeNumber(turn.maxCostMicros),
         maxModelTokens: safeNumber(turn.maxModelTokens),
@@ -771,6 +784,7 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
       },
       policyRevision: session.policyRevision,
       sessionId,
+      taskContext: activeTaskContextFromRow(session, now, accessScope),
       turnId,
     };
   }
@@ -1088,6 +1102,17 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
           transition.nextState.version,
         );
       } else {
+        if (transition.taskDelta !== undefined) {
+          await this.persistTaskDelta(
+            transaction,
+            session,
+            transition.accessScope,
+            event,
+            transition.taskDelta.delta,
+            transition.taskDelta.fencingToken,
+            transition.now,
+          );
+        }
         if (turn.assistantReleaseReceipt !== null) {
           const [databaseClock] = await transaction.$queryRaw<
             readonly [{ now: Date }]
@@ -1147,6 +1172,128 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
       event,
     );
     return { outcome: 'committed' };
+  }
+
+  private async persistTaskDelta(
+    transaction: Transaction,
+    session: {
+      assistantReleaseActivationId: string | null;
+      assistantReleaseGraphRevision: string | null;
+      assistantReleaseKnowledgeRevision: string | null;
+      assistantReleaseManifestSha256: string | null;
+      policyRevision: string;
+    },
+    accessScope: ConversationAccessScope,
+    event: ConversationPublicEvent,
+    delta: ConversationTaskDelta,
+    fencingToken: number,
+    now: Date,
+  ): Promise<void> {
+    const turnId = event.payload.turnId;
+    if (
+      turnId === undefined ||
+      delta.sourceTurnId !== turnId ||
+      session.assistantReleaseActivationId === null ||
+      session.assistantReleaseGraphRevision === null ||
+      session.assistantReleaseKnowledgeRevision === null ||
+      session.assistantReleaseManifestSha256 === null ||
+      delta.release.activationId !== session.assistantReleaseActivationId ||
+      delta.release.graphRevision !== session.assistantReleaseGraphRevision ||
+      delta.release.knowledgeRevision !==
+        session.assistantReleaseKnowledgeRevision ||
+      delta.release.manifestSha256 !== session.assistantReleaseManifestSha256 ||
+      delta.release.policyRevision !== session.policyRevision ||
+      delta.authorizationContextDigest !==
+        conversationAuthorizationContextDigest(accessScope)
+    ) {
+      throw new ConversationRuntimePersistenceCorruptionError();
+    }
+    const claimedTurn = await transaction.conversationTurn.findUnique({
+      select: { fencingToken: true, status: true },
+      where: { id: turnId },
+    });
+    if (
+      claimedTurn?.status !== 'claimed' ||
+      claimedTurn.fencingToken === null ||
+      safeNumber(claimedTurn.fencingToken) !== fencingToken
+    ) {
+      throw new ConversationRuntimePersistenceCorruptionError();
+    }
+
+    const stored = await transaction.conversationTaskContext.findUnique({
+      where: { conversationSessionId: event.sessionId },
+    });
+    const current = stored === null ? null : taskContextFromDatabaseRow(stored);
+    const explicitTopicSwitch =
+      current !== null &&
+      (current.state === 'active' ||
+        current.state === 'awaiting_clarification') &&
+      delta.operation === 'upsert' &&
+      delta.expectedTaskVersion === 0 &&
+      delta.taskId !== current.taskId &&
+      delta.intent !== current.intent;
+    const replaceExisting =
+      current !== null &&
+      (explicitTopicSwitch ||
+        current.state === 'closed' ||
+        current.state === 'expired' ||
+        current.expiresAt.getTime() <= now.getTime() ||
+        current.authorizationContextDigest !==
+          conversationAuthorizationContextDigest(accessScope) ||
+        !taskReleaseMatchesSession(current, session));
+    const next =
+      current === null || replaceExisting
+        ? createConversationTaskContext(delta, { fencingToken, now })
+        : applyConversationTaskDelta(current, delta, { fencingToken, now });
+    if (
+      replaceExisting &&
+      current !== null &&
+      (delta.taskId === current.taskId || delta.expectedTaskVersion !== 0)
+    ) {
+      throw new ConversationRuntimePersistenceCorruptionError();
+    }
+
+    if (stored === null) {
+      await transaction.conversationTaskContext.create({
+        data: taskContextPersistenceData(event.sessionId, next),
+      });
+    } else {
+      const updated = await transaction.conversationTaskContext.updateMany({
+        data: taskContextPersistenceData(event.sessionId, next),
+        where: {
+          conversationSessionId: event.sessionId,
+          taskId: stored.taskId,
+          taskVersion: stored.taskVersion,
+        },
+      });
+      if (updated.count !== 1) {
+        throw new ConversationRuntimePersistenceCorruptionError();
+      }
+    }
+    await transaction.outboxEvent.create({
+      data: {
+        aggregateId: event.sessionId,
+        aggregateType: 'conversation',
+        correlationId: event.eventId,
+        eventType: 'conversation.task.updated',
+        eventVersion: 1,
+        payload: {
+          intent: next.intent,
+          provenanceDigest: next.provenanceDigest,
+          state: next.state,
+          taskId: next.taskId,
+          taskVersion: next.taskVersion,
+          ...(replaceExisting && current !== null
+            ? {
+                replacedTaskId: current.taskId,
+                replacementReason: explicitTopicSwitch
+                  ? 'topic_switch'
+                  : 'terminal_or_stale',
+              }
+            : {}),
+        },
+      },
+    });
   }
 
   private async createAcceptedTurn(
@@ -1718,7 +1865,12 @@ function storedDate(value: unknown): Date {
   return candidate;
 }
 
-function json(value: ConversationContentEnvelopeV1): Prisma.InputJsonValue {
+function json(
+  value:
+    | ConversationContentEnvelopeV1
+    | readonly string[]
+    | Readonly<Record<string, ConversationTaskSlotReference>>,
+): Prisma.InputJsonValue {
   return value as unknown as Prisma.InputJsonValue;
 }
 
@@ -1737,6 +1889,143 @@ function citationHash(citation: ConversationCitation): string {
     .digest('hex');
 }
 
+type StoredTaskContextRow = {
+  assistantReleaseActivationId: string;
+  assistantReleaseManifestSha256: string;
+  authorizationContextDigest: string;
+  closedAt: Date | null;
+  collectedSlots: Prisma.JsonValue;
+  expiresAt: Date;
+  graphRevision: string;
+  intent: string;
+  intentRevision: string;
+  knowledgeRevision: string;
+  lastFencingToken: bigint;
+  pendingSlots: Prisma.JsonValue;
+  policyRevision: string;
+  provenanceDigest: string;
+  sourceTurnId: string | null;
+  taskId: string;
+  taskState: string;
+  taskVersion: bigint;
+};
+
+function taskContextFromDatabaseRow(
+  row: StoredTaskContextRow,
+): ConversationTaskContext {
+  const context = {
+    authorizationContextDigest: row.authorizationContextDigest,
+    closedAt: row.closedAt,
+    collectedSlots: row.collectedSlots as unknown as Readonly<
+      Record<string, ConversationTaskSlotReference>
+    >,
+    expiresAt: storedDate(row.expiresAt),
+    intent: row.intent,
+    intentRevision: row.intentRevision,
+    lastFencingToken: safeNumber(row.lastFencingToken),
+    pendingSlots: row.pendingSlots as unknown as readonly string[],
+    provenanceDigest: row.provenanceDigest,
+    release: {
+      activationId: row.assistantReleaseActivationId,
+      graphRevision: row.graphRevision,
+      knowledgeRevision: row.knowledgeRevision,
+      manifestSha256: row.assistantReleaseManifestSha256,
+      policyRevision: row.policyRevision,
+    },
+    sourceTurnId: row.sourceTurnId,
+    state: row.taskState,
+    taskId: row.taskId,
+    taskVersion: safeNumber(row.taskVersion),
+  } as ConversationTaskContext;
+  try {
+    assertConversationTaskContext(context);
+  } catch {
+    throw new ConversationRuntimePersistenceCorruptionError();
+  }
+  return context;
+}
+
+function taskContextPersistenceData(
+  conversationSessionId: string,
+  context: ConversationTaskContext,
+) {
+  return {
+    assistantReleaseActivationId: context.release.activationId,
+    assistantReleaseManifestSha256: context.release.manifestSha256,
+    authorizationContextDigest: context.authorizationContextDigest,
+    closedAt: context.closedAt,
+    collectedSlots: json(context.collectedSlots),
+    conversationSessionId,
+    expiresAt: context.expiresAt,
+    graphRevision: context.release.graphRevision,
+    intent: context.intent,
+    intentRevision: context.intentRevision,
+    knowledgeRevision: context.release.knowledgeRevision,
+    lastFencingToken: BigInt(context.lastFencingToken),
+    pendingSlots: json(context.pendingSlots),
+    policyRevision: context.release.policyRevision,
+    provenanceDigest: context.provenanceDigest,
+    sourceTurnId: context.sourceTurnId,
+    taskId: context.taskId,
+    taskState: context.state,
+    taskVersion: BigInt(context.taskVersion),
+  };
+}
+
+function taskReleaseMatchesSession(
+  context: ConversationTaskContext,
+  session: {
+    assistantReleaseActivationId: string | null;
+    assistantReleaseGraphRevision: string | null;
+    assistantReleaseKnowledgeRevision: string | null;
+    assistantReleaseManifestSha256: string | null;
+    policyRevision: string;
+  },
+): boolean {
+  return (
+    context.release.activationId === session.assistantReleaseActivationId &&
+    context.release.graphRevision === session.assistantReleaseGraphRevision &&
+    context.release.knowledgeRevision ===
+      session.assistantReleaseKnowledgeRevision &&
+    context.release.manifestSha256 === session.assistantReleaseManifestSha256 &&
+    context.release.policyRevision === session.policyRevision
+  );
+}
+
+function activeTaskContextFromRow(
+  session: {
+    assistantReleaseActivationId: string | null;
+    assistantReleaseGraphRevision: string | null;
+    assistantReleaseKnowledgeRevision: string | null;
+    assistantReleaseManifestSha256: string | null;
+    policyRevision: string;
+    taskContext: StoredTaskContextRow | null;
+  },
+  now: Date,
+  accessScope?: ConversationAccessScope,
+): ConversationTaskContext | null {
+  const row = session.taskContext;
+  if (
+    row === null ||
+    (row.taskState !== 'active' &&
+      row.taskState !== 'awaiting_clarification') ||
+    storedDate(row.expiresAt).getTime() <= now.getTime() ||
+    row.assistantReleaseActivationId !== session.assistantReleaseActivationId ||
+    row.assistantReleaseManifestSha256 !==
+      session.assistantReleaseManifestSha256 ||
+    row.graphRevision !== session.assistantReleaseGraphRevision ||
+    row.knowledgeRevision !== session.assistantReleaseKnowledgeRevision ||
+    row.policyRevision !== session.policyRevision ||
+    (accessScope !== undefined &&
+      row.authorizationContextDigest !==
+        conversationAuthorizationContextDigest(accessScope))
+  ) {
+    return null;
+  }
+
+  return taskContextFromDatabaseRow(row);
+}
+
 function copyAccessScope(
   accessScope: ConversationAccessScope,
 ): ConversationAccessScope {
@@ -1749,6 +2038,25 @@ function contextSubjectKeyHash(accessScope: ConversationAccessScope): string {
     : createHash('sha256')
         .update(`public-capability:${accessScope.capabilityHash}`, 'utf8')
         .digest('hex');
+}
+
+function conversationAuthorizationContextDigest(
+  accessScope: ConversationAccessScope,
+): string {
+  const authorityRef =
+    accessScope.kind === 'authenticated_customer'
+      ? conversationSubjectKeyHash(accessScope.issuer, accessScope.subject)
+      : accessScope.capabilityHash;
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        authorityRef,
+        kind: accessScope.kind,
+        profile: accessScope.profile,
+      }),
+      'utf8',
+    )
+    .digest('hex');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

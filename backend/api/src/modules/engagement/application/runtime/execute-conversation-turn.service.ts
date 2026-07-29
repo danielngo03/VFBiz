@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import {
   ConversationRuntimeNotFoundError,
   ConversationRuntimeService,
@@ -12,6 +13,10 @@ import {
   ConversationRuntimeRepository,
 } from './conversation-runtime.repository';
 import type { ConversationAccessScope } from '../../domain/runtime/conversation-runtime';
+import type {
+  ConversationTaskContext,
+  ConversationTaskDelta,
+} from '../../domain/runtime/conversation-task-context';
 import { ConversationHandoffPolicyService } from '../services/conversation-handoff-policy.service';
 
 export type ExecuteConversationTurnResult = {
@@ -85,6 +90,7 @@ export class ExecuteConversationTurnService {
             'Tính năng tra cứu này chưa được phát hành an toàn. Vui lòng thử lại sau.',
         },
         sessionId: input.sessionId,
+        taskDelta: closeConversationTask(context.taskContext, context.turnId),
         turnId: input.turnId,
         usage: result.usage,
       });
@@ -123,6 +129,12 @@ export class ExecuteConversationTurnService {
       fencingToken: context.fencingToken,
       outcome,
       sessionId: context.sessionId,
+      taskDelta:
+        result.outcome === 'clarification_required'
+          ? result.taskDelta
+          : result.outcome === 'failed_safely'
+            ? undefined
+            : closeConversationTask(context.taskContext, context.turnId),
       turnId: context.turnId,
       usage: result.usage,
     });
@@ -156,6 +168,7 @@ export class ExecuteConversationTurnService {
       {
         accessScope: context.accessScope,
         assistantProfile: context.assistantProfile,
+        authorizationContextDigest: context.authorizationContextDigest,
         budget: context.budget,
         conversationVersion: context.conversationVersion,
         correlationId: input.correlationId,
@@ -172,6 +185,35 @@ export class ExecuteConversationTurnService {
     );
     return 'accepted';
   }
+}
+
+function closeConversationTask(
+  context: ConversationTaskContext | null,
+  sourceTurnId: string,
+): ConversationTaskDelta | undefined {
+  if (context === null) return undefined;
+
+  const material = {
+    authorizationContextDigest: context.authorizationContextDigest,
+    collectedSlots: context.collectedSlots,
+    expectedTaskVersion: context.taskVersion,
+    expiresAt: context.expiresAt.toISOString(),
+    intent: context.intent,
+    intentRevision: context.intentRevision,
+    nextState: 'closed',
+    operation: 'close',
+    pendingSlots: [],
+    release: context.release,
+    sourceTurnId,
+    taskId: context.taskId,
+  } as const;
+  return {
+    ...material,
+    expiresAt: context.expiresAt,
+    provenanceDigest: createHash('sha256')
+      .update(JSON.stringify(material), 'utf8')
+      .digest('hex'),
+  };
 }
 
 function completionProposal(

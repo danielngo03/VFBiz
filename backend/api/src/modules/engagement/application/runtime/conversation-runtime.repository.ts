@@ -5,6 +5,10 @@ import type {
   ConversationRuntimeSnapshot,
   ConfirmedConversationContextEntity,
 } from '../../domain/runtime/conversation-runtime';
+import type {
+  ConversationTaskContext,
+  ConversationTaskDelta,
+} from '../../domain/runtime/conversation-task-context';
 
 export interface AcceptedMessageReplay {
   readonly accessScope: ConversationAccessScope;
@@ -20,6 +24,10 @@ export interface ConversationRuntimeCommit {
   readonly nextState: ConversationRuntimeSnapshot;
   readonly now: Date;
   readonly sessionId: string;
+  readonly taskDelta?: {
+    readonly delta: ConversationTaskDelta;
+    readonly fencingToken: number;
+  };
 }
 
 export type ConversationRuntimeCommitResult =
@@ -141,6 +149,7 @@ export abstract class ConversationRuntimeRepository {
 export interface ConversationCancellationDispatch {
   readonly accessScope: ConversationAccessScope;
   readonly assistantProfile: 'authenticated_customer' | 'public_customer';
+  readonly authorizationContextDigest: string;
   readonly attempts: number;
   readonly budget: {
     readonly maxCostMicros: number;
@@ -172,6 +181,7 @@ export interface ConversationDispatchCandidate {
 export interface ConversationTurnExecutionContext {
   readonly accessScope: ConversationAccessScope;
   readonly assistantProfile: 'authenticated_customer' | 'public_customer';
+  readonly authorizationContextDigest: string;
   readonly budget: {
     readonly maxCostMicros: number;
     readonly maxModelTokens: number;
@@ -194,6 +204,7 @@ export interface ConversationTurnExecutionContext {
   };
   readonly policyRevision: string;
   readonly sessionId: string;
+  readonly taskContext: ConversationTaskContext | null;
   readonly turnId: string;
 }
 

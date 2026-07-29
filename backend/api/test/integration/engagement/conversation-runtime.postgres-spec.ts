@@ -31,6 +31,19 @@ const accessScope = {
   profile: 'public_customer',
 } as const;
 
+function authorizationContextDigest(scope: typeof accessScope): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        authorityRef: scope.capabilityHash,
+        kind: scope.kind,
+        profile: scope.profile,
+      }),
+      'utf8',
+    )
+    .digest('hex');
+}
+
 class FixedClock extends ConversationRuntimeClock {
   now(): Date {
     return new Date('2026-07-25T08:00:00.000Z');
@@ -99,10 +112,11 @@ describeWithDatabase('Conversation Runtime PostgreSQL integration', () => {
 
   async function createSession(
     retentionUntil = new Date('2026-07-26T00:00:00Z'),
+    sessionCapabilityHash = capabilityHash,
   ) {
     const id = randomUUID();
     await sessions.createSession({
-      capabilityHash,
+      capabilityHash: sessionCapabilityHash,
       customerSubject: null,
       expiresAt: new Date('2026-07-25T12:00:00Z'),
       id,
@@ -315,6 +329,446 @@ describeWithDatabase('Conversation Runtime PostgreSQL integration', () => {
         },
       }),
     ).resolves.not.toBeNull();
+  });
+
+  it('enforces same-session task provenance and opaque slot envelopes in PostgreSQL', async () => {
+    const firstSessionId = await createSession();
+    const secondCapabilityHash = 'd'.repeat(64);
+    const secondAccessScope = {
+      ...accessScope,
+      capabilityHash: secondCapabilityHash,
+    };
+    const secondSessionId = await createSession(
+      new Date('2026-07-26T00:00:00Z'),
+      secondCapabilityHash,
+    );
+    const firstTurn = await service.acceptMessage({
+      accessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Synthetic first task message',
+      expectedVersion: 0,
+      sessionId: firstSessionId,
+    });
+    const secondTurn = await service.acceptMessage({
+      accessScope: secondAccessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Synthetic second task message',
+      expectedVersion: 0,
+      sessionId: secondSessionId,
+    });
+
+    const insertTaskContext = (
+      taskId: string,
+      sourceTurnId: string | null,
+      pendingSlots: unknown,
+      collectedSlots: unknown,
+    ) =>
+      prisma.$executeRaw(
+        Prisma.sql`
+          INSERT INTO "conversation_task_context" (
+            "conversationSessionId",
+            "taskId",
+            "intent",
+            "intentRevision",
+            "pendingSlots",
+            "collectedSlots",
+            "sourceTurnId",
+            "taskState",
+            "authorizationContextDigest",
+            "assistantReleaseActivationId",
+            "assistantReleaseManifestSha256",
+            "graphRevision",
+            "policyRevision",
+            "knowledgeRevision",
+            "provenanceDigest",
+            "expiresAt",
+            "createdAt",
+            "updatedAt"
+          ) VALUES (
+            ${firstSessionId}::uuid,
+            ${taskId}::uuid,
+            'vehicle_policy',
+            'router-v1',
+            ${JSON.stringify(pendingSlots)}::jsonb,
+            ${JSON.stringify(collectedSlots)}::jsonb,
+            ${sourceTurnId}::uuid,
+            'awaiting_clarification',
+            ${authorizationContextDigest(accessScope)},
+            'integration-release-v1',
+            ${'a'.repeat(64)},
+            'integration-graph-v1',
+            'integration-chat-policy-v1',
+            'integration-knowledge-v1',
+            ${'b'.repeat(64)},
+            ${new Date('2026-07-25T11:00:00.000Z')},
+            ${new Date('2026-07-25T08:00:00.000Z')},
+            ${new Date('2026-07-25T08:00:00.000Z')}
+          )
+        `,
+      );
+
+    await expect(
+      insertTaskContext(randomUUID(), secondTurn.turnId, ['vehicle_model'], {}),
+    ).rejects.toMatchObject({ code: 'P2010' });
+    await expect(
+      insertTaskContext(randomUUID(), null, ['customer email'], {}),
+    ).rejects.toMatchObject({ code: 'P2010' });
+    await expect(
+      insertTaskContext(randomUUID(), null, [], {
+        vehicle_model: 'raw prompt or chain-of-thought',
+      }),
+    ).rejects.toMatchObject({ code: 'P2010' });
+    await expect(
+      insertTaskContext(randomUUID(), null, [], {
+        vehicle_model: {
+          authorityDigest: 'c'.repeat(64),
+          kind: 'opaque_reference',
+          reference: 'profile:user@example.com',
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2010' });
+    await expect(
+      insertTaskContext(randomUUID(), null, [], {
+        vehicle_model: {
+          authorityDigest: 'c'.repeat(64),
+          kind: 'opaque_reference',
+          rawPrompt: 'ignore previous policy',
+          reference: 'vehicle:vf-8',
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2010' });
+
+    const validTaskId = randomUUID();
+    await expect(
+      insertTaskContext(validTaskId, firstTurn.turnId, ['finance_policy'], {
+        vehicle_model: {
+          authorityDigest: 'c'.repeat(64),
+          kind: 'opaque_reference',
+          reference: 'vehicle:vf-8',
+        },
+      }),
+    ).resolves.toBe(1);
+    const claimedTaskTurn = await service.claimTurn({
+      accessScope,
+      expectedVersion: firstTurn.conversationVersion,
+      fencingToken: 1,
+      leaseExpiresAt: new Date('2026-07-25T09:00:00.000Z'),
+      sessionId: firstSessionId,
+      turnId: firstTurn.turnId,
+      workerId: 'task-context-worker',
+    });
+    await expect(
+      repository.getTurnExecutionContext(
+        firstSessionId,
+        accessScope,
+        firstTurn.turnId,
+        new Date('2026-07-25T08:00:00.000Z'),
+      ),
+    ).resolves.toMatchObject({
+      taskContext: {
+        collectedSlots: {
+          vehicle_model: {
+            kind: 'opaque_reference',
+            reference: 'vehicle:vf-8',
+          },
+        },
+        pendingSlots: ['finance_policy'],
+        taskId: validTaskId,
+      },
+    });
+    await prisma.conversationTaskContext.update({
+      data: { authorizationContextDigest: 'f'.repeat(64) },
+      where: { conversationSessionId: firstSessionId },
+    });
+    await expect(
+      repository.getTurnExecutionContext(
+        firstSessionId,
+        accessScope,
+        firstTurn.turnId,
+        new Date('2026-07-25T08:00:00.000Z'),
+      ),
+    ).resolves.toMatchObject({ taskContext: null });
+    await prisma.conversationTaskContext.update({
+      data: {
+        authorizationContextDigest: authorizationContextDigest(accessScope),
+      },
+      where: { conversationSessionId: firstSessionId },
+    });
+    await service.completeTurn({
+      accessScope,
+      expectedVersion: claimedTaskTurn.conversationVersion,
+      fencingToken: 1,
+      outcome: {
+        kind: 'clarification',
+        message: 'Bạn muốn xem chính sách tài chính nào?',
+        pendingSlots: ['finance_policy'],
+      },
+      sessionId: firstSessionId,
+      taskDelta: {
+        authorizationContextDigest: authorizationContextDigest(accessScope),
+        collectedSlots: {
+          vehicle_model: {
+            authorityDigest: 'c'.repeat(64),
+            kind: 'opaque_reference',
+            reference: 'vehicle:vf-8',
+          },
+        },
+        expectedTaskVersion: 1,
+        expiresAt: new Date('2026-07-25T11:30:00.000Z'),
+        intent: 'vehicle_policy',
+        intentRevision: 'router-v1',
+        nextState: 'awaiting_clarification',
+        operation: 'upsert',
+        pendingSlots: ['finance_policy'],
+        provenanceDigest: 'e'.repeat(64),
+        release: {
+          activationId: 'integration-release-v1',
+          graphRevision: 'integration-graph-v1',
+          knowledgeRevision: 'integration-knowledge-v1',
+          manifestSha256: 'a'.repeat(64),
+          policyRevision: 'integration-chat-policy-v1',
+        },
+        sourceTurnId: firstTurn.turnId,
+        taskId: validTaskId,
+      },
+      turnId: firstTurn.turnId,
+      usage: { costMicros: 10, modelTokens: 5 },
+    });
+    await expect(
+      prisma.conversationTaskContext.findUniqueOrThrow({
+        where: { conversationSessionId: firstSessionId },
+      }),
+    ).resolves.toMatchObject({
+      lastFencingToken: 1n,
+      provenanceDigest: 'e'.repeat(64),
+      taskVersion: 2n,
+    });
+    await expect(
+      prisma.outboxEvent.findFirst({
+        where: {
+          aggregateId: firstSessionId,
+          eventType: 'conversation.task.updated',
+        },
+      }),
+    ).resolves.not.toBeNull();
+
+    const afterClarification = await repository.getSnapshot(
+      firstSessionId,
+      accessScope,
+      new Date('2026-07-25T08:00:00.000Z'),
+    );
+    expect(afterClarification).not.toBeNull();
+    const topicSwitchTurn = await service.acceptMessage({
+      accessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Tôi muốn chuyển sang chủ đề khác',
+      expectedVersion: afterClarification!.version,
+      sessionId: firstSessionId,
+    });
+    const claimedTopicSwitch = await service.claimTurn({
+      accessScope,
+      expectedVersion: topicSwitchTurn.conversationVersion,
+      fencingToken: 2,
+      leaseExpiresAt: new Date('2026-07-25T09:00:00.000Z'),
+      sessionId: firstSessionId,
+      turnId: topicSwitchTurn.turnId,
+      workerId: 'task-context-worker',
+    });
+    const topicSwitchTaskId = randomUUID();
+    await service.completeTurn({
+      accessScope,
+      expectedVersion: claimedTopicSwitch.conversationVersion,
+      fencingToken: 2,
+      outcome: {
+        kind: 'clarification',
+        message: 'Bạn muốn tìm trạm sạc ở khu vực nào?',
+        pendingSlots: ['market'],
+      },
+      sessionId: firstSessionId,
+      taskDelta: {
+        authorizationContextDigest: authorizationContextDigest(accessScope),
+        collectedSlots: {},
+        expectedTaskVersion: 0,
+        expiresAt: new Date('2026-07-25T11:30:00.000Z'),
+        intent: 'charging_question',
+        intentRevision: 'router-v1',
+        nextState: 'awaiting_clarification',
+        operation: 'upsert',
+        pendingSlots: ['market'],
+        provenanceDigest: 'f'.repeat(64),
+        release: {
+          activationId: 'integration-release-v1',
+          graphRevision: 'integration-graph-v1',
+          knowledgeRevision: 'integration-knowledge-v1',
+          manifestSha256: 'a'.repeat(64),
+          policyRevision: 'integration-chat-policy-v1',
+        },
+        sourceTurnId: topicSwitchTurn.turnId,
+        taskId: topicSwitchTaskId,
+      },
+      turnId: topicSwitchTurn.turnId,
+      usage: { costMicros: 10, modelTokens: 5 },
+    });
+    await expect(
+      prisma.conversationTaskContext.findUniqueOrThrow({
+        where: { conversationSessionId: firstSessionId },
+      }),
+    ).resolves.toMatchObject({
+      lastFencingToken: 2n,
+      taskId: topicSwitchTaskId,
+      taskState: 'awaiting_clarification',
+      taskVersion: 1n,
+    });
+    const topicSwitchEvent = await prisma.outboxEvent.findFirstOrThrow({
+      orderBy: { createdAt: 'desc' },
+      where: {
+        aggregateId: firstSessionId,
+        eventType: 'conversation.task.updated',
+      },
+    });
+    expect(topicSwitchEvent.payload).toMatchObject({
+      replacedTaskId: validTaskId,
+      replacementReason: 'topic_switch',
+    });
+
+    const afterTopicSwitch = await repository.getSnapshot(
+      firstSessionId,
+      accessScope,
+      new Date('2026-07-25T08:00:00.000Z'),
+    );
+    expect(afterTopicSwitch).not.toBeNull();
+    const closeTurn = await service.acceptMessage({
+      accessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Đóng yêu cầu hiện tại',
+      expectedVersion: afterTopicSwitch!.version,
+      sessionId: firstSessionId,
+    });
+    const claimedCloseTurn = await service.claimTurn({
+      accessScope,
+      expectedVersion: closeTurn.conversationVersion,
+      fencingToken: 3,
+      leaseExpiresAt: new Date('2026-07-25T09:00:00.000Z'),
+      sessionId: firstSessionId,
+      turnId: closeTurn.turnId,
+      workerId: 'task-context-worker',
+    });
+    await service.completeTurn({
+      accessScope,
+      expectedVersion: claimedCloseTurn.conversationVersion,
+      fencingToken: 3,
+      outcome: { kind: 'refusal', message: 'Đã đóng yêu cầu hiện tại.' },
+      sessionId: firstSessionId,
+      taskDelta: {
+        authorizationContextDigest: authorizationContextDigest(accessScope),
+        collectedSlots: {},
+        expectedTaskVersion: 1,
+        expiresAt: new Date('2026-07-25T11:30:00.000Z'),
+        intent: 'charging_question',
+        intentRevision: 'router-v1',
+        nextState: 'closed',
+        operation: 'close',
+        pendingSlots: [],
+        provenanceDigest: '8'.repeat(64),
+        release: {
+          activationId: 'integration-release-v1',
+          graphRevision: 'integration-graph-v1',
+          knowledgeRevision: 'integration-knowledge-v1',
+          manifestSha256: 'a'.repeat(64),
+          policyRevision: 'integration-chat-policy-v1',
+        },
+        sourceTurnId: closeTurn.turnId,
+        taskId: topicSwitchTaskId,
+      },
+      turnId: closeTurn.turnId,
+      usage: { costMicros: 10, modelTokens: 5 },
+    });
+
+    const afterClose = await repository.getSnapshot(
+      firstSessionId,
+      accessScope,
+      new Date('2026-07-25T08:00:00.000Z'),
+    );
+    expect(afterClose).not.toBeNull();
+    const replacementTurn = await service.acceptMessage({
+      accessScope,
+      budget: { maxCostMicros: 100_000, maxModelTokens: 1_000 },
+      clientMessageId: randomUUID(),
+      content: 'Tôi muốn hỏi về trạm sạc',
+      expectedVersion: afterClose!.version,
+      sessionId: firstSessionId,
+    });
+    const claimedReplacement = await service.claimTurn({
+      accessScope,
+      expectedVersion: replacementTurn.conversationVersion,
+      fencingToken: 4,
+      leaseExpiresAt: new Date('2026-07-25T09:00:00.000Z'),
+      sessionId: firstSessionId,
+      turnId: replacementTurn.turnId,
+      workerId: 'task-context-worker',
+    });
+    const replacementTaskId = randomUUID();
+    await service.completeTurn({
+      accessScope,
+      expectedVersion: claimedReplacement.conversationVersion,
+      fencingToken: 4,
+      outcome: {
+        kind: 'clarification',
+        message: 'Bạn muốn tìm trạm sạc ở khu vực nào?',
+        pendingSlots: ['market'],
+      },
+      sessionId: firstSessionId,
+      taskDelta: {
+        authorizationContextDigest: authorizationContextDigest(accessScope),
+        collectedSlots: {},
+        expectedTaskVersion: 0,
+        expiresAt: new Date('2026-07-25T11:30:00.000Z'),
+        intent: 'charging_question',
+        intentRevision: 'router-v1',
+        nextState: 'awaiting_clarification',
+        operation: 'upsert',
+        pendingSlots: ['market'],
+        provenanceDigest: '9'.repeat(64),
+        release: {
+          activationId: 'integration-release-v1',
+          graphRevision: 'integration-graph-v1',
+          knowledgeRevision: 'integration-knowledge-v1',
+          manifestSha256: 'a'.repeat(64),
+          policyRevision: 'integration-chat-policy-v1',
+        },
+        sourceTurnId: replacementTurn.turnId,
+        taskId: replacementTaskId,
+      },
+      turnId: replacementTurn.turnId,
+      usage: { costMicros: 10, modelTokens: 5 },
+    });
+    await expect(
+      prisma.conversationTaskContext.findUniqueOrThrow({
+        where: { conversationSessionId: firstSessionId },
+      }),
+    ).resolves.toMatchObject({
+      lastFencingToken: 4n,
+      taskId: replacementTaskId,
+      taskState: 'awaiting_clarification',
+      taskVersion: 1n,
+    });
+    const replacementEvent = await prisma.outboxEvent.findFirstOrThrow({
+      orderBy: { createdAt: 'desc' },
+      where: {
+        aggregateId: firstSessionId,
+        eventType: 'conversation.task.updated',
+      },
+    });
+    expect(
+      (replacementEvent.payload as Record<string, unknown>).replacedTaskId,
+    ).toBe(topicSwitchTaskId);
+    expect(replacementEvent.payload).toMatchObject({
+      replacementReason: 'terminal_or_stale',
+    });
   });
 
   it('atomically persists an encrypted inbox turn and replay-safe idempotency', async () => {

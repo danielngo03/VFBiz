@@ -79,6 +79,7 @@ describe('InternalAiConversationTransport', () => {
 
     const confirmedAt = new Date('2026-07-25T07:00:00.000Z');
     const expiresAt = new Date('2026-07-26T07:00:00.000Z');
+    const taskId = '423e4567-e89b-42d3-a456-426614174000';
     const result = await transport.execute({
       ...executionRequest(),
       confirmedEntities: [
@@ -93,6 +94,34 @@ describe('InternalAiConversationTransport', () => {
           sourceRevision: 'd'.repeat(64),
         },
       ],
+      taskContext: {
+        authorizationContextDigest: 'e'.repeat(64),
+        closedAt: null,
+        collectedSlots: {
+          vehicle_model: {
+            authorityDigest: 'c'.repeat(64),
+            kind: 'opaque_reference',
+            reference: 'vehicle:vf-8',
+          },
+        },
+        expiresAt,
+        intent: 'vehicle_policy',
+        intentRevision: 'router-v1',
+        lastFencingToken: 5,
+        pendingSlots: ['finance_policy'],
+        provenanceDigest: 'f'.repeat(64),
+        release: {
+          activationId: executionRequest().release.activationId,
+          graphRevision: 'graph-r1',
+          knowledgeRevision: 'knowledge-r1',
+          manifestSha256: 'a'.repeat(64),
+          policyRevision: 'policy-r1',
+        },
+        sourceTurnId: '323e4567-e89b-42d3-a456-426614174000',
+        state: 'awaiting_clarification',
+        taskId,
+        taskVersion: 2,
+      },
     });
 
     expect(result.outcome).toBe('answered');
@@ -113,6 +142,11 @@ describe('InternalAiConversationTransport', () => {
     if (typeof rawBody !== 'string') throw new Error('Expected string body');
     const body = rawBody;
     expect(body).toBe(canonicalJson(JSON.parse(body) as unknown));
+    expect(assertionInput.requestHash).toBe(
+      createHash('sha256')
+        .update(`POST\n/internal/v1/conversation/turns\n${body}`, 'utf8')
+        .digest('hex'),
+    );
     expect(JSON.parse(body)).toMatchObject({
       confirmedEntities: [
         {
@@ -126,6 +160,21 @@ describe('InternalAiConversationTransport', () => {
           sourceRevision: 'd'.repeat(64),
         },
       ],
+      taskContext: {
+        authorizationContextDigest: 'e'.repeat(64),
+        collectedSlots: {
+          vehicle_model: {
+            authorityDigest: 'c'.repeat(64),
+            kind: 'opaque_reference',
+            reference: 'vehicle:vf-8',
+          },
+        },
+        expiresAt: expiresAt.toISOString(),
+        intent: 'vehicle_policy',
+        pendingSlots: ['finance_policy'],
+        taskId,
+        taskVersion: 2,
+      },
     });
   });
 
@@ -288,14 +337,21 @@ describe('InternalAiConversationTransport', () => {
         pendingSlots: ['vehicle_variant'],
         releaseRevision: '00000000-0000-4000-8000-000000000010',
         revisions: responseRevisions,
+        taskDelta: clarificationTaskDelta(),
         usage: { costMicros: 20, modelTokens: 8 },
       }),
     );
 
-    await expect(transport.execute(executionRequest())).resolves.toMatchObject({
-      outcome: 'clarification_required',
-      pendingSlots: ['vehicle_variant'],
-    });
+    const result = await transport.execute(executionRequest());
+    expect(result.outcome).toBe('clarification_required');
+    if (result.outcome !== 'clarification_required') {
+      throw new Error('Expected a typed clarification result');
+    }
+    expect(result.pendingSlots).toEqual(['vehicle_variant']);
+    expect(result.taskDelta.expectedTaskVersion).toBe(0);
+    expect(result.taskDelta.taskId).toBe(
+      '423e4567-e89b-42d3-a456-426614174000',
+    );
   });
 
   it('accepts failed-safely usage while suppressing answer content', async () => {
@@ -486,6 +542,8 @@ describe('InternalAiConversationTransport', () => {
       transport.cancel({
         accessScope: executionRequest().accessScope,
         assistantProfile: 'public_customer',
+        authorizationContextDigest:
+          executionRequest().authorizationContextDigest,
         budget: executionRequest().budget,
         conversationVersion: 2,
         correlationId,
@@ -523,6 +581,30 @@ describe('InternalAiConversationTransport', () => {
   });
 });
 
+function clarificationTaskDelta() {
+  return {
+    authorizationContextDigest: 'e'.repeat(64),
+    collectedSlots: {},
+    expectedTaskVersion: 0,
+    expiresAt: '2099-07-25T09:00:00.000Z',
+    intent: 'vehicle_question',
+    intentRevision: 'router-v1',
+    nextState: 'awaiting_clarification',
+    operation: 'upsert',
+    pendingSlots: ['vehicle_variant'],
+    provenanceDigest: 'f'.repeat(64),
+    release: {
+      activationId: '00000000-0000-4000-8000-000000000010',
+      graphRevision: 'graph-r1',
+      knowledgeRevision: 'knowledge-r1',
+      manifestSha256: 'a'.repeat(64),
+      policyRevision: 'policy-r1',
+    },
+    sourceTurnId: turnId,
+    taskId: '423e4567-e89b-42d3-a456-426614174000',
+  };
+}
+
 function executionRequest(): ConversationAiExecutionRequest {
   return {
     accessScope: {
@@ -531,6 +613,7 @@ function executionRequest(): ConversationAiExecutionRequest {
       profile: 'public_customer',
     },
     assistantProfile: 'public_customer',
+    authorizationContextDigest: 'e'.repeat(64),
     budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
     confirmedEntities: [],
     content: 'Chính sách bảo hành là gì?',
@@ -553,6 +636,7 @@ function executionRequest(): ConversationAiExecutionRequest {
     policyRevision: 'policy-r1',
     requestId,
     sessionId,
+    taskContext: null,
     turnId,
   };
 }

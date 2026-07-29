@@ -34,6 +34,7 @@ export interface InternalAiTurnBudget {
 export interface InternalAiExecutionAssertionInput {
   readonly action: InternalAiExecutionAction;
   readonly assistantProfile: InternalAiAssistantProfile;
+  readonly authorizationContextDigest: string;
   readonly authorization: InternalAiAuthorization;
   readonly budget: InternalAiTurnBudget;
   readonly conversationVersion: number;

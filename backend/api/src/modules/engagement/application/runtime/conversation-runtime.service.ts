@@ -20,6 +20,7 @@ import {
   type TurnBudgetReservation,
   type TurnBudgetUsage,
 } from '../../domain/runtime/conversation-runtime';
+import type { ConversationTaskDelta } from '../../domain/runtime/conversation-task-context';
 import {
   ConversationRuntimeClock,
   ConversationRuntimeIdGenerator,
@@ -195,6 +196,7 @@ export class ConversationRuntimeService {
     fencingToken: number;
     outcome: ConversationTurnCompletionProposal;
     sessionId: string;
+    taskDelta?: ConversationTaskDelta;
     turnId: string;
     usage: TurnBudgetUsage;
   }): Promise<CompletedTurn> {
@@ -225,6 +227,10 @@ export class ConversationRuntimeService {
       nextState: transition.state,
       now,
       sessionId: input.sessionId,
+      taskDelta:
+        input.taskDelta === undefined
+          ? undefined
+          : { delta: input.taskDelta, fencingToken: input.fencingToken },
     });
     assertCommitSucceeded(commit, input.expectedVersion);
     return transition.result;

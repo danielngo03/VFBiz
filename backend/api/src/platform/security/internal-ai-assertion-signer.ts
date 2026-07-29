@@ -53,6 +53,7 @@ export class InternalAiAssertionSigner {
       action: input.action,
       activationId: input.activationId,
       assistantProfile: input.assistantProfile,
+      authorizationContextDigest: input.authorizationContextDigest,
       authorization: immutableAuthorization(input.authorization),
       aud: this.config.assertionAudience,
       budget: Object.freeze({ ...input.budget }),
@@ -117,6 +118,11 @@ function assertValidInput(input: InternalAiExecutionAssertionInput): void {
   }
   if (!SHA_256_PATTERN.test(input.manifestSha256)) {
     throw new Error('Internal AI assertion manifest digest is invalid');
+  }
+  if (!SHA_256_PATTERN.test(input.authorizationContextDigest)) {
+    throw new Error(
+      'Internal AI assertion authorization context digest is invalid',
+    );
   }
   if (!SHA_256_PATTERN.test(input.requestHash)) {
     throw new Error('Internal AI assertion request hash is invalid');

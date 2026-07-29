@@ -135,6 +135,7 @@ describe('Internal AI conversation transport integration', () => {
     await transport.cancel({
       accessScope: executionRequest().accessScope,
       assistantProfile: 'public_customer',
+      authorizationContextDigest: executionRequest().authorizationContextDigest,
       budget: executionRequest().budget,
       conversationVersion: 2,
       correlationId,
@@ -196,6 +197,7 @@ function executionRequest(): ConversationAiExecutionRequest {
       profile: 'public_customer',
     },
     assistantProfile: 'public_customer',
+    authorizationContextDigest: 'e'.repeat(64),
     budget: { maxCostMicros: 10_000, maxModelTokens: 1_000 },
     confirmedEntities: [],
     content: 'hello',
@@ -218,6 +220,7 @@ function executionRequest(): ConversationAiExecutionRequest {
     policyRevision: 'policy-r1',
     requestId,
     sessionId,
+    taskContext: null,
     turnId,
   };
 }
