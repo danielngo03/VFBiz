@@ -27,9 +27,9 @@ required_checks:
   - npm run verify:ai
   - npm run contracts:lint
   - npm run governance:check
-revision: 4
+revision: 6
 review_date: "2026-08-29"
-updated_at: "2026-07-29T08:46:31.526Z"
+updated_at: "2026-07-29T09:24:06.433Z"
 ---
 
 # Outcome
@@ -65,21 +65,27 @@ active Assistant Release explicitly pins its identity, schema and thresholds.
   Exact deterministic routes avoid classifier cost; implicit/low-confidence
   inputs use a release-bound semantic prediction; timeout or invalid output
   falls back deterministically without removing abuse signals.
-- `RouteDecision` now rejects unregistered intent, malformed/duplicate slot and
-  required/missing-slot overlap before graph routing.
-- Runtime composition remains disabled because Assistant Release Manifest v3
-  does not pin classifier identity, schema, thresholds or evaluation evidence.
-  Blocking coordination
-  `coord-8f252c69-1785-462a-8f2f-6dc876ae25fd` owns the canonical contract.
-- Exact next action: accept the versioned classifier release contract, then
-  compose the governed supervisor from the resolved active release.
+- Review fix `c678d6c` enforces `missingSlots ⊆ requiredSlots`, binds the
+  threshold-policy digest and values, and rejects unregistered abuse signals.
+- Contract `a402e79` adds the canonical additive classifier binding; Manifest
+  v3 alone remains deterministic-only. Python authority checkpoints `7deee8b`
+  and `a191f88` verify canonical digests, lifecycle, artifacts and evidence.
+- Runtime composition remains disabled. Coordination
+  `coord-05b2d84c-2482-4cc3-a20a-1494b570bee9` owns the provider-neutral
+  classifier/routing-policy adapter and immutable benchmark evidence.
+  Coordination `coord-155ef386-d53c-4ce8-a9a0-d6d357644ff4` owns PostgreSQL
+  binding persistence and bootstrap composition.
+- Exact next action: implement those two owner-scoped lanes, then run the
+  required routing slices before composing the supervisor.
 
 ## Evidence
 
-- [x] `npm run verify:ai` — Ruff and Pyright passed; 513 tests passed and 84
+- [x] `npm run verify:ai` — Ruff and Pyright passed; 531 tests passed and 84
   environment-gated tests were skipped by the local fast suite.
-- [ ] `npm run contracts:lint` — add evidence reference
-- [ ] `npm run governance:check` — add evidence reference
+- [x] `npm run contracts:lint` — runtime contracts and registered classifier
+  binding vectors passed.
+- [x] `npm run governance:check` — docs, reports, authorization, work-control
+  and agent-governance checks passed.
 
 ### ready — 2026-07-29T08:35:58.456Z
 
@@ -92,3 +98,11 @@ Begin release-bound classifier contract with negative vectors before runtime com
 ### blocked — 2026-07-29T08:46:31.526Z
 
 Blocking coordination coord-8f252c69-1785-462a-8f2f-6dc876ae25fd must add classifier authority to the canonical Assistant Release contract before bootstrap composition.
+
+### active — 2026-07-29T08:55:30.169Z
+
+Resume active remediation of independent P1 review findings while classifier authority coordination is implemented in its separate contract lane.
+
+### blocked — 2026-07-29T09:24:06.433Z
+
+Provider-neutral classifier/policy adapter, PostgreSQL binding persistence, bootstrap composition and immutable routing-slice evidence are owned by open coordination requests coord-05b2d84c-2482-4cc3-a20a-1494b570bee9 and coord-155ef386-d53c-4ce8-a9a0-d6d357644ff4; semantic runtime remains disabled.
