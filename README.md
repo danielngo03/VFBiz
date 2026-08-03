@@ -43,6 +43,7 @@ hệ thống bên ngoài._
 | API Platform        | Tất cả client được phê duyệt | Business authority, authorization, transaction và integration     |
 | AI Platform         | API Platform                 | RAG, LangGraph, model policy, evaluation và tool proposal         |
 | EV Journey Platform | Customer channels và Chatbot | Tìm trạm và lập kế hoạch hành trình EV trong roadmap              |
+| Agent Runtime       | Đội ngũ kỹ thuật             | Điều phối coding agent có governance, checkpoint và audit cục bộ  |
 
 ## Kiến trúc
 
@@ -79,6 +80,7 @@ VFBiz/
 │   ├── customer-portal/       # Next.js BFF và hành trình Customer
 │   ├── workforce-portal/      # Next.js BFF và nghiệp vụ Workforce
 │   └── identity-theme/        # Keycloak login/email theme
+├── agent-runtime/             # Enterprise coding-agent control plane cục bộ
 ├── backend/
 │   ├── api/                   # NestJS API Platform
 │   └── ai/                    # FastAPI AI Platform nội bộ
@@ -115,12 +117,15 @@ hữu capability đó.
 | Contract                  | OpenAPI, JSON Schema và generated TypeScript SDK                      |
 | Quality                   | ESLint, TypeScript, Jest, Vitest, Playwright, Pytest, Ruff và Pyright |
 | Delivery governance       | Git-native work item, context resolver, claim/lease và CI gates       |
+| Agent orchestration       | OpenAI Agents SDK, provider-compatible adapter và SQLite ledger       |
 
 ## Trạng thái hiện tại
 
 ### Nền tảng đã được xây dựng
 
 - Repository đa-workspace và Multi-Agent Operating System độc lập provider.
+- Enterprise Agent Runtime một máy với durable queue, encrypted checkpoint,
+  typed specialist handoff và OpenAI-compatible model-provider boundary.
 - NestJS/FastAPI foundation, persistence, migration, health check và contract.
 - Keycloak customer/workforce realm, OIDC, session security và Identity Theme.
 - Account, Customer, Customer Garage và governed Vehicle Catalog foundation.
@@ -183,6 +188,22 @@ uv sync --project backend/ai --group test
 
 Không commit `.env`. Tạo cấu hình local từ các file `.env.example` trong từng
 workspace và sử dụng secret riêng cho máy phát triển.
+
+### Agent Runtime cho công việc bất đồng bộ
+
+Phiên Codex thông thường không cần khởi động Agent Runtime. Khi cần durable
+queue, phục hồi checkpoint hoặc điều phối specialist có typed evidence:
+
+```bash
+npm run agent-runtime:doctor
+npm run agent-runtime -- worker --once
+npm run agent-runtime:brief -- --work VFBIZ-NNNN --target <workspace>
+```
+
+Runtime dùng OpenAI Agents SDK nhưng model provider có thể là OpenAI hoặc một
+endpoint OpenAI-compatible có key/base URL riêng. Runtime vẫn fail-closed, không
+có quyền sửa product workspace trong v1 và không thay thế human approval. Xem
+[hướng dẫn Agent Runtime](agent-runtime/README.md) để cấu hình an toàn.
 
 ### Khởi động API Platform
 
@@ -247,6 +268,9 @@ npm run verify:apps
 # FastAPI AI
 npm run verify:ai
 
+# Enterprise Agent Runtime
+npm run verify:agent-runtime
+
 # Drupal
 npm run verify:drupal
 
@@ -301,16 +325,3 @@ phục vụ người đọc; chat history và provider memory không phải ngu�
   cảm trong issue hoặc pull request.
 - Mọi thay đổi authentication, authorization, PII, public contract, migration,
   AI hoặc production đều là controlled change và cần review phù hợp.
-
-## Đóng góp
-
-Trước khi thay đổi code:
-
-- kiểm tra [WORK.md](WORK.md) để tránh trùng lane;
-- đọc root và nearest `AGENTS.md`;
-- không sửa file ngoài phạm vi work item;
-- không trộn refactor không liên quan vào cùng thay đổi;
-- không tuyên bố release hoặc chấp nhận residual risk thay cho human owner.
-
-Repository hiện chưa công bố license nguồn mở. Việc sử dụng code, dữ liệu và
-asset phải tuân theo quyền sở hữu và phê duyệt của dự án.

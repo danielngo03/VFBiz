@@ -38,7 +38,7 @@ export function createRuntime() {
     codexDelegate,
   );
   const agentExecutor = new AgentsSdkExecutor(
-    environment.openAiEnabled,
+    environment.liveProviderEnabled,
     environment.traceEnabled,
     undefined,
     codingExecutor,

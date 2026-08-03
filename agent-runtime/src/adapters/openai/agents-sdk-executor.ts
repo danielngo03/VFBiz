@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
-import { RunState, Runner, tool, type Tool } from "@openai/agents";
+import { OpenAIProvider, RunState, Runner, tool, type Tool } from "@openai/agents";
 import { z } from "zod";
 import { EnvironmentModelPolicy, type ModelPolicy } from "../../config/model-policy.js";
 import type { RuntimeRole } from "../../config/model-policy.js";
+import {
+  assertRuntimeProviderReady,
+  loadRuntimeProviderConfiguration,
+} from "../../config/provider.js";
 import { RuntimeError } from "../../domain/errors.js";
 import { createOrchestratorAgent } from "../../agents/orchestrator-agent.js";
 import { agentResultSchema, failedSafely, type AgentResult } from "../../agents/agent-result.js";
@@ -140,22 +144,21 @@ export class AgentsSdkExecutor implements AgentExecutor {
       return {
         result: failedSafely(
           "orchestrator",
-          "Live OpenAI execution is disabled; deterministic intake completed without model mutation.",
+          "Live model-provider execution is disabled; deterministic intake completed without model mutation.",
         ),
         executedRoles: ["orchestrator"],
         specialistResults: [],
         usage: { inputTokens: 0, outputTokens: 0, estimatedUsd: 0, model: null },
       };
     }
-    if (!this.source.OPENAI_API_KEY) {
-      throw new RuntimeError("OPENAI_KEY_MISSING", "OPENAI_API_KEY is required when live execution is enabled");
-    }
+    const providerConfiguration = loadRuntimeProviderConfiguration(this.source);
+    assertRuntimeProviderReady(providerConfiguration);
     const inputRate = Number(this.source.VFBIZ_AGENT_RUNTIME_INPUT_USD_PER_1M);
     const outputRate = Number(this.source.VFBIZ_AGENT_RUNTIME_OUTPUT_USD_PER_1M);
     if (!Number.isFinite(inputRate) || inputRate < 0 || !Number.isFinite(outputRate) || outputRate < 0) {
       throw new RuntimeError(
         "COST_POLICY_MISSING",
-        "live OpenAI execution requires non-negative input/output USD-per-million token rates",
+        "live provider execution requires non-negative input/output USD-per-million token rates",
       );
     }
     const agent = createOrchestratorAgent(
@@ -163,7 +166,16 @@ export class AgentsSdkExecutor implements AgentExecutor {
       this.models,
       this.createRuntimeTools(request),
     );
-    const runner = new Runner(buildRunnerTraceConfiguration(request, this.traceEnabled));
+    const modelProvider = new OpenAIProvider({
+      ...(providerConfiguration.apiKey ? { apiKey: providerConfiguration.apiKey } : {}),
+      ...(providerConfiguration.baseUrl ? { baseURL: providerConfiguration.baseUrl } : {}),
+      useResponses: providerConfiguration.apiMode === "responses",
+      strictFeatureValidation: true,
+    });
+    const runner = new Runner({
+      ...buildRunnerTraceConfiguration(request, this.traceEnabled),
+      modelProvider,
+    });
     const input = request.checkpointState
       ? await RunState.fromString(agent, request.checkpointState)
       : request.objective;

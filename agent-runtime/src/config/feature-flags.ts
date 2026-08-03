@@ -1,5 +1,5 @@
 export interface RuntimeFeatureFlags {
-  liveOpenAi: boolean;
+  liveProvider: boolean;
   liveCodex: boolean;
   externalMutation: false;
   productWorkspaceWrite: false;
@@ -7,10 +7,16 @@ export interface RuntimeFeatureFlags {
   multiMachine: false;
 }
 
+function enabled(value: string | undefined): boolean {
+  return value === "true" || value === "1";
+}
+
 export function featureFlags(source = process.env): RuntimeFeatureFlags {
   return Object.freeze({
-    liveOpenAi: source.VFBIZ_AGENT_RUNTIME_OPENAI_ENABLED === "true",
-    liveCodex: source.VFBIZ_AGENT_RUNTIME_CODEX_ENABLED === "true",
+    liveProvider: enabled(
+      source.VFBIZ_AGENT_RUNTIME_LIVE_ENABLED ?? source.VFBIZ_AGENT_RUNTIME_OPENAI_ENABLED,
+    ),
+    liveCodex: enabled(source.VFBIZ_AGENT_RUNTIME_CODEX_ENABLED),
     externalMutation: false,
     productWorkspaceWrite: false,
     nestedDelegation: false,

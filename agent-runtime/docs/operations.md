@@ -54,12 +54,14 @@ decision packet, never permission to auto-resume.
 
 ## Startup
 
-Run `agent-runtime doctor` before a worker. Live OpenAI and Codex flags are off
-by default. Configure a fresh base64 32-byte state key outside the repository
-before a run can save an agent checkpoint. The state directory and database are
-owner-only. When OpenAI is enabled, doctor also requires an API key and explicit
-non-negative input/output USD-per-million rates so cost checks cannot silently
-be skipped.
+Run `agent-runtime doctor` before a worker. Live model-provider and Codex flags
+are off by default. Configure a fresh base64 32-byte state key outside the
+repository before a run can save an agent checkpoint. The state directory and
+database are owner-only. When a live provider is enabled, doctor also requires
+an API key and explicit non-negative input/output USD-per-million rates so cost
+checks cannot silently be skipped. OpenAI-compatible endpoints additionally
+require an HTTPS base URL (loopback HTTP is allowed for local development) and
+default to Chat Completions mode; OpenAI defaults to Responses mode.
 
 For controlled work, enqueue requires `--claim` and `--fencing-token`. The
 runtime asks the existing agent-control CLI to validate claim state, fencing,

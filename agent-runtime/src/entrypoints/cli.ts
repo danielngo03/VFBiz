@@ -17,6 +17,10 @@ import { resumeRun } from "../application/resume-run.js";
 import { RuntimeError } from "../domain/errors.js";
 import { createRuntime } from "../index.js";
 import { StateCipher } from "../adapters/persistence/sqlite/state-cipher.js";
+import {
+  assertRuntimeProviderReady,
+  loadRuntimeProviderConfiguration,
+} from "../config/provider.js";
 import { processOne, watch } from "./worker.js";
 
 const execute = promisify(execFile);
@@ -62,10 +66,30 @@ async function doctor(): Promise<Record<string, unknown>> {
       process.env.VFBIZ_AGENT_RUNTIME_INPUT_USD_PER_1M,
       process.env.VFBIZ_AGENT_RUNTIME_OUTPUT_USD_PER_1M,
     ].every((value) => value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 0);
-    const liveProviderReady = (
-      Boolean(process.env.OPENAI_API_KEY) && stateKeyReady && costPolicyReady
-    );
-    const liveConfigurationSafe = !environment.openAiEnabled || liveProviderReady;
+    const providerConfiguration = (() => {
+      try {
+        return { configuration: loadRuntimeProviderConfiguration(), error: null };
+      } catch (error) {
+        return {
+          configuration: null,
+          error: error instanceof RuntimeError ? error.code : "PROVIDER_CONFIGURATION_INVALID",
+        };
+      }
+    })();
+    const providerCredentials = (() => {
+      if (!providerConfiguration.configuration) return { ready: false, error: providerConfiguration.error };
+      try {
+        assertRuntimeProviderReady(providerConfiguration.configuration);
+        return { ready: true, error: null };
+      } catch (error) {
+        return {
+          ready: false,
+          error: error instanceof RuntimeError ? error.code : "PROVIDER_CONFIGURATION_INVALID",
+        };
+      }
+    })();
+    const liveProviderReady = providerCredentials.ready && stateKeyReady && costPolicyReady;
+    const liveConfigurationSafe = !environment.liveProviderEnabled || liveProviderReady;
     return {
       ok:
         organization.controlPlane?.multiMachineReady === false &&
@@ -81,7 +105,11 @@ async function doctor(): Promise<Record<string, unknown>> {
       costPolicy: costPolicyReady ? "ready" : "missing-or-invalid",
       liveProviderReady,
       liveConfigurationSafe,
-      openAi: environment.openAiEnabled ? "enabled" : "disabled",
+      liveProvider: environment.liveProviderEnabled ? "enabled" : "disabled",
+      providerKind: providerConfiguration.configuration?.kind ?? "invalid",
+      providerApiMode: providerConfiguration.configuration?.apiMode ?? "invalid",
+      providerBaseUrlConfigured: Boolean(providerConfiguration.configuration?.baseUrl),
+      providerConfigurationError: providerCredentials.error,
       codexFeature: environment.codexEnabled ? "enabled" : "disabled",
       codex,
       fixtureSource: environment.fixtureRepository ?? "built-in-sample-repository",

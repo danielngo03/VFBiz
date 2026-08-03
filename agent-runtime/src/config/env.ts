@@ -10,7 +10,7 @@ export interface RuntimeEnvironment {
   repositoryRoot: string;
   stateDirectory: string;
   databasePath: string;
-  openAiEnabled: boolean;
+  liveProviderEnabled: boolean;
   codexEnabled: boolean;
   traceEnabled: boolean;
   fixtureRepository: string | null;
@@ -35,7 +35,9 @@ export function loadRuntimeEnvironment(source = process.env): RuntimeEnvironment
     repositoryRoot,
     stateDirectory,
     databasePath: path.join(stateDirectory, "runtime.sqlite"),
-    openAiEnabled: enabled(source.VFBIZ_AGENT_RUNTIME_OPENAI_ENABLED),
+    liveProviderEnabled: enabled(
+      source.VFBIZ_AGENT_RUNTIME_LIVE_ENABLED ?? source.VFBIZ_AGENT_RUNTIME_OPENAI_ENABLED,
+    ),
     codexEnabled: enabled(source.VFBIZ_AGENT_RUNTIME_CODEX_ENABLED),
     traceEnabled: enabled(source.VFBIZ_AGENT_RUNTIME_TRACE_ENABLED),
     fixtureRepository: source.VFBIZ_AGENT_RUNTIME_FIXTURE_WORKTREE
