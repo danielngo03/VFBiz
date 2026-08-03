@@ -1,0 +1,13 @@
+{
+  "schema_revision": "vfbiz-gcp-iam-contract-v1",
+  "reconciler_derived_output_reader": [
+    "storage.objects.get",
+    "storage.objects.list"
+  ],
+  "worker_document_ai_submitter": [
+    "documentai.processorVersions.processBatch"
+  ],
+  "reconciler_document_ai_operation_reader": [
+    "documentai.operations.getLegacy"
+  ]
+}
