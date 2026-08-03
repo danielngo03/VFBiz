@@ -1,0 +1,80 @@
+{
+  "name": "@vfbiz/mobile-customer",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild:check": "expo prebuild --clean --no-install",
+    "lint": "eslint .",
+    "boundaries": "node scripts/check-boundaries.mjs",
+    "native-config:check": "node scripts/check-native-config.mjs",
+    "routes:generate": "node scripts/generate-route-types.mjs",
+    "typecheck": "npm run routes:generate && tsc --noEmit",
+    "test": "npm run routes:generate && jest --runInBand",
+    "doctor": "expo-doctor"
+  },
+  "dependencies": {
+    "@expo-google-fonts/material-symbols": "0.4.42",
+    "@react-native-community/netinfo": "12.0.1",
+    "@tanstack/react-query": "5.101.4",
+    "@vfbiz/api-client": "0.1.0",
+    "@vfbiz/design-tokens": "0.1.0",
+    "expo": "57.0.9",
+    "expo-application": "~57.0.2",
+    "expo-auth-session": "~57.0.5",
+    "expo-constants": "~57.0.8",
+    "expo-crypto": "~57.0.1",
+    "expo-dev-client": "~57.0.10",
+    "expo-file-system": "~57.0.1",
+    "expo-font": "~57.0.1",
+    "expo-linking": "~57.0.4",
+    "expo-router": "~57.0.9",
+    "expo-secure-store": "~57.0.1",
+    "expo-splash-screen": "~57.0.5",
+    "expo-sqlite": "~57.0.1",
+    "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.11",
+    "expo-web-browser": "~57.0.2",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-worklets": "0.10.1"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "13.3.3",
+    "@types/jest": "29.5.14",
+    "@types/react": "~19.2.2",
+    "eslint": "^9.39.2",
+    "eslint-config-expo": "~57.0.1",
+    "expo-doctor": "1.20.1",
+    "jest-expo": "~57.0.3",
+    "react-test-renderer": "19.2.3",
+    "typescript": "~6.0.3"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.ts",
+      "<rootDir>/tests/**/*.test.tsx"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
+    ],
+    "moduleNameMapper": {
+      "^react$": "<rootDir>/node_modules/react"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/app/**"
+    ]
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

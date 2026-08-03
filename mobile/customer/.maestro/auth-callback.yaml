@@ -1,0 +1,7 @@
+appId: ${APP_ID}
+---
+- clearState
+- launchApp
+- assertVisible: "Đăng nhập"
+- openLink: "vfbiz-customer://auth/callback?error=access_denied"
+- assertVisible: "Đăng nhập"

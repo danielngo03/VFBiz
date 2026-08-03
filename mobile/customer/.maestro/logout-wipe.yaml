@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+env:
+  REQUIRE_MOCK_AUTH: "true"
+---
+- launchApp
+- tapOn: "Tài khoản"
+- tapOn: "Đăng xuất khỏi thiết bị này"
+- assertVisible: "Đăng nhập"
+- stopApp
+- launchApp
+- assertVisible: "Đăng nhập"

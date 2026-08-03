@@ -1,0 +1,11 @@
+.expo
+coverage
+dist
+tests
+.maestro
+docs
+*.mobileprovision
+*.p12
+*.jks
+*.keystore
+.env*

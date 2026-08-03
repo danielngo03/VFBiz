@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+---
+- launchApp
+- assertVisible: "Mọi điều quan trọng, thật rõ ràng."
+- assertVisible: "Mật khẩu, OTP và WebAuthn không đi qua ứng dụng."

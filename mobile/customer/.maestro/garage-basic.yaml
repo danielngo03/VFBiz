@@ -1,0 +1,10 @@
+appId: ${APP_ID}
+env:
+  REQUIRE_MOCK_AUTH: "true"
+---
+- launchApp
+- tapOn: "Garage"
+- assertVisible: "Garage"
+- assertVisible: "Thêm xe"
+- tapOn: "Thêm xe"
+- assertVisible: "Đang chờ danh mục xe"
