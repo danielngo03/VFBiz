@@ -57,3 +57,15 @@ test("foundation responses include defensive browser headers", async ({
       response.headers()["content-security-policy-report-only"],
   ).toContain("frame-ancestors 'none'");
 });
+
+test("anonymous visitors cannot open the authenticated Chat page", async ({
+  request,
+}) => {
+  const response = await request.get("/chat", { maxRedirects: 0 });
+  expect(response.status()).toBe(307);
+  const location = response.headers().location;
+  expect(location).toBeTruthy();
+  expect(new URL(location!, "http://localhost:3001").searchParams.get("returnTo")).toBe(
+    "/chat",
+  );
+});

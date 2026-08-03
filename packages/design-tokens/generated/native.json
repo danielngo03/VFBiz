@@ -1,0 +1,107 @@
+{
+  "primitive": {
+    "color": {
+      "white": "#ffffff",
+      "slate25": "#f7f9fc",
+      "slate50": "#f1f4f8",
+      "slate200": "#d8e0ea",
+      "slate400": "#98a6b8",
+      "slate500": "#5c6979",
+      "slate700": "#344256",
+      "slate800": "#202c3d",
+      "slate900": "#142033",
+      "slate950": "#0b1220",
+      "teal300": "#65c9bd",
+      "teal600": "#0f5c55",
+      "teal700": "#0b4742",
+      "blue300": "#78a9ff",
+      "blue600": "#0056d6",
+      "blue700": "#0047b2",
+      "red600": "#b42318",
+      "amber400": "#ffb800"
+    },
+    "radius": {
+      "small": 8,
+      "medium": 14,
+      "large": 20
+    },
+    "space": {
+      "1": 4,
+      "2": 8,
+      "3": 12,
+      "4": 16,
+      "6": 24,
+      "8": 32
+    },
+    "fontSize": {
+      "caption": 12,
+      "body": 16,
+      "title": 20,
+      "display": 32
+    },
+    "lineHeight": {
+      "caption": 16,
+      "body": 24,
+      "title": 28,
+      "display": 40
+    },
+    "touchTarget": {
+      "minimum": 44,
+      "comfortable": 48
+    },
+    "icon": {
+      "small": 16,
+      "medium": 24,
+      "large": 32
+    },
+    "motionDuration": {
+      "instant": 0,
+      "quick": 120,
+      "standard": 220,
+      "deliberate": 360
+    },
+    "motionEasing": {
+      "standard": "cubic-bezier(0.2, 0, 0, 1)",
+      "emphasized": "cubic-bezier(0.2, 0, 0, 1.2)"
+    },
+    "elevation": {
+      "flat": 0,
+      "raised": 2,
+      "overlay": 8
+    }
+  },
+  "customer": {
+    "light": {
+      "surface": "#ffffff",
+      "surfaceSubtle": "#f1f4f8",
+      "text": "#142033",
+      "textMuted": "#5c6979",
+      "border": "#d8e0ea",
+      "danger": "#b42318",
+      "focus": "#ffb800",
+      "radiusSmall": 8,
+      "radiusMedium": 14,
+      "radiusLarge": 20,
+      "accent": "#0f5c55",
+      "accentStrong": "#0b4742",
+      "onAccent": "#ffffff",
+      "canvas": "#f7f9fc"
+    },
+    "dark": {
+      "surface": "#202c3d",
+      "surfaceSubtle": "#142033",
+      "text": "#ffffff",
+      "textMuted": "#98a6b8",
+      "border": "#344256",
+      "danger": "#b42318",
+      "focus": "#ffb800",
+      "radiusSmall": 8,
+      "radiusMedium": 14,
+      "radiusLarge": 20,
+      "accent": "#65c9bd",
+      "accentStrong": "#65c9bd",
+      "onAccent": "#0b1220",
+      "canvas": "#0b1220"
+    }
+  }
+}

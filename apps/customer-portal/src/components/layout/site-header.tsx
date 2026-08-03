@@ -8,9 +8,14 @@ export function SiteHeader() {
           VFBiz
           <span>Customer Portal</span>
         </Link>
-        <Link className="nav-link" href="/account">
-          Tài khoản
-        </Link>
+        <div className="site-nav-links">
+          <Link className="nav-link" href="/chat">
+            Trợ lý
+          </Link>
+          <Link className="nav-link" href="/account">
+            Tài khoản
+          </Link>
+        </div>
       </nav>
     </header>
   );

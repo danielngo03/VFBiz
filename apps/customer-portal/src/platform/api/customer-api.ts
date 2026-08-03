@@ -57,6 +57,19 @@ async function usableToken() {
   }
 }
 
+const UUID_V4 =
+  "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+const CUSTOMER_CHAT_PATH = new RegExp(
+  `^/api/v1/chat/sessions(?:/${UUID_V4}(?:/messages|/events|/close|/handoff|/turns/${UUID_V4}/cancel)?)?$`,
+  "u",
+);
+const CUSTOMER_CHAT_EVENT_PATH = new RegExp(
+  `^/api/v1/chat/sessions/${UUID_V4}/events$`,
+  "u",
+);
+const JSON_REQUEST_TIMEOUT_MS = 10_000;
+const EVENT_STREAM_TIMEOUT_MS = 5 * 60_000 + 15_000;
+
 export async function customerApiRequest(
   path: string,
   init: Omit<RequestInit, "cache" | "credentials" | "redirect" | "signal"> = {},
@@ -64,13 +77,63 @@ export async function customerApiRequest(
   if (path !== "/api/v1/me" && !path.startsWith("/api/v1/me/")) {
     throw new Error("Customer BFF path is outside the reviewed boundary.");
   }
+  return authenticatedCustomerApiRequest(path, init, {
+    timeoutMs: JSON_REQUEST_TIMEOUT_MS,
+  });
+}
+
+export async function customerChatApiRequest(
+  path: string,
+  init: Omit<RequestInit, "cache" | "credentials" | "redirect" | "signal"> = {},
+): Promise<Response> {
+  if (!CUSTOMER_CHAT_PATH.test(path)) {
+    throw new Error("Customer Chat BFF path is outside the reviewed boundary.");
+  }
+  return authenticatedCustomerApiRequest(path, init, {
+    timeoutMs: JSON_REQUEST_TIMEOUT_MS,
+  });
+}
+
+export function customerChatEventStreamRequest(
+  path: string,
+  downstreamSignal: AbortSignal,
+  lastEventId?: string,
+): Promise<Response> {
+  if (!CUSTOMER_CHAT_EVENT_PATH.test(path)) {
+    throw new Error("Customer Chat event path is outside the reviewed boundary.");
+  }
+  return authenticatedCustomerApiRequest(
+    path,
+    {
+      headers: {
+        accept: "text/event-stream",
+        ...(lastEventId === undefined ? {} : { "last-event-id": lastEventId }),
+      },
+      method: "GET",
+    },
+    { downstreamSignal, timeoutMs: EVENT_STREAM_TIMEOUT_MS },
+  );
+}
+
+async function authenticatedCustomerApiRequest(
+  path: string,
+  init: Omit<RequestInit, "cache" | "credentials" | "redirect" | "signal">,
+  lifecycle: {
+    readonly downstreamSignal?: AbortSignal;
+    readonly timeoutMs: number;
+  },
+): Promise<Response> {
   const token = await usableToken();
   if (token === null) {
     return Response.json({ error: "session_required" }, { status: 401 });
   }
   const environment = readCustomerPortalEnvironment();
   const headers = new Headers(init.headers);
-  headers.set("accept", "application/json");
+  if (!headers.has("accept")) headers.set("accept", "application/json");
+  const timeoutSignal = AbortSignal.timeout(lifecycle.timeoutMs);
+  const signal = lifecycle.downstreamSignal
+    ? AbortSignal.any([lifecycle.downstreamSignal, timeoutSignal])
+    : timeoutSignal;
   headers.set("authorization", `Bearer ${token}`);
   return fetch(new URL(path, environment.CUSTOMER_API_BASE_URL), {
     ...init,
@@ -78,7 +141,7 @@ export async function customerApiRequest(
     credentials: "omit",
     headers,
     redirect: "error",
-    signal: AbortSignal.timeout(10_000),
+    signal,
   });
 }
 

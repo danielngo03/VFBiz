@@ -20,6 +20,8 @@ const child = spawn(
       ...process.env,
       CUSTOMER_E2E_ENABLED: "true",
       CUSTOMER_E2E_REQUIRED: "true",
+      CUSTOMER_CHAT_E2E_ENABLED: "true",
+      CUSTOMER_CHAT_E2E_REQUIRED: "true",
     },
     stdio: "inherit",
   },

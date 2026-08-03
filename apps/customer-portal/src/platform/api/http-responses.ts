@@ -18,6 +18,9 @@ export function secureUpstreamResponse(upstream: Response): Response {
     const value = upstream.headers.get(name);
     if (value !== null) headers.set(name, value);
   }
+  if (headers.get("Content-Type")?.startsWith("text/event-stream")) {
+    headers.set("X-Accel-Buffering", "no");
+  }
   headers.set("Vary", "Cookie");
   return new Response(upstream.body, { headers, status: upstream.status });
 }

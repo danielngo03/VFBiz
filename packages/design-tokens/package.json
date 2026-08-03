@@ -7,7 +7,9 @@
     "./base.css": "./generated/base.css",
     "./customer.css": "./generated/customer.css",
     "./workforce.css": "./generated/workforce.css",
-    "./tokens.json": "./generated/tokens.json"
+    "./tokens.json": "./generated/tokens.json",
+    "./native": "./generated/native.ts",
+    "./native.json": "./generated/native.json"
   },
   "files": ["generated"],
   "scripts": {

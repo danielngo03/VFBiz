@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedPrefixes = ["/account"];
+const protectedPrefixes = ["/account", "/chat"];
 
 function contentSecurityPolicy(nonce: string): string {
   const isDevelopment = process.env.NODE_ENV === "development";
@@ -36,8 +36,10 @@ export function proxy(request: NextRequest) {
   requestHeaders.set(cspHeader, policy);
 
   const response = (() => {
-    const isProtected = protectedPrefixes.some((prefix) =>
-      request.nextUrl.pathname.startsWith(prefix),
+    const isProtected = protectedPrefixes.some(
+      (prefix) =>
+        request.nextUrl.pathname === prefix ||
+        request.nextUrl.pathname.startsWith(`${prefix}/`),
     );
     const cookieName =
       process.env.CUSTOMER_SESSION_COOKIE_NAME ?? "vfbiz_customer_session";

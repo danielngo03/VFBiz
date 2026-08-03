@@ -23,3 +23,15 @@ test("semantic variants expose the same required accent contract", async () => {
     assert.match(css, /prefers-color-scheme: dark/u);
   }
 });
+
+test("native output resolves dimensions and customer color modes", async () => {
+  const native = JSON.parse(
+    await readFile(resolve(root, "generated", "native.json"), "utf8"),
+  );
+  assert.equal(native.primitive.space[4], 16);
+  assert.equal(native.primitive.touchTarget.minimum, 44);
+  assert.equal(native.primitive.motionDuration.standard, 220);
+  assert.equal(native.customer.light.canvas, "#f7f9fc");
+  assert.equal(native.customer.dark.canvas, "#0b1220");
+  assert.doesNotMatch(JSON.stringify(native), /\b\d+(?:\.\d+)?rem\b/u);
+});
