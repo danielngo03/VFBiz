@@ -1,0 +1,43 @@
+{
+  "name": "@vfbiz/agent-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "agent-runtime": "dist/src/entrypoints/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && mkdir -p dist/src/adapters/persistence/sqlite/migrations && cp src/adapters/persistence/sqlite/migrations/*.sql dist/src/adapters/persistence/sqlite/migrations/",
+    "lint": "eslint src tests --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude 'dist/**'",
+    "test:unit": "vitest run tests/unit",
+    "test:contract": "vitest run tests/contract",
+    "test:integration": "vitest run tests/integration",
+    "test:security": "vitest run tests/security",
+    "test:evals": "vitest run tests/evals",
+    "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run test:contract && npm run test:integration && npm run test:security && npm run test:evals && npm run build",
+    "cli": "tsx src/entrypoints/cli.ts",
+    "worker": "tsx src/entrypoints/worker.ts",
+    "doctor": "tsx src/entrypoints/cli.ts doctor",
+    "eval": "tsx src/entrypoints/cli.ts eval",
+    "changed-paths:check": "tsx src/entrypoints/cli.ts changed-paths-check"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.14.1",
+    "openai": "^7.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.2",
+    "eslint": "^10.8.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

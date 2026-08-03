@@ -1,0 +1,18 @@
+{
+  "humanAuthorities": ["engineering-lead", "security-owner"],
+  "workspaces": [
+    { "id": "root", "path": "." },
+    { "id": "fixture", "path": "tests/fixtures/sample-repository" }
+  ],
+  "departments": [
+    { "id": "engineering-enablement", "workspaces": ["root", "fixture"] }
+  ],
+  "teams": [
+    {
+      "id": "agent-platform",
+      "departmentId": "engineering-enablement",
+      "workspaces": ["root", "fixture"],
+      "paths": ["tests/fixtures/sample-repository"]
+    }
+  ]
+}
