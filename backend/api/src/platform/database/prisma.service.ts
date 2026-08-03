@@ -11,9 +11,10 @@ export class PrismaService
   private readonly connectOnModuleInit: boolean;
 
   constructor(config: ConfigService) {
-    const adapter = new PrismaPg(
-      config.getOrThrow<string>('VFBIZ_DATABASE_URL'),
-    );
+    const adapter = new PrismaPg({
+      connectionString: config.getOrThrow<string>('VFBIZ_DATABASE_URL'),
+      options: '-c timezone=UTC',
+    });
     super({ adapter });
     this.connectOnModuleInit = config.getOrThrow<string>('NODE_ENV') !== 'test';
   }

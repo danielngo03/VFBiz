@@ -14,11 +14,12 @@ import {
   type ConversationAiExecutionRequest,
   type ConversationAiExecutionResult,
 } from '../../application/runtime/conversation-ai.transport';
+import type {
+  ConversationTaskProposal,
+  ConversationTaskSlotCandidate,
+} from '../../application/ports/conversation-task-slot-authority';
+import type { ConversationTaskSlotReference } from '../../domain/runtime/conversation-task-context';
 import { InternalAiResponseVerifier } from './internal-ai-response-verifier';
-import {
-  assertConversationTaskDelta,
-  type ConversationTaskDelta,
-} from '../../domain/runtime/conversation-task-context';
 export {
   ConversationAiTransportError,
   type ConversationAiTransportFailureCode,
@@ -30,6 +31,9 @@ const CIRCUIT_OPEN_MILLISECONDS = 30_000;
 const MAX_RESPONSE_BYTES = 128 * 1_024;
 const SHA_256_PATTERN = /^[a-f0-9]{64}$/;
 const REVISION_PATTERN = /^[\x21-\x7e]{1,160}$/;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SLOT_PATTERN = /^[a-z][a-z0-9_.-]{0,63}$/;
 // Business tools remain unavailable until the API-side tool authorization and
 // execution gateway is delivered. Authentication alone must never broaden the
 // model's authority.
@@ -82,7 +86,9 @@ export class InternalAiConversationTransport extends ConversationAiTransport {
           : {
               authorizationContextDigest:
                 request.taskContext.authorizationContextDigest,
-              collectedSlots: request.taskContext.collectedSlots,
+              collectedSlots: serializeTaskSlotReceipts(
+                request.taskContext.collectedSlots,
+              ),
               expiresAt: request.taskContext.expiresAt.toISOString(),
               intent: request.taskContext.intent,
               intentRevision: request.taskContext.intentRevision,
@@ -679,7 +685,7 @@ function parseExecutionResult(
         'releaseRevision',
         'releaseCommitReceipt',
         'revisions',
-        'taskDelta',
+        'taskProposal',
         'usage',
       ]) ||
       !requiredMessage(value.message) ||
@@ -699,7 +705,10 @@ function parseExecutionResult(
       releaseRevision,
       releaseCommitReceipt,
       revisions,
-      taskDelta: parseConversationTaskDelta(value.taskDelta, expectedBinding),
+      taskProposal: parseConversationTaskProposal(
+        value.taskProposal,
+        expectedBinding,
+      ),
       usage,
     };
   }
@@ -797,41 +806,36 @@ function parseExecutionResult(
   throw new ConversationAiTransportError('invalid_response', false);
 }
 
-function parseConversationTaskDelta(
+function parseConversationTaskProposal(
   value: unknown,
   expected: {
     readonly authorizationContextDigest: string;
     readonly release: ConversationAiExecutionRequest['release'];
     readonly turnId: string;
   },
-): ConversationTaskDelta {
+): ConversationTaskProposal {
   if (
     !isRecord(value) ||
     !hasExactKeys(value, [
       'authorizationContextDigest',
-      'collectedSlots',
       'expectedTaskVersion',
       'expiresAt',
       'intent',
       'intentRevision',
-      'nextState',
-      'operation',
       'pendingSlots',
       'provenanceDigest',
       'release',
+      'slotCandidates',
       'sourceTurnId',
       'taskId',
     ]) ||
     value.authorizationContextDigest !== expected.authorizationContextDigest ||
-    !isRecord(value.collectedSlots) ||
     !Array.isArray(value.pendingSlots) ||
+    !Array.isArray(value.slotCandidates) ||
+    value.slotCandidates.length > 16 ||
     typeof value.expiresAt !== 'string' ||
     typeof value.intent !== 'string' ||
     typeof value.intentRevision !== 'string' ||
-    (value.nextState !== 'active' &&
-      value.nextState !== 'awaiting_clarification' &&
-      value.nextState !== 'closed') ||
-    (value.operation !== 'close' && value.operation !== 'upsert') ||
     typeof value.provenanceDigest !== 'string' ||
     !isRecord(value.release) ||
     !hasExactKeys(value.release, [
@@ -847,30 +851,34 @@ function parseConversationTaskDelta(
     value.release.manifestSha256 !== expected.release.manifestSha256 ||
     value.release.policyRevision !== expected.release.policyRevision ||
     value.sourceTurnId !== expected.turnId ||
+    !UUID_PATTERN.test(value.sourceTurnId) ||
     typeof value.taskId !== 'string' ||
-    !Number.isSafeInteger(value.expectedTaskVersion)
+    !UUID_PATTERN.test(value.taskId) ||
+    !Number.isSafeInteger(value.expectedTaskVersion) ||
+    (value.expectedTaskVersion as number) < 0 ||
+    !REVISION_PATTERN.test(value.intent) ||
+    !REVISION_PATTERN.test(value.intentRevision) ||
+    !REVISION_PATTERN.test(value.release.graphRevision) ||
+    !REVISION_PATTERN.test(value.release.knowledgeRevision) ||
+    !REVISION_PATTERN.test(value.release.policyRevision) ||
+    !SHA_256_PATTERN.test(value.release.manifestSha256) ||
+    value.pendingSlots.some(
+      (slot) => typeof slot !== 'string' || !SLOT_PATTERN.test(slot),
+    ) ||
+    new Set(value.pendingSlots).size !== value.pendingSlots.length
   ) {
     throw new ConversationAiTransportError('invalid_response', false);
   }
   const expiresAt = new Date(value.expiresAt);
-  const delta: ConversationTaskDelta = {
+  if (!Number.isFinite(expiresAt.getTime())) {
+    throw new ConversationAiTransportError('invalid_response', false);
+  }
+  const proposal: ConversationTaskProposal = {
     authorizationContextDigest: value.authorizationContextDigest,
-    collectedSlots: value.collectedSlots as Readonly<
-      Record<
-        string,
-        {
-          readonly authorityDigest: string;
-          readonly kind: 'opaque_reference';
-          readonly reference: string;
-        }
-      >
-    >,
     expectedTaskVersion: value.expectedTaskVersion as number,
     expiresAt,
     intent: value.intent,
     intentRevision: value.intentRevision,
-    nextState: value.nextState,
-    operation: value.operation,
     pendingSlots: value.pendingSlots as readonly string[],
     provenanceDigest: value.provenanceDigest,
     release: {
@@ -880,15 +888,72 @@ function parseConversationTaskDelta(
       manifestSha256: value.release.manifestSha256,
       policyRevision: value.release.policyRevision,
     },
+    slotCandidates: value.slotCandidates.map(parseTaskSlotCandidate),
     sourceTurnId: value.sourceTurnId,
     taskId: value.taskId,
   };
-  try {
-    assertConversationTaskDelta(delta);
-  } catch {
+  if (
+    !SHA_256_PATTERN.test(proposal.provenanceDigest) ||
+    proposal.pendingSlots.length > 16
+  ) {
     throw new ConversationAiTransportError('invalid_response', false);
   }
-  return delta;
+  return proposal;
+}
+
+function parseTaskSlotCandidate(value: unknown): ConversationTaskSlotCandidate {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      'candidateId',
+      'confidence',
+      'expectedTaskVersion',
+      'kind',
+      'proposedValue',
+      'provenanceDigest',
+      'slot',
+      'sourceTurnId',
+      'taskId',
+    ]) ||
+    value.kind !== 'candidate' ||
+    typeof value.candidateId !== 'string' ||
+    !UUID_PATTERN.test(value.candidateId) ||
+    typeof value.taskId !== 'string' ||
+    !UUID_PATTERN.test(value.taskId) ||
+    !Number.isSafeInteger(value.expectedTaskVersion) ||
+    (value.expectedTaskVersion as number) < 0 ||
+    typeof value.slot !== 'string' ||
+    !SLOT_PATTERN.test(value.slot) ||
+    typeof value.proposedValue !== 'string' ||
+    value.proposedValue.length < 1 ||
+    value.proposedValue.length > 160 ||
+    typeof value.sourceTurnId !== 'string' ||
+    !UUID_PATTERN.test(value.sourceTurnId) ||
+    typeof value.confidence !== 'number' ||
+    !Number.isFinite(value.confidence) ||
+    value.confidence < 0 ||
+    value.confidence > 1 ||
+    typeof value.provenanceDigest !== 'string' ||
+    !SHA_256_PATTERN.test(value.provenanceDigest)
+  ) {
+    throw new ConversationAiTransportError('invalid_response', false);
+  }
+  return value as unknown as ConversationTaskSlotCandidate;
+}
+
+function serializeTaskSlotReceipts(
+  receipts: Readonly<Record<string, ConversationTaskSlotReference>>,
+) {
+  return Object.fromEntries(
+    Object.entries(receipts).map(([slot, receipt]) => [
+      slot,
+      {
+        ...receipt,
+        confirmedAt: receipt.confirmedAt.toISOString(),
+        expiresAt: receipt.expiresAt.toISOString(),
+      },
+    ]),
+  );
 }
 
 function parseReleaseCommitReceipt(

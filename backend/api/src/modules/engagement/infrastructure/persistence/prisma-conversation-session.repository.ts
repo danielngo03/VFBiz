@@ -1,9 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CustomerProfileStatus } from '../../../../generated/prisma/enums';
+import { Prisma } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../../platform/database/prisma.service';
 import { ConversationContentCipher } from '../../../../platform/security/conversation-content-cipher';
 import {
   ConversationSessionRepository,
+  type ConversationSubjectBudgetReservation,
   type ConversationAccessRecord,
   type ConversationMessageView,
   type ConversationSessionSummary,
@@ -63,6 +65,9 @@ export class PrismaConversationSessionRepository extends ConversationSessionRepo
         }
         customerProfileId = profile.id;
       }
+      if (input.subjectBudget !== null && input.subjectBudget !== undefined) {
+        await reserveSubjectBudget(transaction, input.subjectBudget);
+      }
       const session = await transaction.conversationSession.create({
         data: {
           accessCapabilityHash: input.capabilityHash,
@@ -72,6 +77,16 @@ export class PrismaConversationSessionRepository extends ConversationSessionRepo
           id: input.id,
           locale: input.locale,
           ownerSubjectKeyHash: subjectKeyHash,
+          subjectBudgetDate: input.subjectBudget?.budgetDate ?? null,
+          subjectBudgetReservedModelTokens:
+            input.subjectBudget === undefined || input.subjectBudget === null
+              ? null
+              : BigInt(input.subjectBudget.reserveModelTokens),
+          subjectBudgetReservedCostMicros:
+            input.subjectBudget === undefined || input.subjectBudget === null
+              ? null
+              : BigInt(input.subjectBudget.reserveCostMicros),
+          subjectBudgetReconciledAt: null,
           assistantReleaseActivationId: input.release.activationId,
           assistantReleaseEffectiveAt: input.release.effectiveAt,
           assistantReleaseEnvelopeSha256:
@@ -105,10 +120,12 @@ export class PrismaConversationSessionRepository extends ConversationSessionRepo
     });
     return {
       createdAt: created.createdAt,
+      expiresAt: input.expiresAt,
       id: created.id,
       locale: created.locale as 'vi' | 'en',
       profile: created.assistantProfile as
         'public_customer' | 'authenticated_customer',
+      retentionUntil: input.retentionUntil,
     };
   }
 
@@ -190,6 +207,7 @@ export class PrismaConversationSessionRepository extends ConversationSessionRepo
         contentEnvelope: true,
         redactedContent: true,
         role: true,
+        sequence: true,
       },
       where: { conversationSessionId: sessionId },
     });
@@ -217,8 +235,67 @@ export class PrismaConversationSessionRepository extends ConversationSessionRepo
       id: message.id,
       outcome: message.outcome,
       role: message.role,
+      sequence: Number(message.sequence),
     }));
   }
+}
+
+async function reserveSubjectBudget(
+  transaction: Prisma.TransactionClient,
+  reservation: ConversationSubjectBudgetReservation,
+): Promise<void> {
+  const existing = await transaction.conversationSubjectBudget.findUnique({
+    where: {
+      subjectKeyHash_budgetDate: {
+        subjectKeyHash: reservation.subjectKeyHash,
+        budgetDate: reservation.budgetDate,
+      },
+    },
+  });
+  if (existing === null) {
+    if (
+      reservation.reserveModelTokens > reservation.dailyModelTokenLimit ||
+      reservation.reserveCostMicros > reservation.dailyCostLimitMicros
+    ) {
+      throw new Error('CUSTOMER_CHAT_DAILY_BUDGET_EXHAUSTED');
+    }
+    await transaction.conversationSubjectBudget.create({
+      data: {
+        subjectKeyHash: reservation.subjectKeyHash,
+        budgetDate: reservation.budgetDate,
+        remainingModelTokens: BigInt(
+          reservation.dailyModelTokenLimit - reservation.reserveModelTokens,
+        ),
+        remainingCostMicros: BigInt(
+          reservation.dailyCostLimitMicros - reservation.reserveCostMicros,
+        ),
+      },
+    });
+    return;
+  }
+  if (
+    existing.remainingModelTokens < BigInt(reservation.reserveModelTokens) ||
+    existing.remainingCostMicros < BigInt(reservation.reserveCostMicros)
+  ) {
+    throw new Error('CUSTOMER_CHAT_DAILY_BUDGET_EXHAUSTED');
+  }
+  await transaction.conversationSubjectBudget.update({
+    where: {
+      subjectKeyHash_budgetDate: {
+        subjectKeyHash: reservation.subjectKeyHash,
+        budgetDate: reservation.budgetDate,
+      },
+    },
+    data: {
+      remainingModelTokens: {
+        decrement: BigInt(reservation.reserveModelTokens),
+      },
+      remainingCostMicros: {
+        decrement: BigInt(reservation.reserveCostMicros),
+      },
+      version: { increment: BigInt(1) },
+    },
+  });
 }
 
 function messageScopeMatches(

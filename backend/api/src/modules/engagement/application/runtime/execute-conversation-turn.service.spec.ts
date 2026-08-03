@@ -7,6 +7,7 @@ import type {
 } from './conversation-runtime.repository';
 import { ExecuteConversationTurnService } from './execute-conversation-turn.service';
 import { ConversationHandoffPolicyService } from '../services/conversation-handoff-policy.service';
+import type { ResolveConversationTaskSlotsService } from './resolve-conversation-task-slots.service';
 
 const clock = { now: () => new Date('2026-07-25T08:00:00.000Z') };
 
@@ -295,7 +296,19 @@ describe('ExecuteConversationTurnService', () => {
         knowledge: 'knowledge-r1',
         policy: 'policy-r1',
       },
-      taskDelta,
+      taskProposal: {
+        authorizationContextDigest: taskDelta.authorizationContextDigest,
+        expectedTaskVersion: taskDelta.expectedTaskVersion,
+        expiresAt: taskDelta.expiresAt,
+        intent: taskDelta.intent,
+        intentRevision: taskDelta.intentRevision,
+        pendingSlots: taskDelta.pendingSlots,
+        provenanceDigest: taskDelta.provenanceDigest,
+        release: taskDelta.release,
+        slotCandidates: [],
+        sourceTurnId: taskDelta.sourceTurnId,
+        taskId: taskDelta.taskId,
+      },
       usage: { costMicros: 20, modelTokens: 8 },
     });
     fixture.runtime.completeTurn.mockResolvedValue({
@@ -320,6 +333,66 @@ describe('ExecuteConversationTurnService', () => {
         taskDelta,
       }),
     );
+  });
+
+  it('does not ask again for a slot confirmed by the API authority', async () => {
+    const fixture = createFixture();
+    fixture.taskSlots.resolve.mockResolvedValue({
+      ...taskDelta,
+      collectedSlots: {
+        vehicle_model: {
+          authority: 'vehicle_catalog',
+          authorityDigest: 'c'.repeat(64),
+          confirmedAt: clock.now(),
+          expiresAt: taskDelta.expiresAt,
+          kind: 'receipt',
+          opaqueReference: `vehicle:ref/v1/${'1'.repeat(64)}`,
+          provenanceDigest: 'd'.repeat(64),
+          slot: 'vehicle_model',
+          sourceRevision: 'vehicle-catalog-v1',
+          taskId: taskDelta.taskId,
+        },
+      },
+      nextState: 'active',
+      pendingSlots: [],
+    });
+    fixture.transport.execute.mockResolvedValue({
+      message: 'Vui lòng cho biết mẫu xe.',
+      outcome: 'clarification_required',
+      pendingSlots: ['vehicle_model'],
+      releaseCommitReceipt,
+      releaseRevision: release.activationId,
+      revisions: {
+        graph: release.graphRevision,
+        knowledge: release.knowledgeRevision,
+        policy: release.policyRevision,
+      },
+      taskProposal: {
+        authorizationContextDigest: taskDelta.authorizationContextDigest,
+        expectedTaskVersion: 0,
+        expiresAt: taskDelta.expiresAt,
+        intent: taskDelta.intent,
+        intentRevision: taskDelta.intentRevision,
+        pendingSlots: ['vehicle_model'],
+        provenanceDigest: taskDelta.provenanceDigest,
+        release: taskDelta.release,
+        slotCandidates: [],
+        sourceTurnId: taskDelta.sourceTurnId,
+        taskId: taskDelta.taskId,
+      },
+      usage: { costMicros: 20, modelTokens: 8 },
+    });
+
+    await fixture.service.execute(executionInput());
+
+    const completion = fixture.runtime.completeTurn.mock.calls.at(0)?.[0];
+    expect(completion?.outcome).toEqual({
+      citations: [],
+      kind: 'answer',
+      message: 'Đã xác nhận thông tin cần thiết. Bạn có thể tiếp tục yêu cầu.',
+    });
+    expect(completion?.taskDelta?.nextState).toBe('active');
+    expect(completion?.taskDelta?.pendingSlots).toEqual([]);
   });
 
   it('persists failed-safely incurred usage as a refusal', async () => {
@@ -414,6 +487,9 @@ function createFixture(
     cancel: jest.fn(),
     execute: jest.fn(),
   };
+  const taskSlots = {
+    resolve: jest.fn().mockResolvedValue(taskDelta),
+  };
   return {
     repository,
     runtime,
@@ -423,7 +499,9 @@ function createFixture(
       transport,
       clock,
       new ConversationHandoffPolicyService(),
+      taskSlots as unknown as ResolveConversationTaskSlotsService,
     ),
+    taskSlots,
     transport,
   };
 }

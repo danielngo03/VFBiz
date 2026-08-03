@@ -15,6 +15,7 @@ import {
 } from './application/runtime/conversation-runtime.repository';
 import { ConversationRuntimeService } from './application/runtime/conversation-runtime.service';
 import { ExecuteConversationTurnService } from './application/runtime/execute-conversation-turn.service';
+import { ResolveConversationTaskSlotsService } from './application/runtime/resolve-conversation-task-slots.service';
 import { ConversationAccessService } from './application/services/conversation-access.service';
 import { CreateConversationSessionService } from './application/services/create-conversation-session.service';
 import { ConversationHandoffPolicyService } from './application/services/conversation-handoff-policy.service';
@@ -55,6 +56,7 @@ import {
     CreateConversationSessionService,
     ConversationHandoffPolicyService,
     ExecuteConversationTurnService,
+    ResolveConversationTaskSlotsService,
     {
       provide: ConversationAiTransport,
       useClass: InternalAiConversationTransport,

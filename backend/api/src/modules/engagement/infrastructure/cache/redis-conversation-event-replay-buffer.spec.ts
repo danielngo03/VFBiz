@@ -83,6 +83,36 @@ describe('RedisConversationEventReplayBuffer', () => {
     expect(zrangebyscore).not.toHaveBeenCalled();
   });
 
+  it('falls back when cached events are not contiguous or belong to another session', async () => {
+    const other = {
+      ...event(7),
+      sessionId: '00000000-0000-4000-8000-000000000002',
+    };
+    const connection = {
+      client: {
+        zrange: jest.fn(() => Promise.resolve([JSON.stringify(event(6)), '6'])),
+        zrangebyscore: jest.fn(() =>
+          Promise.resolve([
+            JSON.stringify({
+              ...event(8),
+              occurredAt: event(8).occurredAt.toISOString(),
+            }),
+            JSON.stringify({
+              ...other,
+              occurredAt: other.occurredAt.toISOString(),
+            }),
+          ]),
+        ),
+      },
+      ensureConnected: jest.fn(() => Promise.resolve()),
+    } as unknown as RedisConnectionService;
+    const buffer = new RedisConversationEventReplayBuffer(connection);
+
+    await expect(
+      buffer.readAfter(event(6).sessionId, 'event-v1:5'),
+    ).resolves.toBeNull();
+  });
+
   it('fails open to the durable event log when Redis is unavailable', async () => {
     const connection = {
       client: {},

@@ -91,6 +91,10 @@ describe('ConversationTurnDispatcher', () => {
     ).toBe(20_000);
     expect(cancellationClaim[2]).toBe(3);
     expect(runtime.claimTurn).toHaveBeenCalledTimes(1);
+    const turnClaim = runtime.claimTurn.mock.calls[0] as unknown as readonly [
+      { leaseExpiresAt: Date },
+    ];
+    expect(turnClaim[0].leaseExpiresAt.getTime()).toBeGreaterThan(Date.now());
     expect(executor.execute).toHaveBeenCalledTimes(1);
   });
 

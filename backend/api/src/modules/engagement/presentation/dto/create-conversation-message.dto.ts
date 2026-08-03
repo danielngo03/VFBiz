@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsIn,
   IsInt,
   IsString,
   IsUUID,
@@ -7,9 +8,26 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class ConversationTurnBudgetDto {
+  @IsInt()
+  @Min(1)
+  @Max(32_000)
+  maxModelTokens!: number;
+
+  @IsInt()
+  @Min(1)
+  @Max(10_000_000)
+  maxCostMicros!: number;
+}
 
 export class CreateConversationMessageDto {
+  @IsIn(['message.enqueue'])
+  kind!: 'message.enqueue';
+
   @ApiProperty({
     description: 'Client-generated UUID used for idempotent replay.',
     format: 'uuid',
@@ -37,4 +55,8 @@ export class CreateConversationMessageDto {
   @Min(0)
   @Max(Number.MAX_SAFE_INTEGER)
   expectedVersion!: number;
+
+  @ValidateNested()
+  @Type(() => ConversationTurnBudgetDto)
+  budget!: ConversationTurnBudgetDto;
 }

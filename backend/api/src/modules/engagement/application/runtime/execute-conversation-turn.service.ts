@@ -12,6 +12,7 @@ import {
   ConversationRuntimeClock,
   ConversationRuntimeRepository,
 } from './conversation-runtime.repository';
+import { ResolveConversationTaskSlotsService } from './resolve-conversation-task-slots.service';
 import type { ConversationAccessScope } from '../../domain/runtime/conversation-runtime';
 import type {
   ConversationTaskContext,
@@ -42,6 +43,7 @@ export class ExecuteConversationTurnService {
     private readonly transport: ConversationAiTransport,
     private readonly clock: ConversationRuntimeClock,
     private readonly handoffPolicy: ConversationHandoffPolicyService,
+    private readonly taskSlots: ResolveConversationTaskSlotsService,
   ) {}
 
   async execute(input: {
@@ -103,23 +105,49 @@ export class ExecuteConversationTurnService {
       };
     }
 
+    const taskDelta =
+      result.outcome === 'clarification_required'
+        ? await this.taskSlots.resolve({
+            accessScope: context.accessScope,
+            assistantProfile: context.assistantProfile,
+            confirmedEntities: context.confirmedEntities,
+            currentTask: context.taskContext,
+            proposal: result.taskProposal,
+            signal: input.signal,
+          })
+        : result.outcome === 'failed_safely'
+          ? undefined
+          : closeConversationTask(context.taskContext, context.turnId);
     const outcome =
-      result.outcome === 'handoff_recommended'
-        ? this.handoffPolicy.decide({
-            profile: context.assistantProfile,
-            reason: result.reason,
-          }) === 'handoff'
+      result.outcome === 'clarification_required' && taskDelta !== undefined
+        ? taskDelta.pendingSlots.length === 0
           ? {
-              customerMessage: result.customerMessage,
-              kind: 'handoff' as const,
-              reason: result.reason,
+              citations: [],
+              kind: 'answer' as const,
+              message:
+                'Đã xác nhận thông tin cần thiết. Bạn có thể tiếp tục yêu cầu.',
             }
           : {
-              kind: 'refusal' as const,
-              message:
-                'Yêu cầu chưa thể được xử lý an toàn ở thời điểm hiện tại.',
+              kind: 'clarification' as const,
+              message: result.message,
+              pendingSlots: taskDelta.pendingSlots,
             }
-        : completionProposal(result);
+        : result.outcome === 'handoff_recommended'
+          ? this.handoffPolicy.decide({
+              profile: context.assistantProfile,
+              reason: result.reason,
+            }) === 'handoff'
+            ? {
+                customerMessage: result.customerMessage,
+                kind: 'handoff' as const,
+                reason: result.reason,
+              }
+            : {
+                kind: 'refusal' as const,
+                message:
+                  'Yêu cầu chưa thể được xử lý an toàn ở thời điểm hiện tại.',
+              }
+          : completionProposal(result);
     const completed = await this.runtime.completeTurn({
       accessScope: context.accessScope,
       assistantReleaseRevision:
@@ -129,12 +157,7 @@ export class ExecuteConversationTurnService {
       fencingToken: context.fencingToken,
       outcome,
       sessionId: context.sessionId,
-      taskDelta:
-        result.outcome === 'clarification_required'
-          ? result.taskDelta
-          : result.outcome === 'failed_safely'
-            ? undefined
-            : closeConversationTask(context.taskContext, context.turnId),
+      taskDelta,
       turnId: context.turnId,
       usage: result.usage,
     });

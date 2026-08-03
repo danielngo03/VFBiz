@@ -2,7 +2,7 @@ const DIGEST = /^[a-f0-9]{64}$/;
 const IDENTIFIER = /^[a-z][a-z0-9_.-]{0,63}$/;
 const REVISION = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/;
 const OPAQUE_REFERENCE =
-  /^(vehicle|market|locale|profile|garage|policy|product|account):[a-z0-9][a-z0-9._/-]{0,143}$/;
+  /^(vehicle|market|locale|profile|garage|policy|product|account):ref\/v1\/[a-f0-9]{64}$/;
 const MAX_TASK_SLOTS = 16;
 
 export type ConversationTaskState =
@@ -16,10 +16,25 @@ export interface ConversationTaskReleaseBinding {
   readonly policyRevision: string;
 }
 
+export type ConversationTaskSlotAuthority =
+  | 'business_policy'
+  | 'customer_garage'
+  | 'customer_profile'
+  | 'locale_policy'
+  | 'market_catalog'
+  | 'vehicle_catalog';
+
 export interface ConversationTaskSlotReference {
+  readonly authority: ConversationTaskSlotAuthority;
   readonly authorityDigest: string;
-  readonly kind: 'opaque_reference';
-  readonly reference: string;
+  readonly confirmedAt: Date;
+  readonly expiresAt: Date;
+  readonly kind: 'receipt';
+  readonly opaqueReference: string;
+  readonly provenanceDigest: string;
+  readonly slot: string;
+  readonly sourceRevision: string;
+  readonly taskId: string;
 }
 
 export interface ConversationTaskContext {
@@ -122,6 +137,7 @@ function assertReleaseBinding(binding: ConversationTaskReleaseBinding): void {
 }
 
 function assertTaskSlots(
+  taskId: string,
   pendingSlots: readonly string[],
   collectedSlots: Readonly<Record<string, ConversationTaskSlotReference>>,
 ): void {
@@ -152,16 +168,39 @@ function assertTaskSlots(
       pending.has(slot) ||
       !isPlainRecord(reference) ||
       Object.keys(reference).sort().join(',') !==
-        'authorityDigest,kind,reference' ||
-      reference.kind !== 'opaque_reference' ||
-      typeof reference.reference !== 'string' ||
-      !OPAQUE_REFERENCE.test(reference.reference) ||
+        'authority,authorityDigest,confirmedAt,expiresAt,kind,opaqueReference,provenanceDigest,slot,sourceRevision,taskId' ||
+      reference.kind !== 'receipt' ||
+      reference.taskId !== taskId ||
+      reference.slot !== slot ||
+      !isTaskSlotAuthority(reference.authority) ||
+      typeof reference.opaqueReference !== 'string' ||
+      !OPAQUE_REFERENCE.test(reference.opaqueReference) ||
       typeof reference.authorityDigest !== 'string' ||
-      !DIGEST.test(reference.authorityDigest)
+      !DIGEST.test(reference.authorityDigest) ||
+      typeof reference.provenanceDigest !== 'string' ||
+      !DIGEST.test(reference.provenanceDigest) ||
+      typeof reference.sourceRevision !== 'string' ||
+      !REVISION.test(reference.sourceRevision) ||
+      !isValidDate(reference.confirmedAt) ||
+      !isValidDate(reference.expiresAt) ||
+      reference.expiresAt <= reference.confirmedAt
     ) {
       throw new TypeError('Invalid collected conversation task slot.');
     }
   }
+}
+
+function isTaskSlotAuthority(
+  value: unknown,
+): value is ConversationTaskSlotAuthority {
+  return (
+    value === 'business_policy' ||
+    value === 'customer_garage' ||
+    value === 'customer_profile' ||
+    value === 'locale_policy' ||
+    value === 'market_catalog' ||
+    value === 'vehicle_catalog'
+  );
 }
 
 export function assertConversationTaskContext(
@@ -196,7 +235,14 @@ export function assertConversationTaskContext(
     throw new TypeError('Terminal conversation task requires closedAt.');
   }
   assertReleaseBinding(context.release);
-  assertTaskSlots(context.pendingSlots, context.collectedSlots);
+  assertTaskSlots(context.taskId, context.pendingSlots, context.collectedSlots);
+  if (
+    Object.values(context.collectedSlots).some(
+      (receipt) => receipt.expiresAt > context.expiresAt,
+    )
+  ) {
+    throw new TypeError('Task slot receipt cannot outlive its task.');
+  }
 }
 
 function releaseBindingsMatch(

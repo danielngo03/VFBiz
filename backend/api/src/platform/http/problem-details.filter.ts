@@ -14,6 +14,64 @@ interface ExceptionBody {
   message?: string | string[];
 }
 
+interface TypedConversationProblem {
+  readonly status: number;
+  readonly code: string;
+}
+
+const TYPED_CONVERSATION_PROBLEMS: Readonly<
+  Record<string, TypedConversationProblem>
+> = {
+  ConversationBudgetExceededError: {
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    code: 'CHAT_BUDGET_EXHAUSTED',
+  },
+  ConversationBudgetValidationError: {
+    status: HttpStatus.BAD_REQUEST,
+    code: 'CHAT_BUDGET_INVALID',
+  },
+  ConversationCursorValidationError: {
+    status: HttpStatus.BAD_REQUEST,
+    code: 'CHAT_CURSOR_INVALID',
+  },
+  ConversationEventReplayRequiredError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_EVENT_REPLAY_REQUIRED',
+  },
+  ConversationInputValidationError: {
+    status: HttpStatus.BAD_REQUEST,
+    code: 'CHAT_INPUT_INVALID',
+  },
+  ConversationInvalidTransitionError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_STATE_CONFLICT',
+  },
+  ConversationMessageIdempotencyConflictError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_IDEMPOTENCY_CONFLICT',
+  },
+  ConversationRuntimeNotFoundError: {
+    status: HttpStatus.NOT_FOUND,
+    code: 'CHAT_SESSION_NOT_FOUND',
+  },
+  ConversationStaleFencingTokenError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_STALE_FENCE',
+  },
+  ConversationTaskConflictError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_TASK_CONFLICT',
+  },
+  ConversationTurnNotFoundError: {
+    status: HttpStatus.NOT_FOUND,
+    code: 'CHAT_TURN_NOT_FOUND',
+  },
+  ConversationVersionConflictError: {
+    status: HttpStatus.CONFLICT,
+    code: 'CHAT_VERSION_CONFLICT',
+  },
+};
+
 const TITLES: Partial<Record<number, string>> = {
   [HttpStatus.BAD_REQUEST]: 'Bad Request',
   [HttpStatus.UNAUTHORIZED]: 'Unauthorized',
@@ -32,12 +90,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const context = host.switchToHttp();
     const request = context.getRequest<RequestWithContext>();
     const reply = context.getResponse<FastifyReply>();
+    const typed = this.typedConversationProblem(exception);
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        : (typed?.status ?? HttpStatus.INTERNAL_SERVER_ERROR);
     const body = this.exceptionBody(exception);
-    const code = body.code ?? this.defaultCode(status);
+    const code = body.code ?? typed?.code ?? this.defaultCode(status);
     const detail =
       status === 500
         ? 'The service could not complete the request.'
@@ -67,6 +126,13 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         code,
         correlationId: requestCorrelationId(request),
       });
+  }
+
+  private typedConversationProblem(
+    exception: unknown,
+  ): TypedConversationProblem | undefined {
+    if (!(exception instanceof Error)) return undefined;
+    return TYPED_CONVERSATION_PROBLEMS[exception.name];
   }
 
   private exceptionBody(exception: unknown): ExceptionBody {

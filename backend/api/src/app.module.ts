@@ -1,13 +1,19 @@
 import { Module, RequestMethod } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
+import { ConversationContextIntegrationModule } from './integration/conversation/conversation-context-integration.module';
 import { AccessModule } from './modules/access';
 import { CustomerModule } from './modules/customer';
 import { EngagementRuntimeModule } from './modules/engagement/engagement-runtime.module';
-import { ProductModule } from './modules/product';
+import { EngagementModule } from './modules/engagement/engagement.module';
 import { PlatformConfigModule } from './platform/config/config.module';
 import { PlatformHealthModule } from './platform/health/health.module';
 import { PlatformHttpModule } from './platform/http/http.module';
 import { PlatformSecurityModule } from './platform/security/security.module';
+
+const engagementComposition =
+  process.env.VFBIZ_CHAT_API_MODE === 'authenticated-staging'
+    ? EngagementModule
+    : EngagementRuntimeModule;
 
 @Module({
   imports: [
@@ -34,8 +40,8 @@ import { PlatformSecurityModule } from './platform/security/security.module';
     PlatformHealthModule,
     AccessModule,
     CustomerModule,
-    EngagementRuntimeModule,
-    ProductModule,
+    ConversationContextIntegrationModule,
+    engagementComposition,
   ],
 })
 export class AppModule {}

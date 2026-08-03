@@ -21,7 +21,8 @@ import { ExecuteConversationTurnService } from '../../application/runtime/execut
 const DISPATCH_INTERVAL_MS = 250;
 const DISPATCH_BATCH_SIZE = 12;
 const MAX_LOCAL_CONCURRENCY = 3;
-const TURN_LEASE_MS = 30_000;
+const MIN_TURN_LEASE_MS = 30_000;
+const TURN_LEASE_MARGIN_MS = 15_000;
 const MIN_CANCELLATION_LEASE_MS = 20_000;
 const MAX_CANCELLATION_ATTEMPTS = 5;
 const MAX_TURN_DISPATCH_ATTEMPTS = 3;
@@ -156,7 +157,13 @@ export class ConversationTurnDispatcher
       accessScope: candidate.accessScope,
       expectedVersion: candidate.expectedVersion,
       fencingToken: candidate.nextFencingToken,
-      leaseExpiresAt: new Date(Date.now() + TURN_LEASE_MS),
+      leaseExpiresAt: new Date(
+        Date.now() +
+          Math.max(
+            MIN_TURN_LEASE_MS,
+            this.config.requestTimeoutMs + TURN_LEASE_MARGIN_MS,
+          ),
+      ),
       sessionId: candidate.sessionId,
       turnId: candidate.turnId,
       workerId: this.workerId,

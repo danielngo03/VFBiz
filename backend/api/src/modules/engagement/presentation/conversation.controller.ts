@@ -13,7 +13,6 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
-  Res,
   ServiceUnavailableException,
   Sse,
   UseGuards,
@@ -22,7 +21,6 @@ import { randomUUID } from 'node:crypto';
 import {
   ApiBearerAuth,
   ApiAcceptedResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
@@ -32,16 +30,14 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyRequest } from 'fastify';
 import { Observable } from 'rxjs';
-import { Public } from '../../../platform/http/public.decorator';
 import type { AccessPrincipal } from '../../../platform/security/access-principal';
-import { OptionalAuthentication } from '../../../platform/security/optional-authentication.decorator';
+import type { ConversationPublicEvent } from '../domain/runtime/conversation-runtime';
 import { ConversationSessionRepository } from '../application/ports/conversation-session.repository';
 import { ConversationRuntimeService } from '../application/runtime/conversation-runtime.service';
 import { CreateConversationSessionService } from '../application/services/create-conversation-session.service';
 import { ConversationTurnDispatcher } from '../infrastructure/runtime/conversation-turn-dispatcher';
-import { buildConversationCapabilityCookie } from './conversation-capability-cookie';
 import {
   shouldCloseSlowConsumer,
   watchConversationEvents,
@@ -51,10 +47,11 @@ import { ConversationEventStreamRegistry } from '../application/ports/conversati
 import { CreateConversationSessionDto } from './dto/create-conversation-session.dto';
 import { CreateConversationMessageDto } from './dto/create-conversation-message.dto';
 import { CancelConversationTurnDto } from './dto/cancel-conversation-turn.dto';
-import { CloseConversationSessionDto } from './dto/close-conversation-session.dto';
 import { RequestConversationHandoffDto } from './dto/request-conversation-handoff.dto';
 import { ConversationAccessGuard } from './guards/conversation-access.guard';
 import { ChatThrottlerGuard } from './guards/chat-throttler.guard';
+import { AuthenticatedStagingChatGuard } from './guards/authenticated-staging-chat.guard';
+import { StagingChatLiveControlGuard } from './guards/staging-chat-live-control.guard';
 
 const SSE_HEARTBEAT_INTERVAL_MS = 15_000;
 const SSE_MAXIMUM_CONNECTIONS_PER_SESSION = 3;
@@ -63,7 +60,7 @@ const SSE_POLL_INTERVAL_MS = 1_000;
 const SSE_SOCKET_BUFFER_LIMIT_BYTES = 64 * 1024;
 const SSE_RECONNECT_DELAY_MS = 1_000;
 
-interface OptionalPrincipalRequest extends FastifyRequest {
+interface AuthenticatedPrincipalRequest extends FastifyRequest {
   vfbizConversationAuthorization?: {
     accessScope: import('../domain/runtime/conversation-runtime').ConversationAccessScope;
   };
@@ -71,11 +68,9 @@ interface OptionalPrincipalRequest extends FastifyRequest {
 }
 
 @ApiTags('Chat')
-@ApiCookieAuth('anonymousChatCapability')
 @ApiBearerAuth('oidc')
 @Controller({ path: 'chat/sessions', version: '1' })
-@OptionalAuthentication()
-@Public()
+@UseGuards(AuthenticatedStagingChatGuard, StagingChatLiveControlGuard)
 export class ConversationController {
   constructor(
     private readonly createConversationSession: CreateConversationSessionService,
@@ -87,11 +82,11 @@ export class ConversationController {
   ) {}
 
   @ApiOperation({
-    operationId: 'createChatSession',
+    operationId: 'createConversationSession',
     summary: 'Create chat session',
     description:
-      'Creates a governed chat session for public or authenticated customer use. Anonymous sessions receive an opaque capability cookie.',
-    security: [{}, { oidc: [] }],
+      'Creates a governed staging chat session for a verified customer identity.',
+    security: [{ oidc: [] }],
   })
   @ApiCreatedResponse({ description: 'Chat session created.' })
   @ApiServiceUnavailableResponse({
@@ -104,29 +99,29 @@ export class ConversationController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async createSession(
     @Body() input: CreateConversationSessionDto,
-    @Req() request: OptionalPrincipalRequest,
-    @Res({ passthrough: true }) reply: FastifyReply,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
+    const principal = request.vfbizPrincipal;
+    if (principal === undefined) {
+      throw new ForbiddenException({
+        code: 'CHAT_AUTHENTICATED_PRINCIPAL_MISSING',
+        message: 'The verified customer identity is unavailable.',
+      });
+    }
     const created = await this.createConversationSession.execute({
       locale: input.locale,
-      principal: request.vfbizPrincipal ?? null,
-      profile: input.profile,
+      principal,
+      profile: 'authenticated_customer',
     });
-    if (created.capability !== null) {
-      void reply.header(
-        'Set-Cookie',
-        buildConversationCapabilityCookie(
-          created.session.id,
-          created.capability,
-          created.expiresInSeconds,
-        ),
-      );
-    }
-    return created.session;
+    return {
+      ...created.session,
+      status: 'active' as const,
+      version: 0,
+    };
   }
 
   @ApiOperation({
-    operationId: 'getChatSession',
+    operationId: 'getConversationSession',
     summary: 'Get chat session',
     description:
       'Reads session metadata and runtime status for an authorized chat session.',
@@ -143,7 +138,7 @@ export class ConversationController {
   @UseGuards(ConversationAccessGuard)
   async getSession(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
-    @Req() request: OptionalPrincipalRequest,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -166,19 +161,19 @@ export class ConversationController {
       });
     }
     return {
-      conversationVersion: runtimeStatus.conversationVersion,
+      version: runtimeStatus.conversationVersion,
       createdAt: summary.createdAt,
       expiresAt: summary.expiresAt,
       id: summary.id,
       locale: summary.locale,
       profile: summary.profile,
       retentionUntil: summary.retentionUntil,
-      status: runtimeStatus.status,
+      status: publicConversationStatus(runtimeStatus.status),
     };
   }
 
   @ApiOperation({
-    operationId: 'streamChatEvents',
+    operationId: 'streamConversationEvents',
     summary: 'Stream chat events',
     description:
       'Server-sent events for an authorized chat session. Reconnects replay from Last-Event-ID against the durable event log; SSE is a projection, never the source of truth.',
@@ -195,7 +190,7 @@ export class ConversationController {
   streamEvents(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
     @Headers('last-event-id') lastEventId: string | undefined,
-    @Req() request: OptionalPrincipalRequest,
+    @Req() request: AuthenticatedPrincipalRequest,
   ): Observable<MessageEvent> {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -211,6 +206,7 @@ export class ConversationController {
         let closing = false;
         let lastDeliveredCursor = lastEventId ?? null;
         const now = new Date();
+        const correlationId = requestCorrelationId(request);
         const lease = await this.streamRegistry.acquire({
           connectionId: randomUUID(),
           expiresAt: new Date(now.getTime() + SSE_MAXIMUM_LIFETIME_MS),
@@ -235,11 +231,16 @@ export class ConversationController {
           if (closing || !socketBufferExceeded(request)) return false;
           closing = true;
           subscriber.next({
-            data: {
-              lastEventId: lastDeliveredCursor,
-              reason: 'slow_consumer',
-              retryAfterMs: SSE_RECONNECT_DELAY_MS,
-            },
+            data: controlSseFrame({
+              correlationId,
+              data: {
+                lastEventId: lastDeliveredCursor,
+                reason: 'slow_consumer',
+                retryAfterMs: SSE_RECONNECT_DELAY_MS,
+              },
+              sessionId,
+              type: 'stream.reconnect_required',
+            }),
             type: 'stream.reconnect_required',
           });
           controller.abort();
@@ -247,7 +248,15 @@ export class ConversationController {
         };
         const heartbeat = setInterval(() => {
           if (closeSlowConsumer()) return;
-          subscriber.next({ data: {}, type: 'heartbeat' });
+          subscriber.next({
+            data: controlSseFrame({
+              correlationId,
+              data: {},
+              sessionId,
+              type: 'heartbeat',
+            }),
+            type: 'heartbeat',
+          });
         }, SSE_HEARTBEAT_INTERVAL_MS);
         const lifetime = setTimeout(
           () => controller.abort(),
@@ -265,13 +274,21 @@ export class ConversationController {
             if (closeSlowConsumer()) break;
             if (item.kind === 'control') {
               closing = true;
-              subscriber.next({ data: item.data, type: item.type });
+              subscriber.next({
+                data: controlSseFrame({
+                  correlationId,
+                  data: item.data,
+                  sessionId,
+                  type: item.type,
+                }),
+                type: item.type,
+              });
               controller.abort();
               break;
             }
             const event = item.event;
             subscriber.next({
-              data: event.payload,
+              data: toCustomerSseEvent(event, correlationId),
               id: event.cursor,
               type: event.type,
             });
@@ -294,7 +311,7 @@ export class ConversationController {
   }
 
   @ApiOperation({
-    operationId: 'listChatMessages',
+    operationId: 'listConversationMessages',
     summary: 'List chat messages',
     description:
       'Lists messages from an authorized chat session without exposing another subject’s conversation.',
@@ -311,7 +328,7 @@ export class ConversationController {
   @UseGuards(ConversationAccessGuard)
   async listMessages(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
-    @Req() request: OptionalPrincipalRequest,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -320,11 +337,15 @@ export class ConversationController {
         message: 'The authorized chat context is unavailable.',
       });
     }
-    return this.sessions.listMessages(sessionId, authorization.accessScope);
+    const items = await this.sessions.listMessages(
+      sessionId,
+      authorization.accessScope,
+    );
+    return { items, nextCursor: null };
   }
 
   @ApiOperation({
-    operationId: 'createChatMessage',
+    operationId: 'enqueueConversationMessage',
     summary: 'Send a message',
     description:
       'Accepts one customer message. The endpoint fails closed until the governed AI runtime is released.',
@@ -348,7 +369,8 @@ export class ConversationController {
   async createMessage(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
     @Body() input: CreateConversationMessageDto,
-    @Req() request: OptionalPrincipalRequest,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     if (!this.dispatcher.isEnabled()) {
       throw new ServiceUnavailableException({
@@ -363,25 +385,26 @@ export class ConversationController {
         message: 'The authorized chat context is unavailable.',
       });
     }
+    assertMessageIdempotencyKey(idempotencyKey, input.clientMessageId);
     const accepted = await this.runtime.acceptMessage({
       accessScope: authorization.accessScope,
-      budget: { maxCostMicros: 250_000, maxModelTokens: 4_096 },
+      budget: input.budget,
       clientMessageId: input.clientMessageId,
       content: input.content,
       expectedVersion: input.expectedVersion,
       sessionId,
     });
     this.dispatcher.kick();
-    return accepted;
+    return { ...accepted, kind: 'message.accepted' as const };
   }
 
   @ApiOperation({
-    operationId: 'cancelChatTurn',
+    operationId: 'cancelConversationTurn',
     summary: 'Cancel chat turn',
     description:
       'Durably cancels an accepted or running turn. Provider cancellation is delivered asynchronously from the transactional outbox.',
   })
-  @ApiOkResponse({ description: 'Turn cancellation committed.' })
+  @ApiAcceptedResponse({ description: 'Turn cancellation committed.' })
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid customer token.',
   })
@@ -391,11 +414,12 @@ export class ConversationController {
   @Post(':sessionId/turns/:turnId/cancel')
   @Header('Cache-Control', 'no-store')
   @UseGuards(ConversationAccessGuard)
+  @HttpCode(202)
   async cancelTurn(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
     @Param('turnId', new ParseUUIDPipe({ version: '4' })) turnId: string,
     @Body() input: CancelConversationTurnDto,
-    @Req() request: OptionalPrincipalRequest,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -411,11 +435,16 @@ export class ConversationController {
       turnId,
     });
     this.dispatcher.kick();
-    return cancelled;
+    return {
+      conversationVersion: cancelled.conversationVersion,
+      eventCursor: cancelled.eventCursor,
+      sessionId,
+      status: 'accepted' as const,
+    };
   }
 
   @ApiOperation({
-    operationId: 'closeChatSession',
+    operationId: 'closeConversationSession',
     summary: 'Close chat session',
     description:
       'Durably closes the session so no further message or turn can start. Already-persisted history remains readable until retention expiry.',
@@ -432,8 +461,8 @@ export class ConversationController {
   @UseGuards(ConversationAccessGuard)
   async closeSession(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
-    @Body() input: CloseConversationSessionDto,
-    @Req() request: OptionalPrincipalRequest,
+    @Headers('if-match') ifMatch: string | undefined,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -442,20 +471,36 @@ export class ConversationController {
         message: 'The authorized chat context is unavailable.',
       });
     }
-    return this.runtime.closeSession({
+    await this.runtime.closeSession({
       accessScope: authorization.accessScope,
-      expectedVersion: input.expectedVersion,
+      expectedVersion: parseConversationEtag(ifMatch),
       sessionId,
     });
+    const summary = await this.sessions.findSessionSummary(sessionId);
+    if (summary === null) {
+      throw new ForbiddenException({
+        code: 'CHAT_AUTHORIZATION_CONTEXT_MISSING',
+        message: 'The authorized chat context is unavailable.',
+      });
+    }
+    const status = await this.runtime.getRuntimeStatus({
+      accessScope: authorization.accessScope,
+      sessionId,
+    });
+    return {
+      ...summary,
+      status: publicConversationStatus(status.status),
+      version: status.conversationVersion,
+    };
   }
 
   @ApiOperation({
-    operationId: 'requestChatHandoff',
+    operationId: 'requestConversationHandoff',
     summary: 'Request human handoff',
     description:
       'Explicitly requests a human support handoff for this session. This creates only a governed recommendation/request boundary; contact-center lifecycle is owned separately.',
   })
-  @ApiOkResponse({ description: 'Handoff request committed.' })
+  @ApiAcceptedResponse({ description: 'Handoff request committed.' })
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid customer token.',
   })
@@ -465,10 +510,11 @@ export class ConversationController {
   @Post(':sessionId/handoff')
   @Header('Cache-Control', 'no-store')
   @UseGuards(ConversationAccessGuard)
+  @HttpCode(202)
   async requestHandoff(
     @Param('sessionId', new ParseUUIDPipe({ version: '4' })) sessionId: string,
     @Body() input: RequestConversationHandoffDto,
-    @Req() request: OptionalPrincipalRequest,
+    @Req() request: AuthenticatedPrincipalRequest,
   ) {
     const authorization = request.vfbizConversationAuthorization;
     if (authorization === undefined) {
@@ -477,11 +523,54 @@ export class ConversationController {
         message: 'The authorized chat context is unavailable.',
       });
     }
-    return this.runtime.requestHandoff({
+    const handoff = await this.runtime.requestHandoff({
       accessScope: authorization.accessScope,
       expectedVersion: input.expectedVersion,
       sessionId,
     });
+    return {
+      conversationVersion: handoff.conversationVersion,
+      eventCursor: handoff.eventCursor,
+      sessionId,
+      status: 'accepted' as const,
+    };
+  }
+}
+
+function publicConversationStatus(
+  status: 'closed' | 'handoff' | 'open',
+): 'active' | 'closed' | 'handoff' {
+  return status === 'open' ? 'active' : status;
+}
+
+function parseConversationEtag(value: string | undefined): number {
+  const match = /^(?:W\/)?"conversation-(0|[1-9][0-9]*)"$/u.exec(value ?? '');
+  const version = match === null ? Number.NaN : Number(match[1]);
+  if (!Number.isSafeInteger(version)) {
+    throw new HttpException(
+      {
+        code: 'VERSION_CONFLICT',
+        message: 'A valid conversation If-Match revision is required.',
+      },
+      HttpStatus.PRECONDITION_FAILED,
+    );
+  }
+  return version;
+}
+
+function assertMessageIdempotencyKey(
+  value: string | undefined,
+  clientMessageId: string,
+): void {
+  if (value !== clientMessageId) {
+    throw new HttpException(
+      {
+        code: 'CHAT_IDEMPOTENCY_KEY_MISMATCH',
+        message:
+          'Idempotency-Key must match clientMessageId for message replay.',
+      },
+      HttpStatus.BAD_REQUEST,
+    );
   }
 }
 
@@ -490,4 +579,78 @@ function socketBufferExceeded(request: FastifyRequest): boolean {
     request.raw.socket.writableLength,
     SSE_SOCKET_BUFFER_LIMIT_BYTES,
   );
+}
+
+export function toCustomerSseEvent(
+  event: ConversationPublicEvent,
+  correlationId: string,
+): Record<string, unknown> {
+  const base = {
+    correlationId,
+    eventId: event.eventId,
+    occurredAt: event.occurredAt.toISOString(),
+    schemaVersion: event.schemaVersion,
+    sequence: event.sequence,
+    sessionId: event.sessionId,
+    type: event.type,
+  };
+  if (event.type === 'message.accepted') {
+    const { turnId, ...data } = event.payload;
+    return { ...base, data, turnId };
+  }
+  if (event.type === 'turn.processing') {
+    return { ...base, data: {}, turnId: event.payload.turnId };
+  }
+  if (event.type === 'turn.completed') {
+    const { turnId, ...payload } = event.payload;
+    const data =
+      payload.outcome === 'clarification_required'
+        ? { citations: [], message: payload.message, outcome: 'conversational' }
+        : payload.outcome === 'refused'
+          ? { citations: [], ...payload }
+          : {
+              ...payload,
+              citations: payload.citations.map((citation) => ({
+                ...citation,
+                retrievedAt: citation.retrievedAt.toISOString(),
+              })),
+            };
+    return { ...base, data, turnId };
+  }
+  if (event.type === 'turn.cancelled') {
+    const { turnId, ...data } = event.payload;
+    return { ...base, data, turnId };
+  }
+  if (event.type === 'handoff.requested') {
+    const { turnId, ...data } = event.payload;
+    return { ...base, data, ...(turnId === undefined ? {} : { turnId }) };
+  }
+  return { ...base, data: {} };
+}
+
+function controlSseFrame(input: {
+  readonly correlationId: string;
+  readonly data: Record<string, unknown>;
+  readonly sessionId: string;
+  readonly type:
+    'heartbeat' | 'stream.reconnect_required' | 'stream.resync_required';
+}): Record<string, unknown> {
+  return {
+    correlationId: input.correlationId,
+    data: input.data,
+    occurredAt: new Date().toISOString(),
+    schemaVersion: 1,
+    sessionId: input.sessionId,
+    type: input.type,
+  };
+}
+
+function requestCorrelationId(request: FastifyRequest): string {
+  const value = request.headers['x-correlation-id'];
+  return typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
+      value,
+    )
+    ? value
+    : randomUUID();
 }

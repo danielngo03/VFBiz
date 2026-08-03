@@ -1,15 +1,8 @@
 import { createHash } from 'node:crypto';
 import { Prisma } from '../../../../generated/prisma/client';
+export { conversationSubjectKeyHash } from '../../domain/conversation-subject-key';
 
 export type ConversationPersistenceTransaction = Prisma.TransactionClient;
-
-export function conversationSubjectKeyHash(
-  issuer: string,
-  subject: string,
-): string {
-  const framed = `${Buffer.byteLength(issuer, 'utf8')}:${issuer}${Buffer.byteLength(subject, 'utf8')}:${subject}`;
-  return createHash('sha256').update(framed, 'utf8').digest('hex');
-}
 
 export async function lockConversationSession(
   transaction: ConversationPersistenceTransaction,

@@ -9,6 +9,8 @@ import { CheckVehicleVariantEligibilityService } from './application/services/ch
 import { CommercialReleaseWorkflowService } from './application/services/commercial-release-workflow.service';
 import { ReadCommercialDataService } from './application/services/read-commercial-data.service';
 import { ReadVehicleCatalogService } from './application/services/read-vehicle-catalog.service';
+import { ResolveVehicleCatalogIdentityService } from './application/services/resolve-vehicle-catalog-identity.service';
+import { VehicleCatalogIdentityResolver } from './vehicle-catalog-identity.resolver';
 import { PrismaCatalogReleaseWorkflowRepository } from './infrastructure/persistence/prisma-catalog-release-workflow.repository';
 import { PrismaCommercialDataRepository } from './infrastructure/persistence/prisma-commercial-data.repository';
 import { PrismaCommercialReleaseWorkflowRepository } from './infrastructure/persistence/prisma-commercial-release-workflow.repository';
@@ -25,6 +27,11 @@ import { OperationsReleaseController } from './presentation/operations-release.c
     CommercialReleaseWorkflowService,
     ReadCommercialDataService,
     ReadVehicleCatalogService,
+    ResolveVehicleCatalogIdentityService,
+    {
+      provide: VehicleCatalogIdentityResolver,
+      useExisting: ResolveVehicleCatalogIdentityService,
+    },
     {
       provide: CommercialDataRepository,
       useClass: PrismaCommercialDataRepository,
@@ -46,6 +53,7 @@ import { OperationsReleaseController } from './presentation/operations-release.c
     CatalogReleaseWorkflowService,
     CheckVehicleVariantEligibilityService,
     CommercialReleaseWorkflowService,
+    VehicleCatalogIdentityResolver,
   ],
 })
 export class ProductModule {}

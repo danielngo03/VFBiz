@@ -1,5 +1,5 @@
 import type { ConversationAccessScope } from '../../domain/runtime/conversation-runtime';
-import type { ConversationTaskDelta } from '../../domain/runtime/conversation-task-context';
+import type { ConversationTaskProposal } from '../ports/conversation-task-slot-authority';
 import type { ConversationTurnExecutionContext } from './conversation-runtime.repository';
 
 export type ConversationAiTransportFailureCode =
@@ -104,7 +104,7 @@ export type ConversationAiExecutionResult =
       readonly message: string;
       readonly outcome: 'clarification_required';
       readonly pendingSlots: readonly string[];
-      readonly taskDelta: ConversationTaskDelta;
+      readonly taskProposal: ConversationTaskProposal;
     })
   | (ConversationAiResultBase & {
       readonly customerMessage: string;

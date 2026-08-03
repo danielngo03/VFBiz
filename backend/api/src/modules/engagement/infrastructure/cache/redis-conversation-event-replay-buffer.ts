@@ -66,7 +66,22 @@ export class RedisConversationEventReplayBuffer extends ConversationEventReplayB
         0,
         REPLAY_EVENT_LIMIT,
       );
-      return entries.map(deserializeEvent);
+      const events = entries.map(deserializeEvent);
+      let expectedSequence = afterSequence + 1;
+      for (const event of events) {
+        const sequence = parseCursor(event.cursor);
+        if (
+          sequence === null ||
+          sequence !== expectedSequence ||
+          event.sessionId !== sessionId ||
+          event.schemaVersion !== 1 ||
+          !Number.isFinite(event.occurredAt.getTime())
+        ) {
+          return null;
+        }
+        expectedSequence += 1;
+      }
+      return events;
     } catch (error) {
       this.logger.warn({
         error: error instanceof Error ? error.message : String(error),

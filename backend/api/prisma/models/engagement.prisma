@@ -2,6 +2,10 @@ model ConversationSession {
   id                                String                      @id @default(uuid()) @db.Uuid
   customerProfileId                 String?                     @db.Uuid
   ownerSubjectKeyHash               String?                     @db.Char(64)
+  subjectBudgetDate                 DateTime?                   @db.Date
+  subjectBudgetReservedModelTokens  BigInt?
+  subjectBudgetReservedCostMicros   BigInt?
+  subjectBudgetReconciledAt         DateTime?                   @db.Timestamptz(6)
   customerProfile                   CustomerProfile?            @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
   assistantProfile                  String                      @db.VarChar(40)
   locale                            String                      @default("vi") @db.VarChar(8)
@@ -31,6 +35,20 @@ model ConversationSession {
   @@index([customerProfileId, updatedAt])
   @@index([ownerSubjectKeyHash, retentionUntil])
   @@map("conversation_session")
+}
+
+model ConversationSubjectBudget {
+  subjectKeyHash       String   @db.Char(64)
+  budgetDate           DateTime @db.Date
+  remainingModelTokens BigInt
+  remainingCostMicros  BigInt
+  version              BigInt   @default(0)
+  createdAt            DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
+
+  @@id([subjectKeyHash, budgetDate])
+  @@index([budgetDate, updatedAt])
+  @@map("conversation_subject_budget")
 }
 
 model ConversationContextEntity {

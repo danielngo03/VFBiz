@@ -17,6 +17,11 @@ import { PrismaWorkforceAuthorizationRepository } from './infrastructure/persist
 import { AccessSessionController } from './presentation/access-session.controller';
 import { CapabilityAuthorizationGuard } from './presentation/capability-authorization.guard';
 import { WorkforceAuthorizationController } from './presentation/workforce-authorization.controller';
+import { ControlledApplyReservationRepository } from './application/ports/controlled-apply-reservation.repository';
+import { ControlledApplyReservationFacade } from './application/services/controlled-apply-reservation.facade';
+import { PrismaControlledApplyReservationRepository } from './infrastructure/persistence/prisma-controlled-apply-reservation.repository';
+import { ControlledApplyAuthorityVerifier } from './application/ports/controlled-apply-authority-verifier';
+import { FailClosedControlledApplyAuthorityVerifier } from './infrastructure/persistence/fail-closed-controlled-apply-authority-verifier';
 
 @Module({
   controllers: [AccessSessionController, WorkforceAuthorizationController],
@@ -49,7 +54,16 @@ import { WorkforceAuthorizationController } from './presentation/workforce-autho
       provide: IdempotencyRepository,
       useClass: PrismaIdempotencyRepository,
     },
+    ControlledApplyReservationFacade,
+    {
+      provide: ControlledApplyReservationRepository,
+      useClass: PrismaControlledApplyReservationRepository,
+    },
+    {
+      provide: ControlledApplyAuthorityVerifier,
+      useClass: FailClosedControlledApplyAuthorityVerifier,
+    },
   ],
-  exports: [WorkforceEntitlementReader],
+  exports: [WorkforceEntitlementReader, ControlledApplyReservationFacade],
 })
 export class AccessModule {}

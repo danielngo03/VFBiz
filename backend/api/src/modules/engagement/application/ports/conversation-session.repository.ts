@@ -24,6 +24,7 @@ export interface ConversationMessageView {
   readonly id: string;
   readonly outcome: string | null;
   readonly role: string;
+  readonly sequence: number;
 }
 
 export interface CreateConversationSessionRecordInput {
@@ -37,13 +38,25 @@ export interface CreateConversationSessionRecordInput {
   readonly release: import('./active-assistant-release-projection').AssistantReleaseBinding;
   readonly profile: 'public_customer' | 'authenticated_customer';
   readonly retentionUntil: Date;
+  readonly subjectBudget?: ConversationSubjectBudgetReservation | null;
+}
+
+export interface ConversationSubjectBudgetReservation {
+  readonly subjectKeyHash: string;
+  readonly budgetDate: Date;
+  readonly dailyModelTokenLimit: number;
+  readonly dailyCostLimitMicros: number;
+  readonly reserveModelTokens: number;
+  readonly reserveCostMicros: number;
 }
 
 export interface CreatedConversationSessionRecord {
   readonly createdAt: Date;
+  readonly expiresAt: Date;
   readonly id: string;
   readonly locale: 'vi' | 'en';
   readonly profile: 'public_customer' | 'authenticated_customer';
+  readonly retentionUntil: Date;
 }
 
 export interface ConversationSessionSummary {

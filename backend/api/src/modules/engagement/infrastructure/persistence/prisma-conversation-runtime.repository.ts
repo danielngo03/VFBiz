@@ -941,6 +941,7 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
         return purgeSessionsTransaction(
           transaction,
           eligible.map(({ id }) => id),
+          { refundSubjectBudget: true },
         );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -970,7 +971,9 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
         for (const sessionId of sessionIds) {
           await lockConversationSession(transaction, sessionId);
         }
-        return purgeSessionsTransaction(transaction, sessionIds);
+        return purgeSessionsTransaction(transaction, sessionIds, {
+          refundSubjectBudget: false,
+        });
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
@@ -1080,6 +1083,14 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
       event.type === 'session.closed' ||
       (event.type === 'handoff.requested' &&
         event.payload.turnId === undefined);
+    if (event.type === 'session.closed') {
+      await reconcileSubjectBudget(
+        transaction,
+        session,
+        transition.nextState.budget,
+        transition.now,
+      );
+    }
     if (isSessionScopedEvent) {
       // A session-level event, not a turn one: no ConversationTurn row to
       // create or update. session.closed never has one; handoff.requested
@@ -1241,6 +1252,13 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
         current.authorizationContextDigest !==
           conversationAuthorizationContextDigest(accessScope) ||
         !taskReleaseMatchesSession(current, session));
+    const correctedSlots =
+      current !== null &&
+      !replaceExisting &&
+      delta.operation === 'upsert' &&
+      delta.taskId === current.taskId
+        ? changedTaskSlots(current.collectedSlots, delta.collectedSlots)
+        : [];
     const next =
       current === null || replaceExisting
         ? createConversationTaskContext(delta, { fencingToken, now })
@@ -1289,6 +1307,19 @@ export class PrismaConversationRuntimeRepository extends ConversationRuntimeRepo
                 replacementReason: explicitTopicSwitch
                   ? 'topic_switch'
                   : 'terminal_or_stale',
+              }
+            : {}),
+          ...(current !== null && correctedSlots.length > 0
+            ? {
+                correction: {
+                  changedSlots: correctedSlots,
+                  nextReceiptSetSha256: taskSlotReceiptSetSha256(
+                    next.collectedSlots,
+                  ),
+                  previousReceiptSetSha256: taskSlotReceiptSetSha256(
+                    current.collectedSlots,
+                  ),
+                },
               }
             : {}),
         },
@@ -1621,8 +1652,32 @@ function runtimeReadable(
 async function purgeSessionsTransaction(
   transaction: Transaction,
   sessionIds: readonly string[],
+  options: { readonly refundSubjectBudget: boolean },
 ): Promise<number> {
   if (sessionIds.length === 0) return 0;
+  if (options.refundSubjectBudget) {
+    const sessions = await transaction.conversationSession.findMany({
+      include: { runtime: true },
+      where: { id: { in: [...sessionIds] } },
+    });
+    for (const session of sessions) {
+      if (session.runtime !== null) {
+        await reconcileSubjectBudget(
+          transaction,
+          session,
+          {
+            remainingCostMicros: safeNumber(
+              session.runtime.remainingCostMicros,
+            ),
+            remainingModelTokens: safeNumber(
+              session.runtime.remainingModelTokens,
+            ),
+          },
+          new Date(),
+        );
+      }
+    }
+  }
   await transaction.supportHandoff.deleteMany({
     where: { conversationSessionId: { in: [...sessionIds] } },
   });
@@ -1630,6 +1685,69 @@ async function purgeSessionsTransaction(
     where: { id: { in: [...sessionIds] } },
   });
   return deleted.count;
+}
+
+async function reconcileSubjectBudget(
+  transaction: Transaction,
+  session: {
+    readonly id: string;
+    readonly ownerSubjectKeyHash: string | null;
+    readonly subjectBudgetDate: Date | null;
+    readonly subjectBudgetReservedModelTokens: bigint | null;
+    readonly subjectBudgetReservedCostMicros: bigint | null;
+    readonly subjectBudgetReconciledAt: Date | null;
+  },
+  remaining: {
+    readonly remainingCostMicros: number;
+    readonly remainingModelTokens: number;
+  },
+  now: Date,
+): Promise<void> {
+  if (
+    session.ownerSubjectKeyHash === null ||
+    session.subjectBudgetDate === null ||
+    session.subjectBudgetReservedModelTokens === null ||
+    session.subjectBudgetReservedCostMicros === null ||
+    session.subjectBudgetReconciledAt !== null
+  ) {
+    return;
+  }
+  const marked = await transaction.conversationSession.updateMany({
+    data: { subjectBudgetReconciledAt: now },
+    where: { id: session.id, subjectBudgetReconciledAt: null },
+  });
+  if (marked.count !== 1) return;
+  const tokens = BigInt(
+    Math.max(
+      0,
+      Math.min(
+        remaining.remainingModelTokens,
+        safeNumber(session.subjectBudgetReservedModelTokens),
+      ),
+    ),
+  );
+  const cost = BigInt(
+    Math.max(
+      0,
+      Math.min(
+        remaining.remainingCostMicros,
+        safeNumber(session.subjectBudgetReservedCostMicros),
+      ),
+    ),
+  );
+  await transaction.conversationSubjectBudget.update({
+    data: {
+      remainingCostMicros: { increment: cost },
+      remainingModelTokens: { increment: tokens },
+      version: { increment: BigInt(1) },
+    },
+    where: {
+      subjectKeyHash_budgetDate: {
+        budgetDate: session.subjectBudgetDate,
+        subjectKeyHash: session.ownerSubjectKeyHash,
+      },
+    },
+  });
 }
 
 function replayFromTurn(
@@ -1874,6 +1992,53 @@ function json(
   return value as unknown as Prisma.InputJsonValue;
 }
 
+function taskSlotReceiptSetSha256(
+  slots: Readonly<Record<string, ConversationTaskSlotReference>>,
+): string {
+  const canonical = Object.entries(slots)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([slot, receipt]) => [
+      slot,
+      receipt.authority,
+      receipt.authorityDigest,
+      receipt.confirmedAt.toISOString(),
+      receipt.expiresAt.toISOString(),
+      receipt.kind,
+      receipt.opaqueReference,
+      receipt.provenanceDigest,
+      receipt.slot,
+      receipt.sourceRevision,
+      receipt.taskId,
+    ]);
+  return createHash('sha256')
+    .update(JSON.stringify(canonical), 'utf8')
+    .digest('hex');
+}
+
+function changedTaskSlots(
+  previous: Readonly<Record<string, ConversationTaskSlotReference>>,
+  next: Readonly<Record<string, ConversationTaskSlotReference>>,
+): string[] {
+  return [...new Set([...Object.keys(previous), ...Object.keys(next)])]
+    .filter((slot) => {
+      const left = previous[slot];
+      const right = next[slot];
+      return (
+        left?.authority !== right?.authority ||
+        left?.authorityDigest !== right?.authorityDigest ||
+        left?.confirmedAt.getTime() !== right?.confirmedAt.getTime() ||
+        left?.expiresAt.getTime() !== right?.expiresAt.getTime() ||
+        left?.kind !== right?.kind ||
+        left?.opaqueReference !== right?.opaqueReference ||
+        left?.provenanceDigest !== right?.provenanceDigest ||
+        left?.slot !== right?.slot ||
+        left?.sourceRevision !== right?.sourceRevision ||
+        left?.taskId !== right?.taskId
+      );
+    })
+    .sort();
+}
+
 function citationHash(citation: ConversationCitation): string {
   return createHash('sha256')
     .update(
@@ -1916,9 +2081,7 @@ function taskContextFromDatabaseRow(
   const context = {
     authorizationContextDigest: row.authorizationContextDigest,
     closedAt: row.closedAt,
-    collectedSlots: row.collectedSlots as unknown as Readonly<
-      Record<string, ConversationTaskSlotReference>
-    >,
+    collectedSlots: deserializeTaskSlotReceipts(row.collectedSlots),
     expiresAt: storedDate(row.expiresAt),
     intent: row.intent,
     intentRevision: row.intentRevision,
@@ -1954,7 +2117,7 @@ function taskContextPersistenceData(
     assistantReleaseManifestSha256: context.release.manifestSha256,
     authorizationContextDigest: context.authorizationContextDigest,
     closedAt: context.closedAt,
-    collectedSlots: json(context.collectedSlots),
+    collectedSlots: serializeTaskSlotReceipts(context.collectedSlots),
     conversationSessionId,
     expiresAt: context.expiresAt,
     graphRevision: context.release.graphRevision,
@@ -1970,6 +2133,51 @@ function taskContextPersistenceData(
     taskState: context.state,
     taskVersion: BigInt(context.taskVersion),
   };
+}
+
+function serializeTaskSlotReceipts(
+  receipts: Readonly<Record<string, ConversationTaskSlotReference>>,
+): Prisma.InputJsonValue {
+  return Object.fromEntries(
+    Object.entries(receipts).map(([slot, receipt]) => [
+      slot,
+      {
+        authority: receipt.authority,
+        authorityDigest: receipt.authorityDigest,
+        confirmedAt: receipt.confirmedAt.toISOString(),
+        expiresAt: receipt.expiresAt.toISOString(),
+        kind: receipt.kind,
+        opaqueReference: receipt.opaqueReference,
+        provenanceDigest: receipt.provenanceDigest,
+        slot: receipt.slot,
+        sourceRevision: receipt.sourceRevision,
+        taskId: receipt.taskId,
+      },
+    ]),
+  );
+}
+
+function deserializeTaskSlotReceipts(
+  value: Prisma.JsonValue,
+): Readonly<Record<string, ConversationTaskSlotReference>> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new ConversationRuntimePersistenceCorruptionError();
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([slot, raw]) => {
+      if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+        throw new ConversationRuntimePersistenceCorruptionError();
+      }
+      return [
+        slot,
+        {
+          ...raw,
+          confirmedAt: storedDate(raw.confirmedAt),
+          expiresAt: storedDate(raw.expiresAt),
+        } as ConversationTaskSlotReference,
+      ];
+    }),
+  );
 }
 
 function taskReleaseMatchesSession(
@@ -2023,7 +2231,38 @@ function activeTaskContextFromRow(
     return null;
   }
 
-  return taskContextFromDatabaseRow(row);
+  const context = taskContextFromDatabaseRow(row);
+  const expiredSlots = Object.entries(context.collectedSlots)
+    .filter(([, receipt]) => receipt.expiresAt.getTime() <= now.getTime())
+    .map(([slot]) => slot)
+    .sort();
+  if (expiredSlots.length === 0) return context;
+
+  const expired = new Set(expiredSlots);
+  const collectedSlots = Object.fromEntries(
+    Object.entries(context.collectedSlots).filter(
+      ([slot]) => !expired.has(slot),
+    ),
+  );
+  const pendingSlots = [
+    ...new Set([...context.pendingSlots, ...expiredSlots]),
+  ].sort();
+  return {
+    ...context,
+    collectedSlots,
+    pendingSlots,
+    provenanceDigest: createHash('sha256')
+      .update(
+        JSON.stringify({
+          action: 'receipt-expiry-revalidation',
+          expiredSlots,
+          previousProvenanceDigest: context.provenanceDigest,
+        }),
+        'utf8',
+      )
+      .digest('hex'),
+    state: 'awaiting_clarification',
+  };
 }
 
 function copyAccessScope(

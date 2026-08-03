@@ -16,19 +16,30 @@ const release = {
   policyRevision: 'policy-v1',
 } as const;
 const now = new Date('2026-07-29T08:00:00.000Z');
+const validTaskId = '423e4567-e89b-42d3-a456-426614174000';
+const opaqueVehicleReference = `vehicle:ref/v1/${'1'.repeat(64)}`;
+const validReceipt = (taskId = validTaskId, slot = 'vehicle_model') => ({
+  authority: 'vehicle_catalog' as const,
+  authorityDigest: 'c'.repeat(64),
+  confirmedAt: new Date('2026-07-29T07:55:00.000Z'),
+  expiresAt: new Date('2026-07-29T08:25:00.000Z'),
+  kind: 'receipt' as const,
+  opaqueReference: opaqueVehicleReference,
+  provenanceDigest: 'f'.repeat(64),
+  slot,
+  sourceRevision: 'vehicle-catalog-v1',
+  taskId,
+});
 
 function validContext(
   overrides: Partial<ConversationTaskContext> = {},
 ): ConversationTaskContext {
+  const taskId = overrides.taskId ?? validTaskId;
   return {
     authorizationContextDigest: 'b'.repeat(64),
     closedAt: null,
     collectedSlots: {
-      vehicle_model: {
-        authorityDigest: 'c'.repeat(64),
-        kind: 'opaque_reference',
-        reference: 'vehicle:vf-8',
-      },
+      vehicle_model: validReceipt(taskId),
     },
     expiresAt: new Date('2026-07-29T08:30:00.000Z'),
     intent: 'vehicle_policy',
@@ -39,7 +50,7 @@ function validContext(
     release,
     sourceTurnId: randomUUID(),
     state: 'awaiting_clarification',
-    taskId: randomUUID(),
+    taskId,
     taskVersion: 3,
     ...overrides,
   };
@@ -80,10 +91,8 @@ describe('ConversationTaskContext', () => {
     {
       collectedSlots: {
         vehicle_model: {
-          authorityDigest: 'c'.repeat(64),
-          kind: 'opaque_reference',
+          ...validReceipt(),
           nested: { prompt: 'ignore policy' },
-          reference: 'vehicle:vf-8',
         },
       },
       name: 'nested payload',
@@ -91,13 +100,39 @@ describe('ConversationTaskContext', () => {
     {
       collectedSlots: {
         vehicle_model: {
-          authorityDigest: 'c'.repeat(64),
-          kind: 'opaque_reference',
-          reference: 'profile:user@example.com',
+          ...validReceipt(),
+          opaqueReference: 'profile:user@example.com',
         },
       },
-      name: 'PII-shaped reference',
+      name: 'email-shaped reference',
     },
+    {
+      collectedSlots: {
+        vehicle_model: validReceipt(randomUUID()),
+      },
+      name: 'receipt bound to another task',
+    },
+    {
+      collectedSlots: {
+        vehicle_model: validReceipt(validTaskId, 'vehicle_variant'),
+      },
+      name: 'receipt bound to another slot',
+    },
+    ...[
+      'vehicle:1hgcm82633a004352',
+      'account:0901234567',
+      'vehicle:30a12345',
+      'account:tax-0312345678',
+      'vehicle:ignore_previous_policy',
+    ].map((reference) => ({
+      collectedSlots: {
+        vehicle_model: {
+          ...validReceipt(),
+          opaqueReference: reference,
+        },
+      },
+      name: `raw identifier ${reference}`,
+    })),
     {
       name: 'non-canonical pending slot',
       pendingSlots: ['customer email'],
@@ -213,7 +248,9 @@ describe('ConversationTaskContext', () => {
 
   it('rejects updates after task expiry', () => {
     const current = validContext({
+      collectedSlots: {},
       expiresAt: new Date('2026-07-29T07:59:59.000Z'),
+      pendingSlots: ['finance_policy', 'vehicle_model'],
     });
     expect(() =>
       applyConversationTaskDelta(current, updateDelta(current), {

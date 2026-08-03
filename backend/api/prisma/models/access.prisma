@@ -236,3 +236,51 @@ model SessionProjection {
   @@index([revocationState, revocationNextRetryAt])
   @@map("session_projection")
 }
+
+enum ControlledApplyReservationState {
+  RESERVED  @map("reserved")
+  COMPLETED @map("completed")
+  CANCELLED @map("cancelled")
+
+  @@map("controlled_apply_reservation_state")
+}
+
+/// API-owned replay/fencing ledger for a verified controlled-apply request.
+/// The signed envelope remains external evidence; this row is only a durable
+/// reservation receipt after API-owned workforce evidence has been joined.
+model ControlledApplyReservation {
+  id                             String                          @id @default(uuid()) @db.Uuid
+  idempotencyKeyHash             String                          @unique @db.Char(64)
+  nonce                          String                          @unique @db.Char(64)
+  pairingSha256                  String                          @db.Char(64)
+  sourceEnvelopeUri              String                          @db.VarChar(256)
+  sourceEnvelopeSha256           String                          @db.Char(64)
+  sourceEnvelopeGeneration       BigInt                          @db.BigInt
+  claimId                        String                          @db.VarChar(256)
+  claimFencingToken              BigInt                          @db.BigInt
+  requesterSubjectSha256         String                          @db.Char(64)
+  approverSubjectSha256          String                          @db.Char(64)
+  approvalEventId                String                          @db.VarChar(256)
+  approvalEventRevision          BigInt                          @db.BigInt
+  approvalEvidenceSha256         String                          @db.Char(64)
+  approvalPolicyRevisionSha256   String                          @db.Char(64)
+  state                          ControlledApplyReservationState @default(RESERVED)
+  reservationReceiptSha256       String                          @db.Char(64)
+  completionReceiptSha256        String?                         @db.Char(64)
+  cancellationReceiptSha256      String?                         @db.Char(64)
+  cancellationEvidenceSha256     String?                         @db.Char(64)
+  cancellationActorSubjectSha256 String?                         @db.Char(64)
+  cancellationEventId            String?                         @db.VarChar(256)
+  cancellationEventRevision      BigInt?                         @db.BigInt
+  outcome                        String?                         @db.VarChar(80)
+  expiresAt                      DateTime                        @db.Timestamptz(6)
+  reservedAt                     DateTime                        @default(now()) @db.Timestamptz(6)
+  completedAt                    DateTime?                       @db.Timestamptz(6)
+  cancelledAt                    DateTime?                       @db.Timestamptz(6)
+  createdAt                      DateTime                        @default(now()) @db.Timestamptz(6)
+  updatedAt                      DateTime                        @updatedAt @db.Timestamptz(6)
+
+  @@index([pairingSha256, claimId, claimFencingToken])
+  @@index([state, expiresAt])
+  @@map("controlled_apply_reservation")
+}

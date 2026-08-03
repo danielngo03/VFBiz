@@ -99,9 +99,16 @@ describe('InternalAiConversationTransport', () => {
         closedAt: null,
         collectedSlots: {
           vehicle_model: {
+            authority: 'vehicle_catalog',
             authorityDigest: 'c'.repeat(64),
-            kind: 'opaque_reference',
-            reference: 'vehicle:vf-8',
+            confirmedAt,
+            expiresAt,
+            kind: 'receipt',
+            opaqueReference: `vehicle:ref/v1/${'1'.repeat(64)}`,
+            provenanceDigest: 'f'.repeat(64),
+            slot: 'vehicle_model',
+            sourceRevision: 'vehicle-catalog-v1',
+            taskId,
           },
         },
         expiresAt,
@@ -164,9 +171,16 @@ describe('InternalAiConversationTransport', () => {
         authorizationContextDigest: 'e'.repeat(64),
         collectedSlots: {
           vehicle_model: {
+            authority: 'vehicle_catalog',
             authorityDigest: 'c'.repeat(64),
-            kind: 'opaque_reference',
-            reference: 'vehicle:vf-8',
+            confirmedAt: confirmedAt.toISOString(),
+            expiresAt: expiresAt.toISOString(),
+            kind: 'receipt',
+            opaqueReference: `vehicle:ref/v1/${'1'.repeat(64)}`,
+            provenanceDigest: 'f'.repeat(64),
+            slot: 'vehicle_model',
+            sourceRevision: 'vehicle-catalog-v1',
+            taskId,
           },
         },
         expiresAt: expiresAt.toISOString(),
@@ -337,7 +351,7 @@ describe('InternalAiConversationTransport', () => {
         pendingSlots: ['vehicle_variant'],
         releaseRevision: '00000000-0000-4000-8000-000000000010',
         revisions: responseRevisions,
-        taskDelta: clarificationTaskDelta(),
+        taskProposal: clarificationTaskProposal(),
         usage: { costMicros: 20, modelTokens: 8 },
       }),
     );
@@ -348,10 +362,38 @@ describe('InternalAiConversationTransport', () => {
       throw new Error('Expected a typed clarification result');
     }
     expect(result.pendingSlots).toEqual(['vehicle_variant']);
-    expect(result.taskDelta.expectedTaskVersion).toBe(0);
-    expect(result.taskDelta.taskId).toBe(
+    expect(result.taskProposal.expectedTaskVersion).toBe(0);
+    expect(result.taskProposal.taskId).toBe(
       '423e4567-e89b-42d3-a456-426614174000',
     );
+  });
+
+  it('rejects an AI clarification that attempts to forge confirmed slots', async () => {
+    const { transport } = fixture();
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+      jsonResponse(200, {
+        message: 'Vui lòng cho biết phiên bản xe.',
+        outcome: 'clarification_required',
+        pendingSlots: ['vehicle_variant'],
+        releaseRevision: '00000000-0000-4000-8000-000000000010',
+        revisions: responseRevisions,
+        taskProposal: {
+          ...clarificationTaskProposal(),
+          collectedSlots: {
+            vehicle_model: {
+              authority: 'vehicle_catalog',
+              kind: 'receipt',
+            },
+          },
+        },
+        usage: { costMicros: 20, modelTokens: 8 },
+      }),
+    );
+
+    await expect(transport.execute(executionRequest())).rejects.toMatchObject({
+      code: 'invalid_response',
+      retryable: false,
+    });
   });
 
   it('accepts failed-safely usage while suppressing answer content', async () => {
@@ -581,16 +623,13 @@ describe('InternalAiConversationTransport', () => {
   });
 });
 
-function clarificationTaskDelta() {
+function clarificationTaskProposal() {
   return {
     authorizationContextDigest: 'e'.repeat(64),
-    collectedSlots: {},
     expectedTaskVersion: 0,
     expiresAt: '2099-07-25T09:00:00.000Z',
     intent: 'vehicle_question',
     intentRevision: 'router-v1',
-    nextState: 'awaiting_clarification',
-    operation: 'upsert',
     pendingSlots: ['vehicle_variant'],
     provenanceDigest: 'f'.repeat(64),
     release: {
@@ -600,6 +639,7 @@ function clarificationTaskDelta() {
       manifestSha256: 'a'.repeat(64),
       policyRevision: 'policy-r1',
     },
+    slotCandidates: [],
     sourceTurnId: turnId,
     taskId: '423e4567-e89b-42d3-a456-426614174000',
   };

@@ -27,6 +27,15 @@ export interface EnvironmentVariables {
   readonly VFBIZ_CONVERSATION_CONTENT_KEYRING?: string;
   readonly VFBIZ_INTERNAL_AI_ENABLED: boolean;
   readonly VFBIZ_INTERNAL_AI_DISPATCH_ENABLED: boolean;
+  readonly VFBIZ_CHAT_API_MODE:
+    'disabled' | 'authenticated-staging' | 'public-release';
+  readonly VFBIZ_CHAT_LIVE_CONTROL_ID?: string;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_AUTHORITY_SHA256?: string;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_GENERATION?: number;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_NOT_BEFORE?: string;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_EXPIRES_AT?: string;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_RELEASE_ENVELOPE_SHA256?: string;
+  readonly VFBIZ_CHAT_LIVE_CONTROL_RELEASE_POINTER_REVISION?: number;
   readonly VFBIZ_INTERNAL_AI_BASE_URL?: string;
   readonly VFBIZ_INTERNAL_AI_ALLOWED_HOSTS?: string;
   readonly VFBIZ_INTERNAL_AI_REQUEST_TIMEOUT_MS: number;
@@ -45,6 +54,21 @@ const keyIdSchema = Joi.string()
   .trim()
   .pattern(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/)
   .empty('');
+
+const utcSecondTimestampSchema = Joi.string()
+  .pattern(
+    /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\dZ$/,
+  )
+  .custom((value: string, helpers) => {
+    const parsed = new Date(value);
+    if (
+      !Number.isFinite(parsed.getTime()) ||
+      parsed.toISOString().replace('.000Z', 'Z') !== value
+    ) {
+      return helpers.error('any.invalid');
+    }
+    return value;
+  });
 
 const environmentSchema = Joi.object<EnvironmentVariables>({
   NODE_ENV: Joi.string()
@@ -116,6 +140,32 @@ const environmentSchema = Joi.object<EnvironmentVariables>({
     .truthy('true')
     .falsy('false')
     .default(false),
+  VFBIZ_CHAT_API_MODE: Joi.string()
+    .valid('disabled', 'authenticated-staging', 'public-release')
+    .default('disabled'),
+  VFBIZ_CHAT_LIVE_CONTROL_ID: Joi.string()
+    .pattern(/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/)
+    .optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_AUTHORITY_SHA256: Joi.string()
+    .pattern(/^[a-f0-9]{64}$/)
+    .optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_GENERATION: Joi.number()
+    .integer()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .unsafe(false)
+    .optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_NOT_BEFORE: utcSecondTimestampSchema.optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_EXPIRES_AT: utcSecondTimestampSchema.optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_RELEASE_ENVELOPE_SHA256: Joi.string()
+    .pattern(/^[a-f0-9]{64}$/)
+    .optional(),
+  VFBIZ_CHAT_LIVE_CONTROL_RELEASE_POINTER_REVISION: Joi.number()
+    .integer()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .unsafe(false)
+    .optional(),
   VFBIZ_INTERNAL_AI_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .empty('')
@@ -238,6 +288,60 @@ export function validateEnvironment(
   ) {
     throw new Error(
       'Invalid API environment: internal AI dispatch requires internal AI trust to be enabled',
+    );
+  }
+  const liveControlValues = [
+    validated.VFBIZ_CHAT_LIVE_CONTROL_ID,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_AUTHORITY_SHA256,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_GENERATION,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_NOT_BEFORE,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_EXPIRES_AT,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_RELEASE_ENVELOPE_SHA256,
+    validated.VFBIZ_CHAT_LIVE_CONTROL_RELEASE_POINTER_REVISION,
+  ];
+  if (validated.VFBIZ_CHAT_API_MODE === 'authenticated-staging') {
+    if (!['staging', 'test'].includes(validated.NODE_ENV)) {
+      throw new Error(
+        'Invalid API environment: authenticated staging Chat is permitted only in staging/test',
+      );
+    }
+    if (
+      !validated.VFBIZ_INTERNAL_AI_ENABLED ||
+      !validated.VFBIZ_INTERNAL_AI_DISPATCH_ENABLED
+    ) {
+      throw new Error(
+        'Invalid API environment: authenticated staging Chat requires enabled internal AI dispatch',
+      );
+    }
+    if (liveControlValues.some((value) => value === undefined)) {
+      throw new Error(
+        'Invalid API environment: authenticated staging Chat requires complete live-control identity, authority, generation, validity window and release anchor',
+      );
+    }
+    const notBefore = Date.parse(
+      validated.VFBIZ_CHAT_LIVE_CONTROL_NOT_BEFORE as string,
+    );
+    const expiresAt = Date.parse(
+      validated.VFBIZ_CHAT_LIVE_CONTROL_EXPIRES_AT as string,
+    );
+    if (notBefore >= expiresAt) {
+      throw new Error(
+        'Invalid API environment: authenticated staging Chat live-control not-before must precede expires-at',
+      );
+    }
+    if (expiresAt - notBefore > 24 * 60 * 60 * 1_000) {
+      throw new Error(
+        'Invalid API environment: authenticated staging Chat live-control validity window must not exceed 24 hours',
+      );
+    }
+  } else if (liveControlValues.some((value) => value !== undefined)) {
+    throw new Error(
+      'Invalid API environment: live-control values require authenticated staging Chat mode',
+    );
+  }
+  if (validated.VFBIZ_CHAT_API_MODE === 'public-release') {
+    throw new Error(
+      'Invalid API environment: public Chat release is not available before VFBIZ-0195',
     );
   }
   if (
