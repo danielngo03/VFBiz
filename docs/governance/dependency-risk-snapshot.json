@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-07-30T22:05:16+07:00",
+  "auditCommand": "npm audit --omit=dev --json",
+  "lockfile": {
+    "path": "package-lock.json",
+    "sha256": "2491552944ca78eb09cf3685252ebc96d660ddf46f27bb884b6163caedac7e80"
+  },
+  "severityCounts": {
+    "high": 21,
+    "critical": 0
+  },
+  "vulnerablePackages": [
+    "@fastify/static",
+    "@jest/transform",
+    "@nestjs/platform-fastify",
+    "@nestjs/swagger",
+    "@react-native/jest-preset",
+    "@react-native/virtualized-lists",
+    "babel-jest",
+    "babel-plugin-istanbul",
+    "brace-expansion",
+    "find-my-way",
+    "gaxios",
+    "gcp-metadata",
+    "glob",
+    "js-yaml",
+    "minimatch",
+    "next",
+    "postcss",
+    "react-native",
+    "rimraf",
+    "sharp",
+    "test-exclude"
+  ],
+  "advisories": [
+    "GHSA-6g55-p6wh-862q",
+    "GHSA-83w8-p2f5-377r",
+    "GHSA-8pvw-jcv7-9cmj",
+    "GHSA-c96f-x56v-gq3h",
+    "GHSA-f88m-g3jw-g9cj",
+    "GHSA-mh99-v99m-4gvg",
+    "GHSA-pm4m-ph32-ghv5",
+    "GHSA-qx2v-qp2m-jg93",
+    "GHSA-r28c-9q8g-f849"
+  ],
+  "exceptions": []
+}

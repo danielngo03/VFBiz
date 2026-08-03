@@ -1,0 +1,3 @@
+interface:
+  display_name: "Build Tuning Candidate"
+  short_description: "Build governed tuning artifacts without job submission"

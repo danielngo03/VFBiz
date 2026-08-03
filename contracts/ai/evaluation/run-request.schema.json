@@ -1,80 +1,130 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vfbiz.example/contracts/ai/evaluation/run-request/v1",
-  "title": "VFBiz AI Evaluation Run Request",
+  "$id": "https://vfbiz.example/contracts/ai/evaluation/run-request/v2",
+  "title": "VFBiz AI Evaluation Resolved Run Request",
   "type": "object",
   "required": [
-    "run_id",
-    "evaluation_claim",
-    "subject_under_test",
-    "candidate_release",
-    "baseline_release",
-    "suite_revision",
-    "runner_image_digest",
-    "harness_revision",
-    "tool_simulator_revision",
-    "grader_revisions",
-    "environment_revision",
-    "random_seed",
+    "runId",
+    "evaluationClaim",
+    "subjectUnderTest",
+    "authorityClass",
+    "candidate",
+    "baseline",
+    "benchmarkDefinitionDigest",
+    "baselinePolicyDigest",
+    "suite",
+    "runnerImageDigest",
+    "harnessRevision",
+    "toolSimulatorRevision",
+    "metricRevisions",
+    "graderRevisions",
+    "graderKinds",
+    "graderCalibrations",
+    "environmentRevision",
+    "randomSeed",
     "budgets",
-    "attempt_policy",
-    "requested_at",
-    "request_digest"
+    "attemptPolicy",
+    "requestedAt",
+    "requestDigest"
   ],
   "properties": {
-    "run_id": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{3,160}$" },
-    "evaluation_claim": { "type": "string", "minLength": 8, "maxLength": 1000 },
-    "subject_under_test": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 200
+    "runId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{3,160}$" },
+    "evaluationClaim": { "type": "string", "minLength": 8, "maxLength": 1000 },
+    "subjectUnderTest": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "authorityClass": {
+      "enum": ["vinfast-acceptance", "public-diagnostic"]
     },
-    "candidate_release": { "$ref": "#/$defs/release" },
-    "baseline_release": {
+    "candidate": { "$ref": "#/$defs/release" },
+    "baseline": {
       "oneOf": [{ "$ref": "#/$defs/release" }, { "type": "null" }]
     },
-    "suite_revision": { "$ref": "#/$defs/suite" },
-    "runner_image_digest": { "$ref": "#/$defs/sha256" },
-    "harness_revision": { "type": "string", "minLength": 1, "maxLength": 200 },
-    "tool_simulator_revision": {
+    "benchmarkDefinitionDigest": { "$ref": "#/$defs/sha256" },
+    "baselinePolicyDigest": { "$ref": "#/$defs/sha256" },
+    "suite": { "$ref": "#/$defs/suite" },
+    "runnerImageDigest": { "$ref": "#/$defs/sha256" },
+    "harnessRevision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "toolSimulatorRevision": {
       "type": ["string", "null"],
       "minLength": 1,
       "maxLength": 200
     },
-    "grader_revisions": {
+    "metricRevisions": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1, "maxLength": 200 }
     },
-    "environment_revision": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 200
+    "graderRevisions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
     },
-    "random_seed": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "graderKinds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["kind", "revision"],
+        "properties": {
+          "kind": {
+            "enum": ["deterministic", "citation", "nli", "model-judge", "human"]
+          },
+          "revision": { "type": "string", "minLength": 1, "maxLength": 200 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "graderCalibrations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "calibrationDigest",
+          "definitionDigest",
+          "graderRevision",
+          "implementationDigest",
+          "humanLabelledSuiteDigest",
+          "calibratedAt",
+          "expiresAt"
+        ],
+        "properties": {
+          "calibrationDigest": { "$ref": "#/$defs/sha256" },
+          "definitionDigest": { "$ref": "#/$defs/sha256" },
+          "graderRevision": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "implementationDigest": { "$ref": "#/$defs/sha256" },
+          "humanLabelledSuiteDigest": { "$ref": "#/$defs/sha256" },
+          "calibratedAt": { "type": "string", "format": "date-time" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "environmentRevision": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "randomSeed": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
     "budgets": {
       "type": "object",
       "required": [
-        "max_input_tokens",
-        "max_output_tokens",
-        "max_duration_seconds",
-        "max_cost_usd"
+        "maxInputTokens",
+        "maxOutputTokens",
+        "maxDurationSeconds",
+        "maxCostUsd"
       ],
       "properties": {
-        "max_input_tokens": { "type": "integer", "minimum": 1 },
-        "max_output_tokens": { "type": "integer", "minimum": 1 },
-        "max_duration_seconds": { "type": "integer", "minimum": 1 },
-        "max_cost_usd": { "type": "number", "minimum": 0 }
+        "maxInputTokens": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "maxOutputTokens": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "maxDurationSeconds": { "type": "integer", "minimum": 1, "maximum": 2147483 },
+        "maxCostUsd": { "type": "number", "minimum": 0, "maximum": 1000000 }
       },
       "additionalProperties": false
     },
-    "attempt_policy": {
+    "attemptPolicy": {
       "type": "object",
-      "required": ["max_attempts", "retryable_failure_codes"],
+      "required": ["maxAttempts", "retryableFailureCodes"],
       "properties": {
-        "max_attempts": { "type": "integer", "minimum": 1, "maximum": 3 },
-        "retryable_failure_codes": {
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "retryableFailureCodes": {
           "type": "array",
           "uniqueItems": true,
           "items": {
@@ -88,26 +138,26 @@
       },
       "additionalProperties": false
     },
-    "requested_at": { "type": "string", "format": "date-time" },
-    "request_digest": { "$ref": "#/$defs/sha256" }
+    "requestedAt": { "type": "string", "format": "date-time" },
+    "requestDigest": { "$ref": "#/$defs/sha256" }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "release": {
       "type": "object",
-      "required": ["release_id", "manifest_digest"],
+      "required": ["releaseId", "manifestDigest"],
       "properties": {
-        "release_id": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "manifest_digest": { "$ref": "#/$defs/sha256" }
+        "releaseId": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "manifestDigest": { "$ref": "#/$defs/sha256" }
       },
       "additionalProperties": false
     },
     "suite": {
       "type": "object",
-      "required": ["suite_id", "suite_digest"],
+      "required": ["id", "digest"],
       "properties": {
-        "suite_id": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "suite_digest": { "$ref": "#/$defs/sha256" }
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "digest": { "$ref": "#/$defs/sha256" }
       },
       "additionalProperties": false
     }

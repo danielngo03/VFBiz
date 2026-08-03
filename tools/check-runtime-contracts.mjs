@@ -1,11 +1,22 @@
 #!/usr/bin/env node
-import { createHash } from "node:crypto";
+import {
+  createHash,
+  generateKeyPairSync,
+  sign as createSignature,
+} from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import yaml from "js-yaml";
+import {
+  SignedAuthorityError,
+  canonicalAuthorityJson,
+  verifyAndProjectSignedAuthority,
+  verifyNormalizedAuthorityProjection,
+  verifySignedAuthority,
+} from "./lib/gcp-signed-authority.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contractRegistry = await loadContractRegistry();
@@ -15,12 +26,17 @@ const datasetManifestV4ContractId =
   "https://vfbiz.example/contracts/ai/dataset-release-manifest/v4";
 const assistantClassifierBindingContractId =
   "https://vfbiz.example/contracts/ai/assistant-release-classifier-binding/v1";
+const sourceRegisterContractId =
+  "https://vfbiz.example/contracts/ai/source-register/v5";
 const contractPath = (contractId) => {
   const entry = contractRegistry.byId.get(contractId);
   if (!entry) throw new Error(`AI contract is not registered: ${contractId}`);
   return entry.canonicalPath;
 };
 const schemaPaths = [
+  "contracts/governance/agent-runtime.schema.json",
+  "contracts/governance/gcp-controlled-apply-authority.schema.json",
+  "contracts/governance/gcp-controlled-apply-verified-envelope.schema.json",
   "contracts/json-schema/citation.schema.json",
   contractPath(datasetManifestV4ContractId),
   contractPath("https://vfbiz.example/contracts/ai/release-manifest/v3"),
@@ -50,7 +66,33 @@ const requiredConversationOperationIds = [
 ];
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 addFormats(ajv);
+ajv.addFormat("vfbiz-canonical-utc-timestamp", {
+  type: "string",
+  validate: (value) => {
+    if (
+      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{3})?Z$/.test(
+        value,
+      )
+    )
+      return false;
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) return false;
+    const normalized = value.includes(".")
+      ? new Date(parsed).toISOString()
+      : new Date(parsed).toISOString().replace(".000Z", "Z");
+    return normalized === value;
+  },
+});
+const governanceSchema = JSON.parse(
+  await readFile(
+    path.join(root, "contracts/governance/governance.schema.json"),
+    "utf8",
+  ),
+);
+ajv.addSchema(governanceSchema);
 const schemas = new Map();
+
+assertEvaluationCanonicalDigestParity();
 
 for (const relativePath of schemaPaths) {
   const schema = JSON.parse(
@@ -59,6 +101,15 @@ for (const relativePath of schemaPaths) {
   ajv.compile(schema);
   schemas.set(relativePath, schema);
 }
+
+await assertGovernanceContractVectors(
+  "contracts/governance/gcp-controlled-apply-authority.schema.json",
+  "contracts/governance/gcp-controlled-apply-authority.vectors.json",
+);
+await assertPlainContractVectors(
+  "contracts/governance/gcp-controlled-apply-verified-envelope.schema.json",
+  "contracts/governance/gcp-controlled-apply-verified-envelope.vectors.json",
+);
 
 const datasetVectors = JSON.parse(
   await readFile(
@@ -89,26 +140,46 @@ for (const vector of datasetVectors) {
     datasetValidators.set(registryEntry.contractId, validate);
   }
   const schemaValid = validate(vector.value);
-  const semanticErrors =
-    [datasetManifestV3ContractId, datasetManifestV4ContractId].includes(
-      registryEntry.contractId,
-    )
-      ? datasetManifestSemanticErrors(vector.value)
-      : registryEntry.contractId === assistantClassifierBindingContractId
-        ? assistantClassifierBindingSemanticErrors(vector.value)
-      : registryEntry.contractId ===
-          "https://vfbiz.example/contracts/ai/golden-case/v2"
-        ? goldenCaseSemanticErrors(vector.value)
-        : registryEntry.contractId ===
-            "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1"
-          ? graderCalibrationSemanticErrors(vector.value)
+  const semanticErrors = [
+    datasetManifestV3ContractId,
+    datasetManifestV4ContractId,
+  ].includes(registryEntry.contractId)
+    ? datasetManifestSemanticErrors(vector.value)
+    : registryEntry.contractId ===
+        "https://vfbiz.example/contracts/ai/source-intake-receipt/v1"
+      ? sourceIntakeReceiptSemanticErrors(vector.value)
+      : registryEntry.contractId === sourceRegisterContractId
+        ? sourceRegisterSemanticErrors(vector.value)
+        : registryEntry.contractId === assistantClassifierBindingContractId
+          ? assistantClassifierBindingSemanticErrors(vector.value)
           : registryEntry.contractId ===
-              "https://vfbiz.example/contracts/ai/evaluation/run-result/v1"
-            ? evaluationRunResultSemanticErrors(vector.value)
-            : registryEntry.contractId ===
-                "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1"
-              ? evaluationEvidenceBundleSemanticErrors(vector.value)
-              : [];
+              "https://vfbiz.example/contracts/ai/golden-case/v2"
+            ? goldenCaseSemanticErrors(vector.value)
+            : [
+                  "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
+                  "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v2",
+                ].includes(registryEntry.contractId)
+              ? graderCalibrationSemanticErrors(
+                  vector.value,
+                  registryEntry.contractId.endsWith("/v2"),
+                )
+              : [
+                    "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v2",
+                    "https://vfbiz.example/contracts/ai/evaluation/run-request/v2",
+                    "https://vfbiz.example/contracts/ai/evaluation/case-result/v1",
+                    "https://vfbiz.example/contracts/ai/evaluation/run-result/v1",
+                  ].includes(registryEntry.contractId)
+                ? evaluationMoneySemanticErrors(
+                    registryEntry.contractId,
+                    vector.value,
+                  )
+                : registryEntry.contractId ===
+                    "https://vfbiz.example/contracts/ai/evaluation/run-result/v1"
+                  ? evaluationRunResultSemanticErrors(vector.value)
+                  : registryEntry.contractId ===
+                      "https://vfbiz.example/contracts/ai/evaluation/evidence-bundle/v1"
+                    ? evaluationEvidenceBundleSemanticErrors(vector.value)
+                    : [];
   const observed = schemaValid && semanticErrors.length === 0;
   const expected =
     typeof vector.semantic_valid === "boolean"
@@ -119,6 +190,24 @@ for (const vector of datasetVectors) {
       `Dataset contract vector ${vector.id} expected valid=${expected}: ${ajv.errorsText(validate.errors)} ${semanticErrors.join("; ")}`,
     );
   }
+}
+
+function sourceRegisterSemanticErrors(value) {
+  const originKind = value?.origin?.kind;
+  if (
+    ["managed-upload", "local-bootstrap"].includes(originKind) &&
+    value.source_revision !== value.content_revision
+  ) {
+    return ["managed source revision must equal its content revision"];
+  }
+  return [];
+}
+
+function sourceIntakeReceiptSemanticErrors(value) {
+  if (value.content_revision !== `sha256:${value.observed_sha256}`) {
+    return ["content revision must equal the observed SHA-256"];
+  }
+  return [];
 }
 
 const conversationEventSchema = schemas.get(conversationEventSchemaPath);
@@ -141,6 +230,271 @@ if (process.argv.includes("--self-test")) runNegativeSelfTest();
 console.log(
   `Runtime contracts verified: ${contractRegistry.byId.size} registered AI contracts, ${schemaPaths.length} runtime schemas, ${datasetVectors.length} dataset vectors, ${requiredConversationOperationIds.length} isolated candidate operations; active dataset manifest ${datasetManifestV4ContractId}`,
 );
+
+function assertEvaluationCanonicalDigestParity() {
+  const vector = {
+    n: -0,
+    small: 1e-7,
+    large: 1e21,
+    v: "Việt",
+    x: 1,
+  };
+  const canonical = canonicalEvaluationJson(vector);
+  const expectedCanonical =
+    '{"large":1e+21,"n":0,"small":1e-7,"v":"Việt","x":1}';
+  const digest = `sha256:${createHash("sha256").update(canonical).digest("hex")}`;
+  const expectedDigest =
+    "sha256:2cee1c2db35a2523a4212e3dbebe0694b85e04547ae13dfcd71b2b0857a464d5";
+  if (canonical !== expectedCanonical || digest !== expectedDigest) {
+    throw new Error(
+      "Evaluation canonical JSON/digest differs from the Python evidence authority",
+    );
+  }
+}
+
+function canonicalEvaluationJson(value) {
+  if (value === null) return "null";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") {
+    if (!Number.isFinite(value))
+      throw new Error("Evaluation canonical JSON rejects non-finite numbers");
+    return JSON.stringify(Object.is(value, -0) ? 0 : value);
+  }
+  if (typeof value === "string") return JSON.stringify(value);
+  if (Array.isArray(value))
+    return `[${value.map(canonicalEvaluationJson).join(",")}]`;
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map(
+        (key) =>
+          `${JSON.stringify(key)}:${canonicalEvaluationJson(value[key])}`,
+      )
+      .join(",")}}`;
+  }
+  throw new Error(`Evaluation canonical JSON rejects ${typeof value} values`);
+}
+
+async function assertGovernanceContractVectors(schemaPath, vectorsPath) {
+  const schema = schemas.get(schemaPath);
+  const validate = ajv.getSchema(schema.$id) ?? ajv.compile(schema);
+  const vectors = JSON.parse(
+    await readFile(path.join(root, vectorsPath), "utf8"),
+  );
+  if (!Array.isArray(vectors) || vectors.length < 2)
+    throw new Error(`${vectorsPath}: expected positive and negative vectors`);
+  for (const vector of vectors) {
+    const observed = validate(vector.value);
+    if (observed !== vector.valid) {
+      throw new Error(
+        `${vectorsPath}:${vector.id} expected valid=${vector.valid}: ${ajv.errorsText(validate.errors)}`,
+      );
+    }
+  }
+  const normalizedSchema = schemas.get(
+    "contracts/governance/gcp-controlled-apply-verified-envelope.schema.json",
+  );
+  const validateNormalized =
+    ajv.getSchema(normalizedSchema.$id) ?? ajv.compile(normalizedSchema);
+  assertSignedAuthorityVerifier(vectors, validate, validateNormalized);
+}
+
+async function assertPlainContractVectors(schemaPath, vectorsPath) {
+  const schema = schemas.get(schemaPath);
+  const validate = ajv.getSchema(schema.$id) ?? ajv.compile(schema);
+  const vectors = JSON.parse(
+    await readFile(path.join(root, vectorsPath), "utf8"),
+  );
+  if (!Array.isArray(vectors) || vectors.length < 2)
+    throw new Error(`${vectorsPath}: expected positive and negative vectors`);
+  for (const vector of vectors) {
+    const observed = validate(vector.value);
+    if (observed !== vector.valid)
+      throw new Error(
+        `${vectorsPath}:${vector.id} expected valid=${vector.valid}: ${ajv.errorsText(validate.errors)}`,
+      );
+    if (
+      vector.valid &&
+      schemaPath ===
+        "contracts/governance/gcp-controlled-apply-verified-envelope.schema.json"
+    ) {
+      const semanticDigest = createHash("sha256")
+        .update(canonicalAuthorityJson(vector.value.projection))
+        .digest("hex");
+      if (vector.value.projection_sha256 !== semanticDigest)
+        throw new Error(`${vectorsPath}:${vector.id} projection digest drift`);
+      for (const field of [
+        "aggregate_authority_complete",
+        "approval_event_verified",
+        "cancellation_authority_verified",
+        "dispatch_eligible",
+        "workforce_capability_verified",
+        "workforce_subject_verified",
+      ]) {
+        const widened = structuredClone(vector.value);
+        widened.projection[field] = true;
+        if (validate(widened))
+          throw new Error(`${vectorsPath}:${vector.id} allowed ${field}=true`);
+      }
+      for (const field of [
+        "issued_at",
+        "expires_at",
+        "claimed_claim_expires_at",
+        "claimed_approval_event_occurred_at",
+      ]) {
+        if (!(field in vector.value.projection)) continue;
+        for (const invalid of [
+          "2026-08-02T13:00:00+07:00",
+          "2026-08-02T06:00:00.1Z",
+          "2026-02-30T06:00:00Z",
+          "2026-13-01T06:00:00Z",
+          "2026-01-01T25:00:00Z",
+          "2026-12-31T23:59:60Z",
+        ]) {
+          const candidate = structuredClone(vector.value);
+          candidate.projection[field] = invalid;
+          if (validate(candidate))
+            throw new Error(
+              `${vectorsPath}:${vector.id} accepted non-canonical ${field}`,
+            );
+        }
+      }
+    }
+  }
+}
+
+function assertSignedAuthorityVerifier(
+  vectors,
+  validateSchema,
+  validateNormalized,
+) {
+  const positive = vectors.find((vector) => vector.valid === true)?.value;
+  if (!positive) throw new Error("signed authority positive vector is missing");
+  const { privateKey, publicKey } = generateKeyPairSync("ec", {
+    namedCurve: "prime256v1",
+  });
+  const signEnvelope = (candidate) => {
+    const payloadJson = canonicalAuthorityJson(candidate.payload);
+    candidate.payload_sha256 = createHash("sha256")
+      .update(payloadJson)
+      .digest("hex");
+    const signingProjection = canonicalAuthorityJson({
+      algorithm: candidate.signature.algorithm,
+      issuer_service_account: candidate.signature.issuer_service_account,
+      kms_key_version: candidate.signature.kms_key_version,
+      payload: candidate.payload,
+      payload_sha256: candidate.payload_sha256,
+      schema_version: candidate.schema_version,
+    });
+    candidate.signature.value_base64 = createSignature(
+      "sha256",
+      Buffer.from(signingProjection),
+      privateKey,
+    ).toString("base64");
+    return candidate;
+  };
+  const envelope = signEnvelope(structuredClone(positive));
+  const publicKeySha256 = createHash("sha256")
+    .update(publicKey.export({ type: "spki", format: "der" }))
+    .digest("hex");
+  const trustedKmsKeyVersions = new Map([
+    [
+      envelope.signature.kms_key_version,
+      {
+        algorithm: "EC_SIGN_P256_SHA256",
+        issuerServiceAccount: envelope.signature.issuer_service_account,
+        publicKeyPem: publicKey.export({ type: "spki", format: "pem" }),
+        publicKeySha256,
+        state: "ENABLED",
+      },
+    ],
+  ]);
+  const context = {
+    nowMs: Date.parse("2026-08-02T06:10:00Z"),
+    expectedBrokerServiceAccount: envelope.payload.broker_service_account,
+    expectedExecutorServiceAccount: envelope.payload.executor_service_account,
+    trustedKmsKeyVersions,
+    verifierRevisionSha256: "f".repeat(64),
+    expectedVerifierRevisionSha256: "f".repeat(64),
+  };
+  const signedEnvelope = canonicalAuthorityJson(envelope);
+  context.sourceEnvelopeUri =
+    "gs://vinfast-503003-evidence-dev/controlled-apply/authority-envelopes/v1/" +
+    `${createHash("sha256").update(signedEnvelope).digest("hex")}.json#1`;
+  const verified = verifySignedAuthority(signedEnvelope, context);
+  if (
+    !verified.signatureValid ||
+    !verified.semanticValid ||
+    verified.disposition !== "review-pending" ||
+    verified.dispatchEligible
+  )
+    throw new Error("synthetic signed authority must remain inert");
+  const normalized = verifyAndProjectSignedAuthority(signedEnvelope, context);
+  verifyNormalizedAuthorityProjection(normalized, {
+    ...context,
+    sourceEnvelopeBytes: signedEnvelope,
+  });
+  if (!validateNormalized(normalized))
+    throw new Error(
+      `normalized signed authority is invalid: ${ajv.errorsText(validateNormalized.errors)}`,
+    );
+  const normalizedDigest = createHash("sha256")
+    .update(canonicalAuthorityJson(normalized.projection))
+    .digest("hex");
+  if (
+    normalized.projection_sha256 !== normalizedDigest ||
+    normalized.projection.source_signature_verified !== true ||
+    normalized.projection.source_semantics_verified !== true ||
+    normalized.projection.workforce_subject_verified !== false ||
+    normalized.projection.workforce_capability_verified !== false ||
+    normalized.projection.approval_event_verified !== false ||
+    normalized.projection.cancellation_authority_verified !== false ||
+    normalized.projection.aggregate_authority_complete !== false ||
+    normalized.projection.dispatch_eligible !== false
+  )
+    throw new Error("normalized signed authority widened its authority class");
+  for (const field of [
+    "base_revision",
+    "decision_id",
+    "plan_uri",
+    "executor_image",
+  ]) {
+    for (const invalid of [
+      [positive.payload[field]],
+      { value: positive.payload[field] },
+    ]) {
+      const candidate = signEnvelope(structuredClone(positive));
+      candidate.payload[field] = invalid;
+      signEnvelope(candidate);
+      if (validateSchema(candidate))
+        throw new Error(`signed authority schema accepted non-string ${field}`);
+      try {
+        verifySignedAuthority(canonicalAuthorityJson(candidate), context);
+      } catch (error) {
+        if (error instanceof SignedAuthorityError) continue;
+        throw error;
+      }
+      throw new Error(`signed authority runtime coerced non-string ${field}`);
+    }
+  }
+  const payloadJson = canonicalAuthorityJson(envelope.payload);
+  envelope.signature.value_base64 = createSignature(
+    "sha256",
+    Buffer.from(`${payloadJson}tampered`),
+    privateKey,
+  ).toString("base64");
+  try {
+    verifySignedAuthority(canonicalAuthorityJson(envelope), context);
+  } catch (error) {
+    if (
+      error instanceof SignedAuthorityError &&
+      error.code === "AUTHORITY_SIGNATURE_INVALID"
+    )
+      return;
+    throw error;
+  }
+  throw new Error("signed authority verifier accepted an invalid signature");
+}
 
 async function loadContractRegistry() {
   const registryPath = path.join(root, "contracts/ai/index.json");
@@ -437,8 +791,7 @@ function datasetManifestSemanticErrors(manifest) {
       errors.push("artifact content address must match sha256");
     }
     if (
-      isV4 &&
-      artifactAddresses.has(artifact.content_address) ||
+      (isV4 && artifactAddresses.has(artifact.content_address)) ||
       (isV4 && artifactHashes.slice(0, -1).includes(artifact.sha256))
     ) {
       errors.push("artifact digests and content addresses must be unique");
@@ -459,9 +812,7 @@ function datasetManifestSemanticErrors(manifest) {
     ? manifest.split_lock
     : manifest.split;
   const partitions =
-    isRecord(split) && isRecord(split.partitions)
-      ? split.partitions
-      : {};
+    isRecord(split) && isRecord(split.partitions) ? split.partitions : {};
   const partitionRecords = Object.values(partitions).reduce(
     (total, value) => total + (Number.isInteger(value) ? value : 0),
     0,
@@ -503,10 +854,7 @@ function datasetManifestSemanticErrors(manifest) {
       if (!artifactDigests.has(evidence.artifact_digest)) {
         errors.push("quality evidence references artifact outside manifest");
       }
-      if (
-        isV4 &&
-        ["decision-ready", "released"].includes(manifest.status)
-      ) {
+      if (isV4 && ["decision-ready", "released"].includes(manifest.status)) {
         let current = true;
         if (evidence.state !== "verified") {
           current = false;
@@ -516,16 +864,12 @@ function datasetManifestSemanticErrors(manifest) {
         }
         if (evidence.revoked_at !== null && evidence.revoked_at !== undefined) {
           current = false;
-          errors.push(
-            "decision-ready or released quality evidence is revoked",
-          );
+          errors.push("decision-ready or released quality evidence is revoked");
         }
         const expiry = Date.parse(evidence.expires_at);
         if (!Number.isFinite(expiry) || expiry <= Date.now()) {
           current = false;
-          errors.push(
-            "decision-ready or released quality evidence is expired",
-          );
+          errors.push("decision-ready or released quality evidence is expired");
         }
         if (current) verifiedArtifactDigests.add(evidence.artifact_digest);
       }
@@ -602,7 +946,10 @@ function goldenCaseSemanticErrors(goldenCase) {
   return errors;
 }
 
-function graderCalibrationSemanticErrors(calibration) {
+function graderCalibrationSemanticErrors(
+  calibration,
+  requireEvidenceDigest = false,
+) {
   if (!isRecord(calibration)) return ["calibration must be an object"];
   const errors = [];
   const matrix = calibration.confusion_matrix;
@@ -628,24 +975,25 @@ function graderCalibrationSemanticErrors(calibration) {
         errors.push("calibration must contain positive and negative examples");
         return errors;
       }
-      const positiveRecall = truePositive / positiveDenominator;
-      const negativeRecall = trueNegative / negativeDenominator;
-      const expectedBalancedAccuracy = (positiveRecall + negativeRecall) / 2;
       const f1Denominator = 2 * truePositive + falsePositive + falseNegative;
       if (f1Denominator === 0) {
         errors.push("calibration must contain positive predictions or labels");
         return errors;
       }
-      const expectedF1 = (2 * truePositive) / f1Denominator;
       if (
-        !approximatelyEqual(
+        !balancedAccuracyMatches(
           calibration.balanced_accuracy,
-          expectedBalancedAccuracy,
+          truePositive,
+          trueNegative,
+          falsePositive,
+          falseNegative,
         )
       ) {
         errors.push("balanced_accuracy must match confusion matrix");
       }
-      if (!approximatelyEqual(calibration.f1, expectedF1)) {
+      if (
+        !f1Matches(calibration.f1, truePositive, falsePositive, falseNegative)
+      ) {
         errors.push("f1 must match confusion matrix");
       }
     }
@@ -654,6 +1002,16 @@ function graderCalibrationSemanticErrors(calibration) {
     Date.parse(calibration.expires_at) <= Date.parse(calibration.calibrated_at)
   ) {
     errors.push("calibration expiry must be after calibrated_at");
+  }
+  if (requireEvidenceDigest) {
+    const semanticDocument = structuredClone(calibration);
+    delete semanticDocument.evidence_digest;
+    const observedDigest = `sha256:${createHash("sha256")
+      .update(canonicalEvaluationJson(semanticDocument))
+      .digest("hex")}`;
+    if (calibration.evidence_digest !== observedDigest) {
+      errors.push("calibration evidence_digest must match semantic document");
+    }
   }
   const slices = Array.isArray(calibration.slice_metrics)
     ? calibration.slice_metrics
@@ -664,7 +1022,93 @@ function graderCalibrationSemanticErrors(calibration) {
   if (slices.length !== new Set(slices).size) {
     errors.push("calibration slices must be unique");
   }
+  for (const slice of Array.isArray(calibration.slice_metrics)
+    ? calibration.slice_metrics
+    : []) {
+    if (!isRecord(slice) || !isRecord(slice.confusion_matrix)) continue;
+    const sliceMatrix = slice.confusion_matrix;
+    const values = [
+      sliceMatrix.true_positive,
+      sliceMatrix.true_negative,
+      sliceMatrix.false_positive,
+      sliceMatrix.false_negative,
+    ];
+    if (!values.every(Number.isInteger)) continue;
+    const [truePositive, trueNegative, falsePositive, falseNegative] = values;
+    if (
+      values.reduce((total, value) => total + value, 0) !== slice.sample_size
+    ) {
+      errors.push(`calibration slice ${slice.slice} matrix total mismatch`);
+      continue;
+    }
+    if (slice.sample_size > calibration.sample_size) {
+      errors.push(
+        `calibration slice ${slice.slice} exceeds overall sample_size`,
+      );
+    }
+    const positiveDenominator = truePositive + falseNegative;
+    const negativeDenominator = trueNegative + falsePositive;
+    const f1Denominator = 2 * truePositive + falsePositive + falseNegative;
+    if (
+      positiveDenominator <= 0 ||
+      negativeDenominator <= 0 ||
+      f1Denominator <= 0
+    ) {
+      errors.push(`calibration slice ${slice.slice} is not calibratable`);
+      continue;
+    }
+    if (
+      !balancedAccuracyMatches(
+        slice.balanced_accuracy,
+        truePositive,
+        trueNegative,
+        falsePositive,
+        falseNegative,
+      )
+    ) {
+      errors.push(
+        `calibration slice ${slice.slice} balanced_accuracy mismatch`,
+      );
+    }
+    if (!f1Matches(slice.f1, truePositive, falsePositive, falseNegative)) {
+      errors.push(`calibration slice ${slice.slice} f1 mismatch`);
+    }
+    if (
+      slice.slice === "all" &&
+      (slice.sample_size !== calibration.sample_size ||
+        !confusionMatricesEqual(
+          slice.confusion_matrix,
+          calibration.confusion_matrix,
+        ) ||
+        slice.balanced_accuracy !== calibration.balanced_accuracy ||
+        slice.f1 !== calibration.f1)
+    ) {
+      errors.push("calibration all slice must equal overall calibration");
+    }
+  }
   return errors;
+}
+
+function evaluationMoneySemanticErrors(contractId, value) {
+  let cost;
+  if (contractId.endsWith("/benchmark-definition/v2"))
+    cost = value?.budgets?.max_cost_usd;
+  else if (contractId.endsWith("/run-request/v2"))
+    cost = value?.budgets?.maxCostUsd;
+  else if (contractId.endsWith("/case-result/v1"))
+    cost = value?.usage?.cost_usd;
+  else cost = value?.budget_usage?.cost_usd;
+  const errors =
+    typeof cost === "number" &&
+    Number.isFinite(cost) &&
+    cost >= 0 &&
+    cost <= 1_000_000 &&
+    hasAtMostDecimalPlaces(cost, 6)
+      ? []
+      : ["evaluation cost must use bounded micro-USD precision"];
+  return contractId.endsWith("/run-result/v1")
+    ? [...errors, ...evaluationRunResultSemanticErrors(value)]
+    : errors;
 }
 
 function evaluationRunResultSemanticErrors(result) {
@@ -722,12 +1166,76 @@ function evaluationEvidenceBundleSemanticErrors(bundle) {
   return [];
 }
 
-function approximatelyEqual(observed, expected) {
-  return (
-    typeof observed === "number" &&
-    Number.isFinite(observed) &&
-    Math.abs(observed - expected) <= 1e-6
+function balancedAccuracyMatches(observed, tp, tn, fp, fn) {
+  const positiveTotal = BigInt(tp) + BigInt(fn);
+  const negativeTotal = BigInt(tn) + BigInt(fp);
+  const numerator = BigInt(tp) * negativeTotal + BigInt(tn) * positiveTotal;
+  const denominator = 2n * positiveTotal * negativeTotal;
+  return metricMatchesRatio(observed, numerator, denominator);
+}
+
+function f1Matches(observed, tp, fp, fn) {
+  return metricMatchesRatio(
+    observed,
+    2n * BigInt(tp),
+    2n * BigInt(tp) + BigInt(fp) + BigInt(fn),
   );
+}
+
+function metricMatchesRatio(observed, expectedNumerator, expectedDenominator) {
+  const observedRatio = decimalNumberRatio(observed);
+  if (!observedRatio || expectedDenominator <= 0n) return false;
+  const [observedNumerator, observedDenominator] = observedRatio;
+  const difference =
+    observedNumerator * expectedDenominator -
+    expectedNumerator * observedDenominator;
+  const absoluteDifference = difference < 0n ? -difference : difference;
+  return (
+    absoluteDifference * 1_000_000_000_000n <=
+    observedDenominator * expectedDenominator
+  );
+}
+
+function decimalNumberRatio(value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  const match = value
+    .toString()
+    .toLowerCase()
+    .match(/^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/);
+  if (!match) return null;
+  const fraction = match[2] ?? "";
+  const exponent = Number.parseInt(match[3] ?? "0", 10);
+  let numerator = BigInt(`${match[1]}${fraction}`);
+  const scale = fraction.length - exponent;
+  if (scale <= 0) {
+    numerator *= 10n ** BigInt(-scale);
+    return [numerator, 1n];
+  }
+  return [numerator, 10n ** BigInt(scale)];
+}
+
+function confusionMatricesEqual(left, right) {
+  if (!isRecord(left) || !isRecord(right)) return false;
+  return [
+    "true_positive",
+    "true_negative",
+    "false_positive",
+    "false_negative",
+  ].every((key) => left[key] === right[key]);
+}
+
+function hasAtMostDecimalPlaces(value, maximumPlaces) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return false;
+  const match = value
+    .toString()
+    .toLowerCase()
+    .match(/^\d+(?:\.(\d+))?(?:e([+-]?\d+))?$/);
+  if (!match) return false;
+  const fractionalDigits = match[1]?.length ?? 0;
+  const exponent = Number.parseInt(match[2] ?? "0", 10);
+  return fractionalDigits - exponent <= maximumPlaces;
 }
 
 function extractOperationsInterface(source) {
@@ -864,8 +1372,7 @@ function runNegativeSelfTest() {
     );
   }
   const unboundQualityRelease = structuredClone(canonicalRelease);
-  unboundQualityRelease.quality_evidence[0].artifact_digest =
-    `sha256:${"7".repeat(64)}`;
+  unboundQualityRelease.quality_evidence[0].artifact_digest = `sha256:${"7".repeat(64)}`;
   if (
     !datasetManifestSemanticErrors(unboundQualityRelease).some((error) =>
       error.includes("artifact outside manifest"),
@@ -947,9 +1454,7 @@ function runNegativeSelfTest() {
         error.includes(expected),
       )
     ) {
-      throw new Error(
-        `Runtime contract checker self-test failed: ${label}`,
-      );
+      throw new Error(`Runtime contract checker self-test failed: ${label}`);
     }
   }
   console.log("Dataset v4 authority self-test passed.");

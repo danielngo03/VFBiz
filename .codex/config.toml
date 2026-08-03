@@ -1,2 +1,39 @@
 [agents]
-max_concurrent_threads_per_session = 3
+max_threads = 3
+max_depth = 1
+
+[agents.explorer]
+description = "Perform bounded read-heavy repository or documentation research and return a concise evidence summary."
+config_file = "agents/explorer.toml"
+
+[agents.implementer]
+description = "Implement one approved outcome inside declared paths and return observed evidence."
+config_file = "agents/implementer.toml"
+
+[agents.reviewer-verifier]
+description = "Verify acceptance and review correctness, regression and maintainability without editing."
+config_file = "agents/reviewer-verifier.toml"
+
+[agents.risk-reviewer]
+description = "Review security, privacy, data, AI, contracts, rights and operations without accepting risk."
+config_file = "agents/risk-reviewer.toml"
+
+[agents.integrator]
+description = "Integrate sealed disjoint lanes, resolve mechanical conflicts and run cross-lane checks without approving release."
+config_file = "agents/integrator.toml"
+
+[agents.dataset-source-researcher]
+description = "Research dataset and source candidates read-only, record provenance and license evidence, and never download or accept rights."
+config_file = "agents/dataset-source-researcher.toml"
+
+[agents.synthetic-dataset-builder]
+description = "Generate one schema-valid synthetic candidate shard from approved inputs without production PII or release authority."
+config_file = "agents/synthetic-dataset-builder.toml"
+
+[agents.dataset-quality-reviewer]
+description = "Independently verify dataset integrity, schema, lineage, duplication, contamination, PII, bias and coverage; return content-addressed evidence without editing, approving or releasing it."
+config_file = "agents/dataset-quality-reviewer.toml"
+
+[agents.golden-domain-reviewer]
+description = "Independently verify Dataset Product and Golden-case domain correctness, VinFast semantics, ViVi voice, tool/state behavior and ambiguity; return evidence without adjudicating or releasing it."
+config_file = "agents/golden-domain-reviewer.toml"

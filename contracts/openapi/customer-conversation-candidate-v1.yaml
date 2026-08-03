@@ -24,12 +24,10 @@ paths:
       operationId: createConversationSession
       x-vfbiz-availability: candidate
       description: |
-        Creates a durable assistant session. The server derives the assistant
-        profile from verified authentication. Anonymous callers receive a
-        session-bound HttpOnly capability cookie.
+        Creates a durable authenticated-staging assistant session. The server
+        derives the assistant profile from verified customer authentication.
       security:
         - customerAccessToken: []
-        - {}
       requestBody:
         required: true
         content:
@@ -39,9 +37,6 @@ paths:
         "201":
           description: Durable session created
           headers:
-            Set-Cookie:
-              description: Optional opaque public conversation capability
-              schema: { type: string }
             ETag: { $ref: "#/components/headers/ETag" }
           content:
             application/json:
@@ -57,7 +52,6 @@ paths:
       x-vfbiz-availability: candidate
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       responses:
         "200":
           description: Current durable session snapshot
@@ -75,11 +69,9 @@ paths:
       description: Closes the session without deleting its governed retention record.
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       parameters:
         - { $ref: "#/components/parameters/ConversationSessionId" }
         - { $ref: "#/components/parameters/ConversationIfMatch" }
-        - { $ref: "#/components/parameters/IdempotencyKey" }
       responses:
         "200":
           description: Closed session snapshot
@@ -101,7 +93,6 @@ paths:
         idempotency key; reuse with different content is rejected.
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       requestBody:
         required: true
         content:
@@ -128,7 +119,6 @@ paths:
       description: Returns persisted customer-visible messages for recovery and resync.
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       parameters:
         - { $ref: "#/components/parameters/PageCursor" }
         - { $ref: "#/components/parameters/PageLimit" }
@@ -148,11 +138,10 @@ paths:
       description: |
         Replays durable events after Last-Event-ID and may interleave typed
         connection-local progress frames. Transient frames never advance the
-        durable cursor. Heartbeats are SSE comments every 15 seconds.
+        durable cursor. Typed, content-free heartbeat frames are sent every 15 seconds.
         An expired cursor returns 409 before the stream opens.
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       parameters:
         - { $ref: "#/components/parameters/ConversationSessionId" }
         - { $ref: "#/components/parameters/LastEventId" }
@@ -183,11 +172,9 @@ paths:
       x-vfbiz-availability: candidate
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       parameters:
         - { $ref: "#/components/parameters/ConversationSessionId" }
         - { $ref: "#/components/parameters/ConversationTurnId" }
-        - { $ref: "#/components/parameters/IdempotencyKey" }
       requestBody:
         required: true
         content:
@@ -212,10 +199,8 @@ paths:
         not an AI tool call.
       security:
         - customerAccessToken: []
-        - conversationCapability: []
       parameters:
         - { $ref: "#/components/parameters/ConversationSessionId" }
-        - { $ref: "#/components/parameters/IdempotencyKey" }
       requestBody:
         required: true
         content:
@@ -235,13 +220,6 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    conversationCapability:
-      type: apiKey
-      in: cookie
-      name: __Host-vfbiz_chat
-      description: |
-        Opaque session-bound capability issued with Secure, HttpOnly,
-        SameSite=Lax, Path=/ and bounded Max-Age.
   parameters:
     ConversationSessionId:
       name: sessionId
@@ -258,12 +236,7 @@ components:
       in: header
       required: true
       schema:
-        { type: string, pattern: '^(W/)?"conversation-[1-9][0-9]*"$' }
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: true
-      schema: { type: string, minLength: 16, maxLength: 128 }
+        { type: string, pattern: '^(W/)?"conversation-(0|[1-9][0-9]*)"$' }
     LastEventId:
       name: Last-Event-ID
       in: header

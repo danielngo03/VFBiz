@@ -9,14 +9,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INDEX = path.join(ROOT, 'docs/INDEX.md');
 const MACHINE_INDEX = path.join(ROOT, 'docs/INDEX.json');
 const STATUS = new Set(['proposed', 'active', 'superseded', 'archived']);
-const DOC_ROOTS = [
-  'docs',
-  'backend/api/docs',
-  'backend/ai/docs',
-  'drupal/docs',
-  'apps/customer-portal/docs',
-  'apps/workforce-portal/docs',
-];
 const EXCLUDED = new Set(['docs/INDEX.md']);
 const TRIGGER_PATTERN =
   /^(?:[a-z0-9]+(?:-[a-z0-9]+)*|VFBIZ-[0-9]{4})$/;
@@ -43,7 +35,7 @@ function validateDocument(relative, parsed, organization) {
   const errors = [];
   for (const key of required) if (!(key in attributes)) errors.push(`${relative}: missing ${key}`);
   if (attributes.status && !STATUS.has(attributes.status)) errors.push(`${relative}: invalid status ${attributes.status}`);
-  if (attributes.when_to_read && !Array.isArray(attributes.when_to_read)) errors.push(`${relative}: when_to_read must be an array`);
+  if (attributes.when_to_read && !Array.isArray(attributes.when_to_read) && typeof attributes.when_to_read !== 'string') errors.push(`${relative}: when_to_read must be an array or string`);
   if (attributes.tags && !Array.isArray(attributes.tags)) errors.push(`${relative}: tags must be an array`);
   if (attributes.supersedes && !Array.isArray(attributes.supersedes)) errors.push(`${relative}: supersedes must be an array`);
   const roles = new Set([
@@ -61,15 +53,26 @@ function validateDocument(relative, parsed, organization) {
   if (attributes.scope && !scopes.has(attributes.scope)) {
     errors.push(`${relative}: scope is not canonical: ${attributes.scope}`);
   }
-  for (const trigger of attributes.when_to_read ?? []) {
-    if (typeof trigger !== 'string' || !TRIGGER_PATTERN.test(trigger)) {
+  const readTriggers = Array.isArray(attributes.when_to_read)
+    ? attributes.when_to_read
+    : attributes.when_to_read ? [attributes.when_to_read] : [];
+  for (const trigger of readTriggers) {
+    if (
+      typeof trigger !== 'string'
+      || (!TRIGGER_PATTERN.test(trigger) && trigger.trim().length < 8)
+    ) {
       errors.push(`${relative}: invalid when_to_read trigger: ${trigger}`);
     }
   }
-  const anchors = attributes.context_anchors ?? {};
+  const declaredAnchors = attributes.context_anchors ?? {};
+  const legacyAnchorList = Array.isArray(declaredAnchors);
+  const anchors = Array.isArray(declaredAnchors)
+    ? Object.fromEntries(
+      declaredAnchors.map(({ signal, heading }) => [signal, `## ${heading}`]),
+    )
+    : declaredAnchors;
   if (
     anchors === null
-    || Array.isArray(anchors)
     || typeof anchors !== 'object'
   ) {
     errors.push(`${relative}: context_anchors must be an object`);
@@ -81,7 +84,7 @@ function validateDocument(relative, parsed, organization) {
         .map((line) => line.trim()),
     );
     for (const [trigger, heading] of Object.entries(anchors)) {
-      if (!(attributes.when_to_read ?? []).includes(trigger)) {
+      if (!legacyAnchorList && !readTriggers.includes(trigger) && TRIGGER_PATTERN.test(trigger)) {
         errors.push(
           `${relative}: context anchor ${trigger} is not declared in when_to_read`,
         );
@@ -96,7 +99,7 @@ function validateDocument(relative, parsed, organization) {
   if (
     attributes.status === 'active'
     && /^apps\/(?:customer|workforce)-portal\/docs\//.test(relative)
-    && (attributes.when_to_read ?? []).length > 0
+    && readTriggers.length > 0
     && Object.keys(anchors).length === 0
   ) {
     errors.push(`${relative}: active portal documentation requires context_anchors`);
@@ -109,7 +112,11 @@ export async function buildCatalog() {
     await readFile(path.join(ROOT, '.agents/organization.json'), 'utf8'),
   );
   const files = [];
-  for (const root of DOC_ROOTS) {
+  const docRoots = new Set(['docs']);
+  for (const workspace of organization.workspaces) {
+    if (workspace.path !== '.') docRoots.add(`${workspace.path}/docs`);
+  }
+  for (const root of [...docRoots].sort()) {
     const absolute = path.join(ROOT, root);
     try { files.push(...await walk(absolute)); } catch (error) {
       if (error.code !== 'ENOENT') throw error;
@@ -130,7 +137,10 @@ export async function buildCatalog() {
     const id = parsed.attributes.id;
     if (id && ids.has(id)) errors.push(`${relative}: duplicate id ${id} also used by ${ids.get(id)}`);
     else if (id) ids.set(id, relative);
-    documents.push({ ...parsed.attributes, path: relative, source_hash: parsed.hash });
+    const whenToRead = Array.isArray(parsed.attributes.when_to_read)
+      ? parsed.attributes.when_to_read
+      : parsed.attributes.when_to_read ? [parsed.attributes.when_to_read] : [];
+    documents.push({ ...parsed.attributes, when_to_read: whenToRead, path: relative, source_hash: parsed.hash });
   }
   return { version: 1, generated_from: 'YAML frontmatter', documents, errors };
 }

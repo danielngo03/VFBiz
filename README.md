@@ -127,7 +127,10 @@ hữu capability đó.
 - Dynamic Workforce Authorization theo capability, role và organizational
   scope.
 - Next.js foundation cho Customer Portal và Workforce Portal.
-- AI data contract, dataset governance, evaluation và release gate.
+- Conversation Runtime riêng tư với PostgreSQL inbox, OCC, fencing,
+  cancellation, signed API–AI transport và SSE replay foundation.
+- AI data contract, Dataset Manifest v4, quarantine, evaluation registry và
+  release-control foundation.
 - Bộ báo cáo kiến trúc tổng thể trong
   [reports/common](reports/common/README.md).
 
@@ -137,15 +140,24 @@ hữu capability đó.
 - Workforce Portal: role, assignment, approval, Customer Support và audit.
 - Browser E2E cho toàn bộ login, MFA, logout và authorization flow.
 - Reconciliation với provider và dữ liệu Product có provenance.
+- Customer Assistant: semantic classifier composition, durable slot authority,
+  evaluation executor, grounded factual acceptance và Knowledge Release thật.
+- Dataset Factory và AI Quality Platform: durable worker execution, immutable
+  quality evidence và reproducible benchmark evidence.
 
-### Roadmap tiếp theo
+### Chưa được bật hoặc còn phụ thuộc human authority
 
-- Customer Chatbot runtime, LangGraph, RAG và Knowledge Release.
+- Public Chat API và Customer Portal chat vẫn fail-closed cho tới khi factual
+  multi-turn staging gate đạt.
+- First-party VinFast Knowledge Release cần Content, Legal và Data Owner phê
+  duyệt; repository không giả lập sự phê duyệt này.
 - Lập kế hoạch hành trình EV, dữ liệu trạm sạc và energy estimation.
 - Mobile experience, commerce, service và ownership integrations.
 
 Trạng thái canonical của từng hạng mục nằm trong [WORK.md](WORK.md), không nằm
-trong README hoặc bộ nhớ của agent.
+trong README hoặc bộ nhớ của agent. Mức trưởng thành Customer Assistant được
+sinh và kiểm tra tại
+[Customer Assistant capability maturity](docs/architecture/customer-assistant-capability-maturity.md).
 
 ## Bắt đầu phát triển
 

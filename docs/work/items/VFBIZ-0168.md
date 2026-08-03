@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0168
 title: Add durable conversation task authority
-status: review
+status: done
 mode: controlled
 priority: P0
 owner_team: customer-engagement
@@ -34,9 +34,9 @@ exclusive_resources:
 required_checks:
   - npm run typecheck --workspace @vfbiz/api
   - npm run test --workspace @vfbiz/api
-revision: 8
+revision: 15
 review_date: "2026-08-29"
-updated_at: "2026-07-29T08:20:54.000Z"
+updated_at: "2026-07-29T14:56:51.772Z"
 ---
 
 # Outcome
@@ -79,13 +79,19 @@ clarification continuity across independent customer turns.
 - NestJS, not the model, creates the deterministic close delta for answered,
   refused, handoff and tool-refusal terminal outcomes. Task close, completion
   event and outbox share the same serializable transaction.
-- Exact next action: final independent P0/P1 review followed by a cohesive
-  checkpoint.
+- Collected slots now accept only receipt references shaped as
+  `namespace:ref/v1/<sha256>` in TypeScript, Python and PostgreSQL; raw VIN,
+  phone, plate, tax identifier and prompt-shaped values fail closed.
+- Same-task slot correction emits only changed slot names and immutable
+  before/after receipt-set digests in the transactional outbox. Raw receipt
+  references and customer values never enter correction audit payloads.
+- Exact next action: close the independently reviewed task-authority baseline,
+  then build VFBIZ-0191 candidate/receipt resolution on top of it.
 
 ## Evidence
 
 - [x] `npm run typecheck --workspace @vfbiz/api` — pass.
-- [x] `npm run test --workspace @vfbiz/api` — 355 unit tests passed.
+- [x] `npm run test --workspace @vfbiz/api` — 360 unit tests passed.
 - [x] Focused API domain/transport/application/security tests — 44 passed.
 - [x] AI unit/contract task-continuity tests — pass.
 - [x] `npm run verify:ai` — Ruff, Pyright, Alembic and 504 tests passed;
@@ -94,6 +100,13 @@ clarification continuity across independent customer turns.
   — 42 PostgreSQL tests, clean/legacy replay and zero schema drift passed.
 - [x] Lifecycle regression evidence covers active topic switch plus automatic
   close after answer, refusal and handoff.
+- [x] Final independent correctness/risk review — no P0/P1/P2 findings after
+  receipt-only reference and digest-only correction remediation.
+
+### active — 2026-07-29T14:56:00.000Z
+
+Final remediation binds opaque slots to authority-issued receipt hashes and
+adds correction-specific audit lineage without persisting raw customer values.
 
 ### review — 2026-07-29T08:20:54.000Z
 
@@ -104,3 +117,31 @@ the API-owned task deterministically.
 ### active — 2026-07-29T07:17:09.521Z
 
 VFBIZ-0181 migration clean replay exposed expected Prisma drift; implement the owning engagement model and durable repository contract while public Chat remains disabled.
+
+### blocked — 2026-07-29T14:52:21.196Z
+
+Independent review found raw identifier leakage and missing correction-specific lineage; remediation is implemented and under final verification.
+
+### active — 2026-07-29T14:52:21.341Z
+
+Apply receipt-only opaque references and digest-only correction audit remediation.
+
+### review — 2026-07-29T14:52:46.830Z
+
+Receipt-only slots and correction lineage passed API, AI and PostgreSQL gates; independent review reports no P0/P1/P2.
+
+### blocked — 2026-07-29T14:54:51.873Z
+
+Formalize the completed remediation writer ledger before closing controlled work.
+
+### active — 2026-07-29T14:54:52.015Z
+
+Record implementation evidence for receipt-only slots and correction audit.
+
+### review — 2026-07-29T14:56:15.775Z
+
+Checkpoint 7492d64 contains the scoped remediation and all required checks pass.
+
+### done — 2026-07-29T14:56:51.772Z
+
+Durable task authority now enforces receipt-only slots and digest-only correction audit with independent correctness/risk acceptance.

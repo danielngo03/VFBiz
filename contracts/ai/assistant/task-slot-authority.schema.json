@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/conversation-task-slot-authority/v1",
+  "title": "VFBiz Conversation Task Slot Authority",
+  "description": "Separates transient AI slot candidates from authority-issued API receipts.",
+  "oneOf": [
+    { "$ref": "#/$defs/TaskSlotCandidate" },
+    { "$ref": "#/$defs/TaskSlotReceipt" }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "slot": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+    },
+    "opaqueReference": {
+      "type": "string",
+      "pattern": "^(vehicle|market|locale|profile|garage|policy|product|account):ref/v1/[a-f0-9]{64}$"
+    },
+    "TaskSlotCandidate": {
+      "type": "object",
+      "required": [
+        "kind",
+        "candidateId",
+        "taskId",
+        "expectedTaskVersion",
+        "slot",
+        "proposedValue",
+        "sourceTurnId",
+        "confidence",
+        "provenanceDigest"
+      ],
+      "properties": {
+        "kind": { "const": "candidate" },
+        "candidateId": { "type": "string", "format": "uuid" },
+        "taskId": { "type": "string", "format": "uuid" },
+        "expectedTaskVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "slot": { "$ref": "#/$defs/slot" },
+        "proposedValue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "sourceTurnId": { "type": "string", "format": "uuid" },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "provenanceDigest": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "TaskSlotReceipt": {
+      "type": "object",
+      "required": [
+        "kind",
+        "taskId",
+        "slot",
+        "opaqueReference",
+        "authority",
+        "authorityDigest",
+        "sourceRevision",
+        "confirmedAt",
+        "expiresAt",
+        "provenanceDigest"
+      ],
+      "properties": {
+        "kind": { "const": "receipt" },
+        "taskId": { "type": "string", "format": "uuid" },
+        "slot": { "$ref": "#/$defs/slot" },
+        "opaqueReference": { "$ref": "#/$defs/opaqueReference" },
+        "authority": {
+          "enum": [
+            "vehicle_catalog",
+            "market_catalog",
+            "locale_policy",
+            "customer_profile",
+            "customer_garage",
+            "business_policy"
+          ]
+        },
+        "authorityDigest": { "$ref": "#/$defs/sha256" },
+        "sourceRevision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+        },
+        "confirmedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "provenanceDigest": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

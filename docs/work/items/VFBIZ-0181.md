@@ -1,7 +1,7 @@
 ---
 id: VFBIZ-0181
 title: Persist conversation task context schema
-status: review
+status: done
 mode: controlled
 priority: P0
 owner_team: api-foundation
@@ -19,9 +19,9 @@ exclusive_resources:
   - database-migration
 required_checks:
   - npm run prisma:validate --workspace @vfbiz/api
-revision: 8
+revision: 15
 review_date: "2026-08-29"
-updated_at: "2026-07-29T08:20:54.000Z"
+updated_at: "2026-07-29T14:56:51.609Z"
 ---
 
 # Outcome
@@ -54,8 +54,10 @@ Add a forward-only PostgreSQL migration for one versioned
 - Follow-up PostgreSQL evidence now covers update, close, active topic switch
   and terminal/stale replacement with a new task ID/version plus typed
   `replacedTaskId` and `replacementReason` audit evidence.
-- Exact next action: final independent P0/P1 review, then checkpoint with
-  VFBIZ-0168.
+- A forward migration replaces the permissive reference envelope with
+  `namespace:ref/v1/<sha256>` and validates all existing rows before the new
+  constraint becomes authoritative.
+- Exact next action: close with VFBIZ-0168 after the final independent review.
 
 ## Evidence
 
@@ -63,8 +65,15 @@ Add a forward-only PostgreSQL migration for one versioned
   — schema valid.
 - [x] `npm run test:migrations --workspace @vfbiz/api`
   — clean replay, zero schema drift, 42 PostgreSQL tests and legacy replay
-  passed; negative cases cover cross-session provenance, raw text, PII-shaped
-  reference and nested prompt injection.
+  passed; negative cases cover cross-session provenance, raw text, VIN, phone,
+  plate, tax identifier, PII-shaped reference and nested prompt injection.
+- [x] Final independent correctness/risk review — no P0/P1/P2 findings after
+  the forward constraint remediation.
+
+### active — 2026-07-29T14:56:00.000Z
+
+Forward receipt-envelope migration and database negative cases close the final
+P1 finding without rewriting migration history.
 
 ### review — 2026-07-29T08:20:54.000Z
 
@@ -75,3 +84,31 @@ constraints.
 ### active — 2026-07-29T07:14:57.858Z
 
 Dataset provenance gates checkpointed; begin additive conversation task authority migration with public Chat API still disabled.
+
+### blocked — 2026-07-29T14:52:21.483Z
+
+Independent review found database opaque-reference validation too permissive; forward remediation is implemented and under final verification.
+
+### active — 2026-07-29T14:52:21.626Z
+
+Apply forward PostgreSQL receipt-envelope constraint and negative integration coverage.
+
+### review — 2026-07-29T14:52:46.970Z
+
+Forward receipt constraint passed clean and legacy migration replay; independent review reports no P0/P1/P2.
+
+### blocked — 2026-07-29T14:54:52.154Z
+
+Formalize the completed remediation writer ledger before closing controlled work.
+
+### active — 2026-07-29T14:54:52.296Z
+
+Record implementation evidence for the forward PostgreSQL receipt constraint.
+
+### review — 2026-07-29T14:56:15.917Z
+
+Checkpoint 7492d64 contains the forward migration and clean/legacy replay evidence.
+
+### done — 2026-07-29T14:56:51.609Z
+
+Forward receipt-envelope migration is validated by clean/legacy replay and independent correctness/risk review.

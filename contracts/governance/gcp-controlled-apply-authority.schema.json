@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/gcp-controlled-apply-authority/v1",
+  "title": "VFBiz signed GCP controlled-apply authority envelope v1",
+  "type": "object",
+  "required": ["schema_version", "payload", "payload_sha256", "signature"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "payload": { "$ref": "#/$defs/payload" },
+    "payload_sha256": { "$ref": "#/$defs/sha256" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "fullRevision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._:/-]{8,256}$"
+    },
+    "serviceAccount": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{4,29}@[a-z][a-z0-9-]{4,29}\\.iam\\.gserviceaccount\\.com$"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{3})?Z$",
+      "allOf": [
+        { "format": "date-time" },
+        { "format": "vfbiz-canonical-utc-timestamp" }
+      ],
+      "$comment": "vfbiz-canonical-utc-timestamp is a registered provider-neutral format: canonical UTC, optional exactly three milliseconds, and calendar-valid Date.parse round-trip. Consumers must register this format or use the runtime verifier."
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "kind",
+        "evidence_class",
+        "environment",
+        "work_item_id",
+        "target_work_item_id",
+        "action",
+        "approval_event_id",
+        "approval_event_occurred_at",
+        "approval_event_revision",
+        "approval_event_schema_sha256",
+        "decision_id",
+        "decision",
+        "authority_class",
+        "approver_role",
+        "requester_subject_sha256",
+        "approver_subject_sha256",
+        "approval_evidence_sha256",
+        "project_id",
+        "project_number",
+        "region",
+        "base_revision",
+        "plan_uri",
+        "plan_sha256",
+        "plan_semantic_sha256",
+        "claim_snapshot_sha256",
+        "claim_id",
+        "claim_fencing_token",
+        "claim_expires_at",
+        "subject_hash_profile",
+        "workforce_issuer_sha256",
+        "workforce_tenant_sha256",
+        "required_capability",
+        "capability_policy_revision_sha256",
+        "credential_authority_sha256",
+        "credential_authority_generation",
+        "recovery_protocol_sha256",
+        "broker_service_account",
+        "executor_service_account",
+        "executor_image",
+        "nonce",
+        "safe_to_retry",
+        "issued_at",
+        "expires_at"
+      ],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "kind": {
+          "enum": ["apply-decision", "recovery-protocol"]
+        },
+        "evidence_class": {
+          "enum": ["human-issued", "synthetic-test-only"]
+        },
+        "environment": {
+          "enum": ["test", "development", "staging"]
+        },
+        "work_item_id": { "const": "VFBIZ-0220" },
+        "target_work_item_id": {
+          "enum": ["VFBIZ-0216", "VFBIZ-0218"]
+        },
+        "action": {
+          "enum": [
+            "apply-vfbiz-0217-database-credential-authority",
+            "accept-vfbiz-0216-recovery-protocol"
+          ]
+        },
+        "approval_event_id": { "$ref": "#/$defs/identifier" },
+        "approval_event_occurred_at": { "$ref": "#/$defs/timestamp" },
+        "approval_event_revision": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "approval_event_schema_sha256": { "$ref": "#/$defs/sha256" },
+        "decision_id": { "$ref": "#/$defs/identifier" },
+        "decision": {
+          "enum": [
+            "review-pending",
+            "authorized",
+            "protocol-accepted",
+            "rejected"
+          ]
+        },
+        "authority_class": {
+          "enum": ["named-human-workforce-approval", "synthetic-test-only"]
+        },
+        "approver_role": {
+          "enum": ["release-owner", "security-owner"]
+        },
+        "requester_subject_sha256": { "$ref": "#/$defs/sha256" },
+        "approver_subject_sha256": { "$ref": "#/$defs/sha256" },
+        "approval_evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "project_id": { "const": "vinfast-503003" },
+        "project_number": { "const": "81588547131" },
+        "region": { "const": "asia-southeast1" },
+        "base_revision": { "$ref": "#/$defs/fullRevision" },
+        "plan_uri": {
+          "type": "string",
+          "pattern": "^gs://vinfast-503003-evidence-dev/controlled-apply/plans/v1/[a-f0-9]{64}\\.tfplan#[1-9][0-9]*$"
+        },
+        "plan_sha256": { "$ref": "#/$defs/sha256" },
+        "plan_semantic_sha256": { "$ref": "#/$defs/sha256" },
+        "claim_snapshot_sha256": { "$ref": "#/$defs/sha256" },
+        "claim_id": { "$ref": "#/$defs/identifier" },
+        "claim_fencing_token": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "claim_expires_at": { "$ref": "#/$defs/timestamp" },
+        "subject_hash_profile": { "const": "oidc-issuer-sub-v1" },
+        "workforce_issuer_sha256": { "$ref": "#/$defs/sha256" },
+        "workforce_tenant_sha256": { "$ref": "#/$defs/sha256" },
+        "required_capability": { "const": "authorization.approval.approve" },
+        "capability_policy_revision_sha256": { "$ref": "#/$defs/sha256" },
+        "credential_authority_sha256": { "$ref": "#/$defs/sha256" },
+        "credential_authority_generation": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "recovery_protocol_sha256": { "$ref": "#/$defs/sha256" },
+        "broker_service_account": { "$ref": "#/$defs/serviceAccount" },
+        "executor_service_account": { "$ref": "#/$defs/serviceAccount" },
+        "executor_image": {
+          "type": "string",
+          "pattern": "^asia-southeast1-docker\\.pkg\\.dev/vinfast-503003/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "safe_to_retry": { "const": false },
+        "issued_at": { "$ref": "#/$defs/timestamp" },
+        "expires_at": { "$ref": "#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "apply-decision" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "target_work_item_id": { "const": "VFBIZ-0218" },
+              "action": {
+                "const": "apply-vfbiz-0217-database-credential-authority"
+              },
+              "approver_role": { "const": "release-owner" },
+              "required_capability": { "const": "authorization.approval.approve" },
+              "decision": {
+                "enum": ["review-pending", "authorized", "rejected"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "recovery-protocol" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "target_work_item_id": { "const": "VFBIZ-0216" },
+              "action": { "const": "accept-vfbiz-0216-recovery-protocol" },
+              "approver_role": { "const": "security-owner" },
+              "required_capability": { "const": "authorization.approval.approve" },
+              "decision": {
+                "enum": ["review-pending", "protocol-accepted", "rejected"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "evidence_class": { "const": "synthetic-test-only" }
+            },
+            "required": ["evidence_class"]
+          },
+          "then": {
+            "properties": {
+              "environment": { "const": "test" },
+              "authority_class": { "const": "synthetic-test-only" },
+              "decision": { "const": "review-pending" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "evidence_class": { "const": "human-issued" } },
+            "required": ["evidence_class"]
+          },
+          "then": {
+            "properties": {
+              "environment": { "enum": ["development", "staging"] },
+              "authority_class": {
+                "const": "named-human-workforce-approval"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "kms_key_version",
+        "issuer_service_account",
+        "value_base64"
+      ],
+      "properties": {
+        "algorithm": { "const": "EC_SIGN_P256_SHA256" },
+        "kms_key_version": {
+          "type": "string",
+          "pattern": "^projects/vinfast-503003/locations/asia-southeast1/keyRings/[a-zA-Z0-9_-]{1,63}/cryptoKeys/[a-zA-Z0-9_-]{1,63}/cryptoKeyVersions/[1-9][0-9]*$"
+        },
+        "issuer_service_account": { "$ref": "#/$defs/serviceAccount" },
+        "value_base64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+          "minLength": 8,
+          "maxLength": 256
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$comment": "The envelope byte representation must be canonical JSON and no larger than 65536 bytes. Runtime semantic verification additionally proves duplicate-key rejection, payload digest/signature, trusted KMS key version and issuer, requester/approver separation, exact plan URI-to-digest binding, time window and broker/executor identities. Schema validity alone never authorizes dispatch."
+}

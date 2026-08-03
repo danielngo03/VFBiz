@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "capability": "customer-assistant",
+  "statuses": [
+    "Implemented",
+    "Candidate",
+    "Target-only",
+    "Human-blocked"
+  ],
+  "entries": [
+    {
+      "id": "conversation-runtime",
+      "name": "Durable Conversation Runtime",
+      "status": "Implemented",
+      "owner": "customer-engagement",
+      "summary": "PostgreSQL inbox, OCC, fencing, cancellation, final commit and private dispatch are composed.",
+      "evidence": [
+        {
+          "path": "backend/api/src/app.module.ts",
+          "contains": "EngagementRuntimeModule",
+          "kind": "composition"
+        },
+        {
+          "path": "backend/api/src/modules/engagement/domain/runtime/conversation-task-context.ts",
+          "contains": "ConversationTaskContext",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/api/test/integration/engagement/conversation-runtime.postgres-spec.ts",
+          "contains": "uses OCC, one active claim and fencing to reject a late result",
+          "kind": "verification-spec"
+        }
+      ]
+    },
+    {
+      "id": "public-chat-api",
+      "name": "Public Chat API",
+      "status": "Candidate",
+      "owner": "customer-engagement",
+      "summary": "Controllers and contracts exist, but production AppModule intentionally keeps them disabled.",
+      "evidence": [
+        {
+          "path": "backend/api/src/modules/engagement/engagement.module.ts",
+          "contains": "EngagementModule",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/api/src/app.module.ts",
+          "absent": "EngagementModule,",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "assistant-graph",
+      "name": "LangGraph assistant runtime",
+      "status": "Candidate",
+      "owner": "ai-assistant-orchestration",
+      "summary": "The graph composes a release-bound semantic router with deterministic fallback; immutable routing-slice evidence and factual acceptance remain incomplete.",
+      "evidence": [
+        {
+          "path": "backend/ai/app/bootstrap/semantic_routing.py",
+          "contains": "build_semantic_routing_runtime",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/ai/.env.example",
+          "contains": "VFBIZ_AI_SEMANTIC_CLASSIFIER_PROVIDER=disabled",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-task-continuity",
+      "name": "Multi-turn task continuity",
+      "status": "Candidate",
+      "owner": "customer-engagement",
+      "summary": "Task state is durable and vehicle-model candidates can be confirmed by the API-owned active catalog authority; broader slot families remain release-gated.",
+      "evidence": [
+        {
+          "path": "backend/api/src/modules/engagement/domain/runtime/conversation-task-context.ts",
+          "contains": "pendingSlots",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/ai/app/api/internal_v1/conversation_router.py",
+          "contains": "TaskSlotCandidateResponse",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/api/src/integration/conversation/catalog-conversation-task-slot-authority.ts",
+          "contains": "VehicleCatalogIdentityResolver",
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/api/src/integration/conversation/catalog-conversation-task-slot-authority.ts",
+          "contains": "unsupported_slot",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "knowledge-release-runtime",
+      "name": "Knowledge Release and grounded retrieval",
+      "status": "Candidate",
+      "owner": "ai-knowledge-engineering",
+      "summary": "Revision-coherent release and retrieval foundations exist; no approved VinFast source has passed staging acceptance.",
+      "evidence": [
+        {
+          "path": "backend/ai/app/modules/knowledge",
+          "exists": true,
+          "kind": "implementation"
+        },
+        {
+          "path": "backend/ai/docs/knowledge-ingestion.md",
+          "contains": "packaged synthetic",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "dataset-factory",
+      "name": "Dataset Factory",
+      "status": "Candidate",
+      "owner": "ai-knowledge-engineering",
+      "summary": "Registry, quarantine and release contracts exist; production worker orchestration and full quality authority remain incomplete.",
+      "evidence": [
+        {
+          "path": "backend/ai/app/modules/datasets",
+          "exists": true,
+          "kind": "implementation"
+        },
+        {
+          "path": "docs/work/items/VFBIZ-0185.md",
+          "contains": "status: active",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "ai-quality-execution",
+      "name": "AI Quality execution and evidence",
+      "status": "Candidate",
+      "owner": "ai-assurance",
+      "summary": "Contracts and run registry exist; suite execution and EvidenceBundleAuthority are not composed.",
+      "evidence": [
+        {
+          "path": "backend/ai/app/modules/evaluation/domain/run.py",
+          "contains": "evidence_bundle_digest",
+          "kind": "implementation"
+        },
+        {
+          "path": "docs/work/items/VFBIZ-0156.md",
+          "contains": "status: review",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "first-party-knowledge",
+      "name": "Approved VinFast knowledge source",
+      "status": "Human-blocked",
+      "owner": "data-governance",
+      "requiredAuthorities": [
+        "content-owner",
+        "legal-owner",
+        "data-owner"
+      ],
+      "summary": "Requires real Content, Legal and Data Owner approval; agents cannot manufacture this evidence.",
+      "evidence": [
+        {
+          "path": "backend/ai/docs/knowledge-ingestion.md",
+          "contains": "Legal/Data approval evidence",
+          "kind": "authority"
+        },
+        {
+          "path": "backend/ai/docs/knowledge-ingestion.md",
+          "contains": "packaged synthetic",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "customer-chat-experience",
+      "name": "Customer Portal chat experience",
+      "status": "Target-only",
+      "owner": "customer-web-experience",
+      "summary": "No production customer chat journey is composed; it remains gated by factual runtime acceptance.",
+      "evidence": [
+        {
+          "path": "apps/customer-portal/src",
+          "exists": true,
+          "kind": "intent"
+        },
+        {
+          "path": "backend/api/docs/conversation-runtime.md",
+          "contains": "Public Chat API",
+          "kind": "blocker"
+        }
+      ]
+    },
+    {
+      "id": "private-read-tools",
+      "name": "Customer-scoped read-only tools",
+      "status": "Target-only",
+      "owner": "customer-engagement",
+      "summary": "Vehicle profile and garage tools remain disabled until object authorization and evaluation gates pass.",
+      "evidence": [
+        {
+          "path": "backend/api/docs/ai-gateway-and-tools.md",
+          "contains": "read-only",
+          "kind": "intent"
+        },
+        {
+          "path": "backend/ai/app/bootstrap/release_runtime.py",
+          "contains": "\"tools\": []",
+          "kind": "blocker"
+        }
+      ]
+    }
+  ]
+}

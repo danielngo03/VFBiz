@@ -156,7 +156,6 @@
         "eventId",
         "schemaVersion",
         "sessionId",
-        "turnId",
         "sequence",
         "type",
         "occurredAt",
@@ -180,8 +179,11 @@
             "reason": {
               "enum": [
                 "customer_requested",
+                "insufficient_evidence",
                 "policy_required",
-                "provider_unavailable"
+                "provider_unavailable",
+                "safety_risk",
+                "tool_unavailable"
               ]
             },
             "status": { "const": "queued" },
@@ -226,7 +228,9 @@
               "enum": [
                 "user_interrupt",
                 "budget_exhausted",
-                "deadline_exceeded"
+                "deadline_exceeded",
+                "system_shutdown",
+                "timeout"
               ]
             }
           },
@@ -240,7 +244,6 @@
       "required": [
         "schemaVersion",
         "sessionId",
-        "turnId",
         "type",
         "occurredAt",
         "correlationId",
@@ -273,7 +276,6 @@
       "required": [
         "schemaVersion",
         "sessionId",
-        "turnId",
         "type",
         "occurredAt",
         "correlationId",
@@ -309,7 +311,6 @@
       "required": [
         "schemaVersion",
         "sessionId",
-        "turnId",
         "type",
         "occurredAt",
         "correlationId",
@@ -324,22 +325,103 @@
         "correlationId": { "$ref": "#/$defs/CorrelationId" },
         "data": {
           "type": "object",
-          "required": ["reason", "retryAfterMs", "resumeFrom"],
+          "required": ["reason", "retryAfterMs", "lastEventId"],
           "properties": {
-            "reason": { "enum": ["backpressure", "server_drain"] },
+            "reason": { "enum": ["slow_consumer", "server_drain"] },
             "retryAfterMs": {
               "type": "integer",
               "minimum": 100,
               "maximum": 30000
             },
-            "resumeFrom": {
-              "type": "string",
-              "minLength": 1,
+            "lastEventId": {
+              "type": ["string", "null"],
               "maxLength": 128
             }
           },
           "additionalProperties": false
         }
+      },
+      "additionalProperties": false
+    },
+    "ResyncRequiredFrame": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sessionId",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "turnId": { "$ref": "#/$defs/TurnId" },
+        "type": { "const": "stream.resync_required" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": {
+          "type": "object",
+          "required": [
+            "earliestAvailableCursor",
+            "latestAvailableCursor",
+            "reason",
+            "recovery",
+            "retentionUntil"
+          ],
+          "properties": {
+            "earliestAvailableCursor": { "type": ["string", "null"], "maxLength": 128 },
+            "latestAvailableCursor": { "type": ["string", "null"], "maxLength": 128 },
+            "reason": { "enum": ["cursor_expired", "cursor_out_of_range", "retention_expired"] },
+            "recovery": { "const": "fetch_session_messages_and_handoff_snapshot" },
+            "retentionUntil": { "type": "string", "format": "date-time" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SessionClosedEvent": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "schemaVersion",
+        "sessionId",
+        "sequence",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/EventId" },
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "sequence": { "$ref": "#/$defs/Sequence" },
+        "type": { "const": "session.closed" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": { "type": "object", "additionalProperties": false }
+      },
+      "additionalProperties": false
+    },
+    "HeartbeatFrame": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sessionId",
+        "type",
+        "occurredAt",
+        "correlationId",
+        "data"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/SchemaVersion" },
+        "sessionId": { "$ref": "#/$defs/SessionId" },
+        "type": { "const": "heartbeat" },
+        "occurredAt": { "$ref": "#/$defs/OccurredAt" },
+        "correlationId": { "$ref": "#/$defs/CorrelationId" },
+        "data": { "type": "object", "additionalProperties": false }
       },
       "additionalProperties": false
     },
@@ -349,14 +431,17 @@
         { "$ref": "#/$defs/TurnProcessingEvent" },
         { "$ref": "#/$defs/TurnCompletedEvent" },
         { "$ref": "#/$defs/HandoffRequestedEvent" },
-        { "$ref": "#/$defs/TurnCancelledEvent" }
+        { "$ref": "#/$defs/TurnCancelledEvent" },
+        { "$ref": "#/$defs/SessionClosedEvent" }
       ]
     },
     "TransientFrame": {
       "oneOf": [
         { "$ref": "#/$defs/RetrievalStartedFrame" },
         { "$ref": "#/$defs/ToolStartedFrame" },
-        { "$ref": "#/$defs/ReconnectRequiredFrame" }
+        { "$ref": "#/$defs/HeartbeatFrame" },
+        { "$ref": "#/$defs/ReconnectRequiredFrame" },
+        { "$ref": "#/$defs/ResyncRequiredFrame" }
       ]
     },
     "SseFrame": {

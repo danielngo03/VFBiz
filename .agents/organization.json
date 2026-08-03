@@ -78,6 +78,10 @@
         "resource": "ai-evaluation-suite-registry"
       },
       {
+        "path": "local-data/ai-datasets",
+        "resource": "ai-dataset-registry"
+      },
+      {
         "path": ".agents/organization.json",
         "resource": "agent-organization-registry"
       }
@@ -216,6 +220,11 @@
       "owns": ["cross-system-governance", "product-policy", "contracts"]
     },
     {
+      "id": "agent-runtime",
+      "path": "agent-runtime",
+      "owns": ["agent-orchestration", "runtime-state", "sandbox-execution"]
+    },
+    {
       "id": "drupal",
       "path": "drupal",
       "owns": ["public-ssr", "cms", "seo", "editorial-experience"]
@@ -285,7 +294,7 @@
       "name": "Engineering Enablement",
       "leadHumanRole": "engineering-lead",
       "mandate": "Own repository standards, agent control plane, developer workflows and cross-provider validation.",
-      "workspaces": ["root"]
+      "workspaces": ["root", "agent-runtime"]
     },
     {
       "id": "digital-platform",
@@ -375,7 +384,7 @@
       "name": "Agent Platform",
       "departmentId": "engineering-enablement",
       "leadHumanRole": "engineering-lead",
-      "workspaces": ["root"],
+      "workspaces": ["root", "agent-runtime"],
       "owns": [
         "agent-routing",
         "skills",
@@ -403,7 +412,8 @@
         "docs/operating-model",
         "docs/INDEX.md",
         "docs/INDEX.json",
-        "docs/work"
+        "docs/work",
+        "agent-runtime"
       ],
       "specializations": [
         "agent-orchestration",
@@ -651,6 +661,8 @@
         "backend/ai/docs/architecture.md",
         "backend/ai/docs/inference-serving.md",
         "backend/ai/docs/evaluation-and-release.md",
+        ".agents/skills/operate-gcp-ai",
+        ".agents/skills/build-tuning-candidate",
         "guides/customer-ai"
       ],
       "specializations": [
@@ -689,6 +701,7 @@
         "backend/ai/docs/dataset-engineering.md",
         "backend/ai/.agents/skills/onboard-dataset",
         "backend/ai/.agents/skills/generate-synthetic-dataset",
+        ".agents/skills/operate-gcp-ai",
         "backend/ai/tests/fixtures/datasets"
       ],
       "specializations": [
@@ -995,7 +1008,10 @@
     "plan-change",
     "deliver-change",
     "review-change",
-    "handoff-context"
+    "handoff-context",
+    "operate-agent-runtime",
+    "operate-gcp-ai",
+    "build-tuning-candidate"
   ],
   "skillPolicy": {
     "providerNativeIsOptional": true,

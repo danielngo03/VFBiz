@@ -3,6 +3,72 @@
   "generated_from": "YAML frontmatter",
   "documents": [
     {
+      "id": "agent-runtime-evaluation",
+      "title": "Agent runtime evaluation procedure",
+      "status": "active",
+      "owner_role": "quality-lead",
+      "scope": "agent-runtime",
+      "when_to_read": [
+        "agent-runtime",
+        "agent-evaluation",
+        "prompt-injection"
+      ],
+      "tags": [
+        "agents",
+        "evaluation",
+        "security"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "agent-runtime/docs/evaluation.md",
+      "source_hash": "b5bfb530a599d5ce527c29c34587865662606626b186a83b9ca7f0ee365c00f2"
+    },
+    {
+      "id": "agent-runtime-implementation-architecture",
+      "title": "Agent runtime implementation architecture",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "agent-runtime",
+      "when_to_read": [
+        "agent-runtime",
+        "runtime-state",
+        "agent-tool"
+      ],
+      "tags": [
+        "agents",
+        "architecture",
+        "sqlite"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "agent-runtime/docs/architecture.md",
+      "source_hash": "4b7a8ba042bf54261d0de9db8ef89d409de079bd6509fd6c2845ad1a6e608d69"
+    },
+    {
+      "id": "agent-runtime-operations",
+      "title": "Agent runtime local operations and recovery",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "agent-runtime",
+      "when_to_read": [
+        "agent-runtime",
+        "agent-recovery",
+        "agent-approval"
+      ],
+      "tags": [
+        "agents",
+        "operations",
+        "recovery"
+      ],
+      "revision": 4,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "agent-runtime/docs/operations.md",
+      "source_hash": "b953584e0a31e6318a25dc8d4061165ae49b584bf9c6e87ed782e81a619742ec"
+    },
+    {
       "id": "ai-architecture",
       "title": "Kiến trúc AI Platform",
       "status": "active",
@@ -41,11 +107,11 @@
         "state-machine",
         "assistant"
       ],
-      "revision": 5,
+      "revision": 6,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/conversation-graph.md",
-      "source_hash": "3692f9d011a1e6ec27cc31d0889e48cd3474f10bbcbec996aca65c92e645aa32"
+      "source_hash": "65972d55c7249173bc4c515c107c930884f39c7983000840258ab578032671e8"
     },
     {
       "id": "ai-dataset-engineering",
@@ -159,11 +225,11 @@
         "retrieval",
         "data-governance"
       ],
-      "revision": 4,
+      "revision": 9,
       "review_date": "2026-08-23T00:00:00.000Z",
       "supersedes": [],
       "path": "backend/ai/docs/knowledge-ingestion.md",
-      "source_hash": "ed9e21e98f02b433ff5f9ff84cfcc8767a97965639fb1b49f7d4bd06e9d480b7"
+      "source_hash": "8ffb70484c8e42ccca596b31d6dc1cfd624d4fe9475cbe407fa0f37311dc5ee6"
     },
     {
       "id": "ai-knowledge-release",
@@ -706,6 +772,94 @@
       "source_hash": "1a830faecd9a0ab1c8d6e373920ce79af10e48804cf3584b74720d7b870556ee"
     },
     {
+      "id": "adr-0008",
+      "title": "Customer Mobile dùng Expo 57, CNG và app boundary độc lập",
+      "status": "proposed",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "mobile-customer-foundation",
+        "native-dependency",
+        "mobile-release"
+      ],
+      "tags": [
+        "adr",
+        "mobile",
+        "expo"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0008-mobile-customer-expo57.md",
+      "source_hash": "6720405f3f519940afec406b6db75de7fe559fe8bf8186f59edf7c39d2040654"
+    },
+    {
+      "id": "adr-0009",
+      "title": "Enterprise agent runtime is an additive platform boundary",
+      "status": "proposed",
+      "owner_role": "architect",
+      "scope": "cross-system",
+      "when_to_read": [
+        "agent-runtime",
+        "multi-agent",
+        "coding-agent"
+      ],
+      "tags": [
+        "adr",
+        "agents",
+        "control-plane"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/decisions/0009-enterprise-agent-runtime-boundary.md",
+      "source_hash": "977e31820932a849db45b73656bda9e082ce62081d4261a1bace795898ce8d1b"
+    },
+    {
+      "id": "agent-control-plane",
+      "title": "Enterprise agent control plane",
+      "status": "proposed",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "agent-runtime",
+        "multi-agent",
+        "agent-tool"
+      ],
+      "tags": [
+        "agents",
+        "architecture",
+        "security"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/agent-control-plane.md",
+      "source_hash": "32eb3f463322fd719075db6171af1503ebe29c81c915215adb9ca8960ba0296b"
+    },
+    {
+      "id": "agent-runtime-lifecycle",
+      "title": "Enterprise agent runtime lifecycle",
+      "status": "proposed",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "agent-runtime",
+        "agent-approval",
+        "agent-recovery"
+      ],
+      "tags": [
+        "agents",
+        "lifecycle",
+        "evidence"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/operating-model/agent-runtime-lifecycle.md",
+      "source_hash": "256db947287d6b93d28909f3c8a3f0893ce03f2599260a3437ab8d1c667c18cd"
+    },
+    {
       "id": "archived-staging-mvp-2026-07-20",
       "title": "Kế hoạch staging MVP 20–25/07/2026",
       "status": "archived",
@@ -775,6 +929,27 @@
       "supersedes": [],
       "path": "docs/governance/customer-ai-ev-threat-model.md",
       "source_hash": "40efc29d08add3ad872f574fbe5d6298deea5f4c27672a9adc857b5fb9579c66"
+    },
+    {
+      "id": "customer-assistant-capability-maturity",
+      "title": "Customer Assistant capability maturity",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "capability-maturity",
+        "staging-readiness"
+      ],
+      "tags": [
+        "customer-chatbot",
+        "capability-maturity",
+        "staging"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-29T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/architecture/customer-assistant-capability-maturity.md",
+      "source_hash": "f588553a907d245dec724a5b69d426ce5d2020cb5631442d23e5caabbf194f01"
     },
     {
       "id": "customer-chatbot-product",
@@ -856,6 +1031,27 @@
       "supersedes": [],
       "path": "docs/product/customer-portal.md",
       "source_hash": "df3ce16ddc810ab01527024cf12d1b4d125b0b71aa8e7dfbf9cf6889cd0029e8"
+    },
+    {
+      "id": "dependency-risk-register",
+      "title": "Production dependency risk register",
+      "status": "active",
+      "owner_role": "security-owner",
+      "scope": "cross-system",
+      "when_to_read": [
+        "dependency-policy",
+        "staging-readiness"
+      ],
+      "tags": [
+        "supply-chain",
+        "security",
+        "staging"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-12T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/governance/dependency-risk-register.md",
+      "source_hash": "0a679d8e63d4cc2161bcedb1b3e42936878af0a5fc7cea1f100727ae0c32b536"
     },
     {
       "id": "ev-journey-planner-architecture",
@@ -1110,6 +1306,73 @@
       "supersedes": [],
       "path": "docs/work/plans/VFBIZ-0055.md",
       "source_hash": "f49a3e66f7c0d0ab1e5abb343f68f758af96b5522ca71806f14221f4c2beba56"
+    },
+    {
+      "id": "plan-VFBIZ-0203",
+      "title": "ExecPlan VFBiz Customer Mobile Foundation bằng Expo 57",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0203"
+      ],
+      "tags": [
+        "mobile",
+        "customer",
+        "expo"
+      ],
+      "revision": 1,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0203.md",
+      "source_hash": "0e9f0eb1c659dbcdde2ae89827ec32c2e99fe3b90fbc29e00e45f9df9a366510"
+    },
+    {
+      "id": "plan-VFBIZ-0204",
+      "title": "ExecPlan VFBiz Enterprise Agent Runtime v1",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0204",
+        "agent-runtime",
+        "multi-agent"
+      ],
+      "tags": [
+        "agents",
+        "control-plane",
+        "openai"
+      ],
+      "revision": 2,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/VFBIZ-0204.md",
+      "source_hash": "3bb82e849d3e71d789016ff22b2ee713ebf068fc3ef276e9c5db88d1a07962ed"
+    },
+    {
+      "id": "plan-vivi-gcp-ai-platform",
+      "title": "ExecPlan GCP AI Platform, ViVi text voice and evidence-gated tuning",
+      "status": "active",
+      "owner_role": "engineering-lead",
+      "scope": "cross-system",
+      "when_to_read": [
+        "VFBIZ-0199",
+        "VFBIZ-0200",
+        "VFBIZ-0201",
+        "VFBIZ-0202"
+      ],
+      "tags": [
+        "gcp",
+        "knowledge-ingestion",
+        "vivi-voice",
+        "evaluation",
+        "fine-tuning"
+      ],
+      "revision": 25,
+      "review_date": "2026-08-30T00:00:00.000Z",
+      "supersedes": [],
+      "path": "docs/work/plans/vivi-gcp-ai-platform.md",
+      "source_hash": "3aa0cd5b913acb330f6686d56d8e848d0c45409a455b3b9e156d093fc7f90f8f"
     },
     {
       "id": "staging-mvp",
@@ -1390,6 +1653,110 @@
       "supersedes": [],
       "path": "drupal/docs/README.md",
       "source_hash": "69cf35d99ac144482acd8d5c3615ccad9b9a9ba26cf96261719b13f362500495"
+    },
+    {
+      "id": "identity-theme-accessibility",
+      "title": "Accessibility cho Identity",
+      "status": "active",
+      "owner_role": "design-lead",
+      "scope": "identity-theme",
+      "when_to_read": [
+        "Khi thay đổi layout, CSS, message hoặc interaction trong theme."
+      ],
+      "tags": [
+        "accessibility",
+        "identity"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/identity-theme/docs/accessibility.md",
+      "source_hash": "154bc4c1c00e7a2e37e1f4ea026097ff4b31bc481e165e8c0a66c3128dbd8188"
+    },
+    {
+      "id": "identity-theme-architecture",
+      "title": "Kiến trúc Identity Experience",
+      "status": "active",
+      "owner_role": "identity-platform-owner",
+      "scope": "identity-theme",
+      "when_to_read": [
+        "Khi thay đổi Keycloak theme, login/email experience hoặc design token."
+      ],
+      "tags": [
+        "identity",
+        "keycloak",
+        "theme"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "context_anchors": [
+        {
+          "signal": "identity-theme",
+          "heading": "Ranh giới"
+        }
+      ],
+      "path": "apps/identity-theme/docs/architecture.md",
+      "source_hash": "fd0873e0a5cfea7c273d6cc8f3c13bfc79d4d0853a404a9674e241826acd07b7"
+    },
+    {
+      "id": "identity-theme-experience-matrix",
+      "title": "Ma trận luồng Identity",
+      "status": "active",
+      "owner_role": "product-owner",
+      "scope": "identity-theme",
+      "when_to_read": [
+        "Khi thêm hoặc thay đổi authentication flow."
+      ],
+      "tags": [
+        "identity",
+        "ux",
+        "keycloak"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/identity-theme/docs/experience-matrix.md",
+      "source_hash": "c69a57b4b9b2e46851f48f4fbadaeb84569256b8f0013fba86b29cb93e9bdb05"
+    },
+    {
+      "id": "identity-theme-release-upgrade",
+      "title": "Phát hành và nâng cấp Identity Theme",
+      "status": "active",
+      "owner_role": "identity-platform-owner",
+      "scope": "identity-theme",
+      "when_to_read": [
+        "Khi build image, release, rollback hoặc nâng Keycloak."
+      ],
+      "tags": [
+        "identity",
+        "release",
+        "keycloak"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/identity-theme/docs/release-and-upgrade.md",
+      "source_hash": "7c43a6e8e97a26920cfffa67ec101ffcd687fbd5b59b57fdcf047a9302a22109"
+    },
+    {
+      "id": "identity-theme-testing",
+      "title": "Kiểm thử Identity Theme",
+      "status": "active",
+      "owner_role": "quality-lead",
+      "scope": "identity-theme",
+      "when_to_read": [
+        "Khi viết test hoặc chuẩn bị release Identity Theme."
+      ],
+      "tags": [
+        "identity",
+        "testing"
+      ],
+      "revision": 1,
+      "review_date": "2026-10-24T00:00:00.000Z",
+      "supersedes": [],
+      "path": "apps/identity-theme/docs/testing.md",
+      "source_hash": "96cf35dafe6bc316f4e77f90c21d16e203c3e82ad00c816434a1cc75bc29a324"
     },
     {
       "id": "adr-0004-dynamic-workforce-authorization",

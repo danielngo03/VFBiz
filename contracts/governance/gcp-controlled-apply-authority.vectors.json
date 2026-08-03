@@ -1,0 +1,73 @@
+[
+  {
+    "id": "synthetic-review-pending-envelope-shape",
+    "valid": true,
+    "value": {
+      "schema_version": 1,
+      "payload": {
+        "schema_version": 1,
+        "kind": "apply-decision",
+        "evidence_class": "synthetic-test-only",
+        "environment": "test",
+        "work_item_id": "VFBIZ-0220",
+        "target_work_item_id": "VFBIZ-0218",
+        "action": "apply-vfbiz-0217-database-credential-authority",
+        "approval_event_id": "approval/VFBIZ-0220/synthetic-review",
+        "approval_event_occurred_at": "2026-08-02T05:59:00.123Z",
+        "approval_event_revision": "1",
+        "approval_event_schema_sha256": "3030303030303030303030303030303030303030303030303030303030303030",
+        "decision_id": "synthetic/VFBIZ-0220/review-pending",
+        "decision": "review-pending",
+        "authority_class": "synthetic-test-only",
+        "approver_role": "release-owner",
+        "requester_subject_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "approver_subject_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "approval_evidence_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "project_id": "vinfast-503003",
+        "project_number": "81588547131",
+        "region": "asia-southeast1",
+        "base_revision": "4444444444444444444444444444444444444444",
+        "plan_uri": "gs://vinfast-503003-evidence-dev/controlled-apply/plans/v1/5555555555555555555555555555555555555555555555555555555555555555.tfplan#6",
+        "plan_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "plan_semantic_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "claim_snapshot_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "claim_id": "claim/VFBIZ-0220/synthetic-review",
+        "claim_fencing_token": "11",
+        "claim_expires_at": "2026-08-02T06:20:00Z",
+        "subject_hash_profile": "oidc-issuer-sub-v1",
+        "workforce_issuer_sha256": "3131313131313131313131313131313131313131313131313131313131313131",
+        "workforce_tenant_sha256": "3232323232323232323232323232323232323232323232323232323232323232",
+        "required_capability": "authorization.approval.approve",
+        "capability_policy_revision_sha256": "3434343434343434343434343434343434343434343434343434343434343434",
+        "credential_authority_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "credential_authority_generation": "9",
+        "recovery_protocol_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "broker_service_account": "vfbiz-apply-broker@vinfast-503003.iam.gserviceaccount.com",
+        "executor_service_account": "vfbiz-apply-executor@vinfast-503003.iam.gserviceaccount.com",
+        "executor_image": "asia-southeast1-docker.pkg.dev/vinfast-503003/vfbiz-ai-workers-dev/controlled-apply@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "nonce": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "safe_to_retry": false,
+        "issued_at": "2026-08-02T06:00:00.123Z",
+        "expires_at": "2026-08-02T06:14:59.456Z"
+      },
+      "payload_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "signature": {
+        "algorithm": "EC_SIGN_P256_SHA256",
+        "kms_key_version": "projects/vinfast-503003/locations/asia-southeast1/keyRings/vfbiz-controlled-apply-dev/cryptoKeys/release-authority/cryptoKeyVersions/1",
+        "issuer_service_account": "vfbiz-apply-issuer@vinfast-503003.iam.gserviceaccount.com",
+        "value_base64": "c3ludGhldGljLXNpZ25hdHVyZQ=="
+      }
+    }
+  },
+  {
+    "id": "synthetic-envelope-rejects-extra-key",
+    "valid": false,
+    "value": {
+      "schema_version": 1,
+      "payload": {},
+      "payload_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "signature": {},
+      "execute": true
+    }
+  }
+]

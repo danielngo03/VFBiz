@@ -74,6 +74,11 @@ work state; implementation detail stays with its workspace.
 - Before compaction, interruption or provider handoff, finish the atomic action
   and update the durable checkpoint with revisions, changed paths, decisions,
   observed checks, blockers and one exact next action.
+- When a user asks to continue work performed by the runtime or another
+  session, run `npm run agent-runtime:brief -- --work VFBIZ-NNNN --target
+  <workspace>` before answering. Treat stale context, pending approval and
+  reconciliation dispositions as stop conditions; never infer overnight state
+  from chat memory.
 - `code-complete`, `acceptance-complete`, `released` and
   `outcome-validated` are distinct states.
 

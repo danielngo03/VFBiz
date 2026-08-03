@@ -4,6 +4,9 @@
 
 | ID | Status | Scope | Owner role | Document | When to read |
 | --- | --- | --- | --- | --- | --- |
+| agent-runtime-evaluation | active | agent-runtime | quality-lead | [Agent runtime evaluation procedure](../agent-runtime/docs/evaluation.md) | agent-runtime, agent-evaluation, prompt-injection |
+| agent-runtime-implementation-architecture | active | agent-runtime | engineering-lead | [Agent runtime implementation architecture](../agent-runtime/docs/architecture.md) | agent-runtime, runtime-state, agent-tool |
+| agent-runtime-operations | active | agent-runtime | engineering-lead | [Agent runtime local operations and recovery](../agent-runtime/docs/operations.md) | agent-runtime, agent-recovery, agent-approval |
 | ai-architecture | active | ai | engineering-lead | [Kiến trúc AI Platform](../backend/ai/docs/architecture.md) | ai-boundary, customer-chatbot, ai-tool |
 | ai-conversation-graph | active | ai | engineering-lead | [LangGraph Conversation State Machine](../backend/ai/docs/conversation-graph.md) | customer-conversation, ai-assistant, session-concurrency, ai-vision |
 | ai-dataset-engineering | active | ai | data-owner | [Dataset Factory cho Customer Chatbot](../backend/ai/docs/dataset-engineering.md) | dataset-source, synthetic-dataset, dataset-release, ai-dataset |
@@ -33,12 +36,18 @@
 | adr-0005-customer-portal-bff-and-dal | active | cross-system | architect | [ADR 0005 — Customer Portal BFF và server DAL](../docs/decisions/0005-customer-portal-bff-and-dal.md) | customer-portal, customer-bff, customer-auth, customer-session, customer-journey |
 | ADR-0006 | active | cross-system | architect | [Keycloak sở hữu Identity Experience](../docs/decisions/0006-enterprise-keycloak-identity-experience.md) | identity-theme, authentication, keycloak |
 | adr-0007-ev-route-and-charging-planner | active | cross-system | architect | [ADR 0007 — EV Route & Charging Planner](../docs/decisions/0007-ev-route-and-charging-planner.md) | ev-trip-planner, charging-station, charging-data, maps-provider, route-provider, energy-model, location-privacy, trip-correctness, mobility, architecture |
+| adr-0008 | proposed | cross-system | architect | [Customer Mobile dùng Expo 57, CNG và app boundary độc lập](../docs/decisions/0008-mobile-customer-expo57.md) | mobile-customer-foundation, native-dependency, mobile-release |
+| adr-0009 | proposed | cross-system | architect | [Enterprise agent runtime is an additive platform boundary](../docs/decisions/0009-enterprise-agent-runtime-boundary.md) | agent-runtime, multi-agent, coding-agent |
+| agent-control-plane | proposed | cross-system | engineering-lead | [Enterprise agent control plane](../docs/architecture/agent-control-plane.md) | agent-runtime, multi-agent, agent-tool |
+| agent-runtime-lifecycle | proposed | cross-system | engineering-lead | [Enterprise agent runtime lifecycle](../docs/operating-model/agent-runtime-lifecycle.md) | agent-runtime, agent-approval, agent-recovery |
 | archived-staging-mvp-2026-07-20 | archived | cross-system | product-manager | [Kế hoạch staging MVP 20–25/07/2026](../docs/work/archive/2026-07-20-staging-mvp.md) | historical-staging-plan |
 | customer-account-and-vehicle | active | cross-system | product-owner | [Nền tảng tài khoản khách hàng và dữ liệu xe](../docs/product/customer-account-and-vehicle.md) | identity, customer-account, customer-profile, customer-data, vehicle-data, vehicle-catalog, customer-garage |
 | customer-ai-ev-threat-model | active | cross-system | security-owner | [Threat model cho Customer AI Assistant và EV Journey Planner](../docs/governance/customer-ai-ev-threat-model.md) | customer-chatbot, ev-trip-planner, security, privacy, threat-model |
+| customer-assistant-capability-maturity | active | cross-system | engineering-lead | [Customer Assistant capability maturity](../docs/architecture/customer-assistant-capability-maturity.md) | capability-maturity, staging-readiness |
 | customer-chatbot-product | active | cross-system | product-owner | [Customer Chatbot V6](../docs/product/customer-chatbot.md) | customer-chatbot, customer-conversation, support-handoff, product-outcome |
 | customer-chatbot-v6-architecture | active | cross-system | architect | [Kiến trúc Customer Chatbot V6](../docs/architecture/customer-chatbot-v6.md) | customer-chatbot, customer-conversation, support-handoff, ai-vision, multimodal-injection, knowledge-revision, local-inference, cross-system |
 | customer-portal-product | active | cross-system | product-owner | [Customer Portal](../docs/product/customer-portal.md) | customer-portal, customer-journey, customer-bff, customer-profile, customer-privacy, customer-garage |
+| dependency-risk-register | active | cross-system | security-owner | [Production dependency risk register](../docs/governance/dependency-risk-register.md) | dependency-policy, staging-readiness |
 | ev-journey-planner-architecture | active | cross-system | architect | [Kiến trúc EV Journey Planner](../docs/architecture/ev-journey-planner.md) | ev-trip-planner, charging-data, route-provider, energy-model, location-privacy, trip-correctness, cross-system |
 | ev-journey-planner-product | active | cross-system | product-owner | [Lập kế hoạch hành trình EV](../docs/product/ev-journey-planner.md) | ev-trip-planner, charging-station, charging-data, customer-journey, mobility |
 | GOV-WORKFORCE-AUTHZ-THREAT-MODEL | proposed | cross-system | security-owner | [Threat model cho Workforce Authorization](../docs/governance/workforce-authorization-threat-model.md) | workforce-authorization, security-review, threat-model |
@@ -48,6 +57,9 @@
 | plan-customer-chatbot-runtime-sequence | active | cross-system | engineering-lead | [ExecPlan Conversation Runtime, LangGraph và Knowledge foundation](../docs/work/plans/customer-chatbot-runtime-sequence.md) | VFBIZ-0017, VFBIZ-0018, VFBIZ-0019, VFBIZ-0020, VFBIZ-0021, VFBIZ-0022, VFBIZ-0023, VFBIZ-0024, VFBIZ-0025, VFBIZ-0026 |
 | plan-vfbiz-0011 | archived | cross-system | architect | [ExecPlan Chatbot V6 và Dataset Factory](../docs/work/plans/VFBIZ-0011.md) | VFBIZ-0011, customer-chatbot-v6 |
 | plan-VFBIZ-0055 | active | cross-system | engineering-lead | [ExecPlan Workforce Portal và Dynamic Authorization](../docs/work/plans/VFBIZ-0055.md) | VFBIZ-0055, VFBIZ-0056, VFBIZ-0057, VFBIZ-0058, VFBIZ-0059, VFBIZ-0060 |
+| plan-VFBIZ-0203 | active | cross-system | engineering-lead | [ExecPlan VFBiz Customer Mobile Foundation bằng Expo 57](../docs/work/plans/VFBIZ-0203.md) | VFBIZ-0203 |
+| plan-VFBIZ-0204 | active | cross-system | engineering-lead | [ExecPlan VFBiz Enterprise Agent Runtime v1](../docs/work/plans/VFBIZ-0204.md) | VFBIZ-0204, agent-runtime, multi-agent |
+| plan-vivi-gcp-ai-platform | active | cross-system | engineering-lead | [ExecPlan GCP AI Platform, ViVi text voice and evidence-gated tuning](../docs/work/plans/vivi-gcp-ai-platform.md) | VFBIZ-0199, VFBIZ-0200, VFBIZ-0201, VFBIZ-0202 |
 | staging-mvp | superseded | cross-system | product-owner | [Staging MVP Account, Customer Chatbot và EV Trip Planner](../docs/product/staging-mvp.md) | staging-mvp, account, chatbot, trip |
 | staging-mvp-boundaries | superseded | cross-system | architect | [Staging MVP runtime boundaries](../docs/architecture/staging-mvp-boundaries.md) | staging-mvp, cross-system, controlled |
 | VFBIZ-0073-plan | active | cross-system | engineering-lead | [ExecPlan chuẩn hóa kiến trúc hai Next.js portal](../docs/work/plans/VFBIZ-0073.md) | VFBIZ-0073, portal-architecture, provider-handoff |
@@ -59,6 +71,11 @@
 | customer-portal-testing | active | customer-portal | engineering-lead | [Kiểm thử Customer Portal](../apps/customer-portal/docs/testing.md) | customer-portal-test, customer-portal-e2e |
 | drupal-ddev-runbook | active | drupal | engineering-lead | [DDEV local development](../drupal/docs/development/ddev.md) | ddev, local-development, drupal-config |
 | drupal-workspace-guide | active | drupal | engineering-lead | [Drupal workspace guide](../drupal/docs/README.md) | drupal-boundary, drupal-integration |
+| identity-theme-accessibility | active | identity-theme | design-lead | [Accessibility cho Identity](../apps/identity-theme/docs/accessibility.md) | Khi thay đổi layout, CSS, message hoặc interaction trong theme. |
+| identity-theme-architecture | active | identity-theme | identity-platform-owner | [Kiến trúc Identity Experience](../apps/identity-theme/docs/architecture.md) | Khi thay đổi Keycloak theme, login/email experience hoặc design token. |
+| identity-theme-experience-matrix | active | identity-theme | product-owner | [Ma trận luồng Identity](../apps/identity-theme/docs/experience-matrix.md) | Khi thêm hoặc thay đổi authentication flow. |
+| identity-theme-release-upgrade | active | identity-theme | identity-platform-owner | [Phát hành và nâng cấp Identity Theme](../apps/identity-theme/docs/release-and-upgrade.md) | Khi build image, release, rollback hoặc nâng Keycloak. |
+| identity-theme-testing | active | identity-theme | quality-lead | [Kiểm thử Identity Theme](../apps/identity-theme/docs/testing.md) | Khi viết test hoặc chuẩn bị release Identity Theme. |
 | adr-0004-dynamic-workforce-authorization | active | root | architect | [Dynamic Workforce Authorization](../docs/decisions/0004-dynamic-workforce-authorization.md) | authorization, workforce-admin, workforce-portal |
 | adr-NNNN | proposed | root | architect | [Decision title](../docs/decisions/0000-template.md) |  |
 | capability-map | active | root | product-owner | [Bản đồ capability](../docs/product/capability-map.md) | discovery, new-capability |

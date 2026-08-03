@@ -14,6 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { parse as parseToml } from "smol-toml";
 import { readFrontmatter } from "./lib/frontmatter.mjs";
 import { resolveContext } from "./lib/governance.mjs";
 import { validateDatasetReviewBoard } from "./lib/dataset-review-board.mjs";
@@ -104,6 +105,13 @@ async function validateInstructions(organization) {
   for (const workspace of organization.workspaces.filter(
     ({ id }) => id !== "root",
   )) {
+    const workspaceDirectory = path.join(ROOT, workspace.path);
+    const exactAgents = path.join(workspaceDirectory, "AGENTS.md");
+    const exactClaude = path.join(workspaceDirectory, "CLAUDE.md");
+    if ((await exists(exactAgents)) && !(await exists(exactClaude)))
+      fail(
+        `${workspace.path}/CLAUDE.md: registered workspace with AGENTS.md must provide a thin provider adapter`,
+      );
     const segments = workspace.path.split("/");
     const chain = ["AGENTS.md"];
     for (let depth = 1; depth <= segments.length; depth += 1) {
@@ -197,11 +205,41 @@ async function validateRolesAndAdapters(organization) {
     fail(".gemini/settings.json: context.fileName must be AGENTS.md");
   if (gemini?.context?.includeDirectoryTree !== false)
     fail(".gemini/settings.json: includeDirectoryTree must be false");
-  const codex = await readFile(path.join(ROOT, ".codex/config.toml"), "utf8");
-  if (!/max_concurrent_threads_per_session\s*=\s*3/.test(codex))
-    fail(".codex/config.toml: expected the documented three-thread cap");
-  if (/max_threads|max_depth/.test(codex))
-    fail(".codex/config.toml: legacy or undocumented agent keys remain");
+  let codexConfig = {};
+  try {
+    codexConfig = parseToml(
+      await readFile(path.join(ROOT, ".codex/config.toml"), "utf8"),
+    );
+  } catch (error) {
+    fail(`.codex/config.toml: invalid TOML (${error.message})`);
+  }
+  const codexAgents = codexConfig.agents ?? {};
+  if (codexAgents.max_threads !== 3)
+    fail(".codex/config.toml: agents.max_threads must enforce three threads");
+  if (codexAgents.max_depth !== organization.runtime.maxSpawnDepth)
+    fail(
+      `.codex/config.toml: agents.max_depth must equal runtime maxSpawnDepth ${organization.runtime.maxSpawnDepth}`,
+    );
+  const configuredCodexRoles = Object.entries(codexAgents)
+    .filter(([, value]) => value && typeof value === "object")
+    .map(([id]) => id);
+  if (!same(workerIds, configuredCodexRoles))
+    fail(".codex/config.toml: configured agents differ from canonical workers");
+  for (const id of workerIds) {
+    const role = organization.roles.find((candidate) => candidate.id === id);
+    const configured = codexAgents[id];
+    const expectedConfig = `agents/${id}.toml`;
+    if (configured?.config_file !== expectedConfig)
+      fail(
+        `.codex/config.toml: ${id}.config_file must be ${expectedConfig}`,
+      );
+    if (configured?.description !== role?.description)
+      fail(
+        `.codex/config.toml: ${id}.description must match the organization registry`,
+      );
+    if (!(await exists(path.join(ROOT, ".codex", expectedConfig))))
+      fail(`.codex/${expectedConfig}: configured agent file is missing`);
+  }
   const codexHooks = await json(".codex/hooks.json");
   for (const event of ["PreToolUse", "PostToolUse", "PreCompact"]) {
     if (
@@ -1029,6 +1067,10 @@ async function validateSchemas(organization) {
       "contracts/ai/datasets/sources/fetch-manifest.schema.json",
     ],
     [
+      "intake-receipt.schema.json",
+      "contracts/ai/datasets/sources/intake-receipt.schema.json",
+    ],
+    [
       "dataset-card.schema.json",
       "contracts/ai/datasets/products/card.schema.json",
     ],
@@ -1068,10 +1110,40 @@ async function validateSchemas(organization) {
   const sourceSemanticErrors = (entry) => {
     const proposed = new Set(entry?.proposed_purposes ?? []);
     const approved = entry?.approved_purposes ?? [];
-    return approved.every((purpose) => proposed.has(purpose))
+    const errors = approved.every((purpose) => proposed.has(purpose))
       ? []
       : ["approved_purposes must be a subset of proposed_purposes"];
+    if (
+      ["managed-upload", "local-bootstrap"].includes(entry?.origin?.kind) &&
+      entry?.source_revision !== entry?.content_revision
+    )
+      errors.push("managed source revision must equal its content revision");
+    return errors;
   };
+  const sourceIntakeReceiptSemanticErrors = (entry) =>
+    entry?.content_revision === `sha256:${entry?.observed_sha256}`
+      ? []
+      : ["content revision must equal the observed SHA-256"];
+  const validateIntakeReceipt = aiValidators.get("intake-receipt.schema.json");
+  const datasetContractVectors = await json(
+    "contracts/ai/test-vectors/dataset-contracts.json",
+  );
+  for (const vector of datasetContractVectors ?? []) {
+    if (
+      vector?.schema !==
+      "https://vfbiz.example/contracts/ai/source-intake-receipt/v1"
+    )
+      continue;
+    const schemaValid = Boolean(validateIntakeReceipt?.(vector.value));
+    const observed =
+      schemaValid && sourceIntakeReceiptSemanticErrors(vector.value).length === 0;
+    const expected =
+      typeof vector.semantic_valid === "boolean"
+        ? vector.semantic_valid
+        : vector.valid;
+    if (observed !== expected)
+      fail(`source intake receipt semantic vector ${vector.id}`);
+  }
   if (!Array.isArray(sourceCatalog?.entries))
     fail("catalog/sources/index.json: expected an entries array");
   else {
@@ -1114,6 +1186,11 @@ async function validateSchemas(organization) {
       status: "purpose-approved",
       source_type: "synthetic",
       locator: "https://example.invalid/source",
+      origin: {
+        kind: "external-https",
+        requested_uri: "https://example.invalid/source",
+        allowed_origin: "https://example.invalid/",
+      },
       allowed_origin: "https://example.invalid/",
       source_revision: "fixture-1",
       upstream_checksum_sha256: null,

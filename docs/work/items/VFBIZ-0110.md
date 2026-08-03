@@ -29,7 +29,7 @@ required_checks:
   - npm run verify:ai
   - npm run verify:ai:integration
   - npm run governance:check
-revision: 1
+revision: 2
 review_date: "2026-07-25"
 ---
 
@@ -47,6 +47,11 @@ production candidate.
   được dùng cho mọi candidate.
 - Candidate không đạt citation/refusal hoặc security gate không được bù bằng
   latency hay giá rẻ.
+- Một `RetrievalBakeoffManifest` tự kiểm chứng chỉ chứng minh tính toàn vẹn
+  canonical. Trước khi chạy hoặc dùng kết quả cho release, phải có
+  `RetrievalSuiteAuthority` độc lập bind đúng suite/source/index/evaluator
+  digest, provenance evidence, held-out flag và ba subject khác nhau. Agent
+  không được tự tạo hoặc thay thế authority record.
 
 ## Done when
 

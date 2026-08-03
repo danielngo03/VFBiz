@@ -1,0 +1,3 @@
+interface:
+  display_name: "Operate GCP AI"
+  short_description: "Operate bounded VFBiz GCP AI development infrastructure"

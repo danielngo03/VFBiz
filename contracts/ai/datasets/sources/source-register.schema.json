@@ -1,16 +1,57 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vfbiz.example/contracts/ai/source-register/v4",
+  "$id": "https://vfbiz.example/contracts/ai/source-register/v5",
   "title": "VFBiz Source Register entry",
   "type": "object",
-  "required": ["source_id", "version", "title", "status", "source_type", "locator", "source_revision", "classification", "owner_role", "rights", "retention", "deletion_method", "review_date"],
+  "required": ["source_id", "version", "title", "status", "source_type", "origin", "source_revision", "classification", "owner_role", "rights", "retention", "deletion_method", "review_date"],
   "properties": {
     "source_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
     "version": {"type": "string", "minLength": 1},
     "title": {"type": "string", "minLength": 1},
     "status": {"enum": ["candidate", "legal-hold", "fetch-approved", "purpose-approved", "rejected", "tombstoned"]},
-    "source_type": {"enum": ["internal-content", "public-dataset", "synthetic", "customer-derived"]},
+    "source_type": {"enum": ["first-party-content", "internal-content", "public-dataset", "synthetic", "customer-derived"]},
     "locator": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "origin": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "requested_uri"],
+          "properties": {
+            "kind": {"const": "external-https"},
+            "requested_uri": {"type": "string", "format": "uri", "pattern": "^https://"},
+            "allowed_origin": {"type": "string", "format": "uri", "pattern": "^https://[^/]+/?$"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "upload_receipt_id", "actor_ref", "original_filename"],
+          "properties": {
+            "kind": {"const": "managed-upload"},
+            "upload_receipt_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+            "actor_ref": {"type": "string", "minLength": 1},
+            "original_filename": {"type": "string", "minLength": 1, "maxLength": 512}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "batch_id", "relative_path_token", "import_receipt_id"],
+          "properties": {
+            "kind": {"const": "local-bootstrap"},
+            "batch_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+            "relative_path_token": {"type": "string", "pattern": "^[a-z0-9][a-z0-9/_=.-]{0,511}$"},
+            "import_receipt_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "storage_uri": {"type": "string", "pattern": "^(?:file://|gs://)[a-zA-Z0-9][a-zA-Z0-9/_=.:+-]{0,1023}$"},
+    "content_revision": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "document_family_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "version_label": {"type": "string", "minLength": 1, "maxLength": 160},
+    "supersedes_source_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
     "allowed_origin": {"type": "string", "format": "uri", "pattern": "^https://[^/]+/?$"},
     "source_revision": {"type": "string", "minLength": 1},
     "upstream_checksum_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
@@ -53,7 +94,67 @@
     "approval": {"type": "object", "required": ["decision_id", "role", "actor_ref", "decision", "evidence_digest", "decided_at"], "properties": {"decision_id": {"type": "string", "minLength": 1}, "role": {"enum": ["data-owner", "legal-owner", "privacy-owner", "content-owner"]}, "actor_ref": {"type": "string", "minLength": 1}, "decision": {"const": "approved"}, "evidence_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "decided_at": {"type": "string", "format": "date-time"}}, "additionalProperties": false}
   },
   "allOf": [
-    {"if": {"properties": {"status": {"enum": ["fetch-approved", "purpose-approved"]}}, "required": ["status"]}, "then": {"required": ["allowed_origin", "fetch_approval_evidence"]}},
+    {
+      "if": {
+        "properties": {
+          "origin": {
+            "properties": {"kind": {"const": "external-https"}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["origin"]
+      },
+      "then": {"required": ["locator", "allowed_origin"]}
+    },
+    {
+      "if": {
+        "properties": {
+          "origin": {
+            "properties": {"kind": {"enum": ["managed-upload", "local-bootstrap"]}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["origin"]
+      },
+      "then": {
+        "required": ["storage_uri", "content_revision", "document_family_id"],
+        "properties": {
+          "source_revision": {"pattern": "^sha256:[a-f0-9]{64}$"}
+        },
+        "not": {"required": ["locator"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "origin": {
+            "properties": {"kind": {"const": "local-bootstrap"}},
+            "required": ["kind"]
+          }
+        },
+        "required": ["origin"]
+      },
+      "then": {
+        "properties": {
+          "status": {"const": "candidate"},
+          "approved_uses": {"maxItems": 0},
+          "approved_purposes": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "origin": {
+            "properties": {"kind": {"const": "external-https"}},
+            "required": ["kind"]
+          },
+          "status": {"enum": ["fetch-approved", "purpose-approved"]}
+        },
+        "required": ["origin", "status"]
+      },
+      "then": {"required": ["allowed_origin", "fetch_approval_evidence"]}
+    },
     {"if": {"properties": {"status": {"const": "purpose-approved"}}, "required": ["status"]}, "then": {"required": ["acl_namespaces", "custodian_role", "verified_fetch_ids", "purpose_approval_evidence"], "anyOf": [{"required": ["approved_uses"]}, {"required": ["approved_purposes"]}], "properties": {"rights": {"properties": {"commercial_use": {"const": "permitted"}, "derivatives": {"const": "permitted"}, "legal_review": {"const": "approved"}}}}}},
     {"if": {"properties": {"source_type": {"const": "customer-derived"}}, "required": ["source_type"]}, "then": {"properties": {"classification": {"const": "restricted"}, "status": {"not": {"const": "purpose-approved"}}}}},
     {"if": {"properties": {"acl_namespaces": {"contains": {"pattern": "^public_customer:"}}}, "required": ["acl_namespaces"]}, "then": {"properties": {"classification": {"const": "public"}}}}

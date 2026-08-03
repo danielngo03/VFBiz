@@ -2,7 +2,7 @@
   "format_version": 1,
   "purpose": "Detect canonical-source drift in the target-architecture report set.",
   "generated_from": {
-    "backend/ai/docs/conversation-graph.md": "3692f9d011a1e6ec27cc31d0889e48cd3474f10bbcbec996aca65c92e645aa32",
+    "backend/ai/docs/conversation-graph.md": "65972d55c7249173bc4c515c107c930884f39c7983000840258ab578032671e8",
     "backend/ai/docs/knowledge-release.md": "d6469173656a701ad071887d8f62237a423f88a4412d98edb1abb53c2f8d5ca6",
     "backend/api/docs/conversation-runtime.md": "c4a16b8421fce15e739886dfc3cf5d45a8da66b816fc8d094bdd86e474ba11ba",
     "backend/api/docs/data-model.md": "9abf592b942df5055b06598c6872b886b63003d0f04c0caf0c3201b3f69c2b9d",

@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/source-intake-receipt/v1",
+  "title": "VFBiz Source Intake Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "batch_id",
+    "origin",
+    "actor_ref",
+    "relative_path_token",
+    "original_filename",
+    "media_type",
+    "byte_size",
+    "observed_sha256",
+    "content_revision",
+    "storage_uri",
+    "document_family_id",
+    "taxonomy",
+    "environment",
+    "allowed_use",
+    "visibility",
+    "release_eligible",
+    "provenance_status",
+    "received_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "vfbiz-source-intake-receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "batch_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "origin": {"enum": ["managed-upload", "local-bootstrap"]},
+    "actor_ref": {"type": "string", "minLength": 1},
+    "relative_path_token": {"type": "string", "pattern": "^[a-z0-9][a-z0-9/_=.-]{0,511}$"},
+    "original_filename": {"type": "string", "minLength": 1, "maxLength": 512},
+    "media_type": {
+      "enum": [
+        "application/pdf",
+        "application/json",
+        "application/x-ndjson",
+        "text/csv",
+        "application/vnd.apache.parquet"
+      ]
+    },
+    "byte_size": {"type": "integer", "minimum": 1, "maximum": 1073741824},
+    "observed_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_revision": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "storage_uri": {"type": "string", "pattern": "^(?:file://|gs://)[a-zA-Z0-9][a-zA-Z0-9/_=.:+-]{0,1023}$"},
+    "environment": {"enum": ["development", "staging", "production"]},
+    "allowed_use": {"enum": ["knowledge-index", "quarantine-only"]},
+    "visibility": {"enum": ["developer-only", "workforce-private"]},
+    "release_eligible": {"const": false},
+    "provenance_status": {
+      "enum": [
+        "locally-supplied-first-party-candidate",
+        "managed-upload-pending-review"
+      ]
+    },
+    "document_family_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "taxonomy": {"type": "object"},
+    "received_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"origin": {"const": "local-bootstrap"}},
+        "required": ["origin"]
+      },
+      "then": {
+        "properties": {
+          "environment": {"const": "development"},
+          "allowed_use": {"const": "knowledge-index"},
+          "visibility": {"const": "developer-only"},
+          "release_eligible": {"const": false},
+          "provenance_status": {"const": "locally-supplied-first-party-candidate"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"origin": {"const": "managed-upload"}},
+        "required": ["origin"]
+      },
+      "then": {
+        "properties": {
+          "allowed_use": {"const": "quarantine-only"},
+          "visibility": {"const": "workforce-private"},
+          "release_eligible": {"const": false},
+          "provenance_status": {"const": "managed-upload-pending-review"}
+        }
+      }
+    }
+  ]
+}

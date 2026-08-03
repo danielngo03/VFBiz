@@ -22,6 +22,16 @@
       "legacyPaths": ["contracts/ai/conversation-public-event.schema.json"]
     },
     {
+      "contractId": "https://vfbiz.example/contracts/ai/conversation-task-slot-authority/v1",
+      "canonicalPath": "contracts/ai/assistant/task-slot-authority.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/semantic-route-output/v1",
+      "canonicalPath": "contracts/ai/assistant/semantic-route-output.schema.json",
+      "legacyPaths": []
+    },
+    {
       "contractId": "https://vfbiz.example/contracts/ai/release-manifest/v3",
       "canonicalPath": "contracts/ai/releases/ai-release-manifest.schema.json",
       "legacyPaths": [
@@ -35,9 +45,14 @@
       "legacyPaths": []
     },
     {
-      "contractId": "https://vfbiz.example/contracts/ai/source-register/v4",
+      "contractId": "https://vfbiz.example/contracts/ai/source-register/v5",
       "canonicalPath": "contracts/ai/datasets/sources/source-register.schema.json",
       "legacyPaths": ["contracts/ai/source-register.schema.json"]
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/source-intake-receipt/v1",
+      "canonicalPath": "contracts/ai/datasets/sources/intake-receipt.schema.json",
+      "legacyPaths": []
     },
     {
       "contractId": "https://vfbiz.example/contracts/ai/source-catalog-entry/v1",
@@ -130,7 +145,12 @@
       "legacyPaths": []
     },
     {
-      "contractId": "https://vfbiz.example/contracts/ai/evaluation/run-request/v1",
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/benchmark-definition/v2",
+      "canonicalPath": "contracts/ai/evaluation/benchmark-definition-v2.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/run-request/v2",
       "canonicalPath": "contracts/ai/evaluation/run-request.schema.json",
       "legacyPaths": []
     },
@@ -150,8 +170,18 @@
       "legacyPaths": []
     },
     {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/grader-definition/v2",
+      "canonicalPath": "contracts/ai/evaluation/grader-definition-v2.schema.json",
+      "legacyPaths": []
+    },
+    {
       "contractId": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v1",
       "canonicalPath": "contracts/ai/evaluation/grader-calibration.schema.json",
+      "legacyPaths": []
+    },
+    {
+      "contractId": "https://vfbiz.example/contracts/ai/evaluation/grader-calibration/v2",
+      "canonicalPath": "contracts/ai/evaluation/grader-calibration-v2.schema.json",
       "legacyPaths": []
     },
     {

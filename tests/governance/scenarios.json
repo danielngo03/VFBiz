@@ -98,7 +98,7 @@
       "id": "mobile-document-fast",
       "input": {
         "request": "Sửa một lỗi chính tả trong hướng dẫn mobile",
-        "paths": ["mobile/README.md"],
+        "paths": ["mobile/customer/README.md"],
         "presentationOnly": true
       },
       "expected": {

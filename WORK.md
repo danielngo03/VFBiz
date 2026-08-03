@@ -70,20 +70,45 @@
 | VFBIZ-0165 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python AI contract vectors with canonical registry](docs/work/items/VFBIZ-0165.md) |
 | VFBIZ-0166 | P0 | review | Agent Platform | root | — | — | [Register AI Quality PostgreSQL release gate](docs/work/items/VFBIZ-0166.md) |
 | VFBIZ-0167 | P0 | review | Data Governance | root | — | — | [Harden dataset release contract authority](docs/work/items/VFBIZ-0167.md) |
-| VFBIZ-0168 | P0 | review | Customer Engagement | api | — | — | [Add durable conversation task authority](docs/work/items/VFBIZ-0168.md) |
 | VFBIZ-0169 | P0 | blocked | AI Assistant Orchestration | ai | — | See checkpoint | [Add governed semantic routing](docs/work/items/VFBIZ-0169.md) |
 | VFBIZ-0176 | P0 | review | AI Knowledge Engineering | ai | — | — | [Adopt dataset manifest v4 in AI runtime](docs/work/items/VFBIZ-0176.md) |
 | VFBIZ-0177 | P0 | review | Agent Platform | root | — | — | [Enforce dataset v4 in runtime contract gate](docs/work/items/VFBIZ-0177.md) |
 | VFBIZ-0178 | P0 | review | AI Platform Foundation | ai | — | — | [Align Python dataset contract parity with v4](docs/work/items/VFBIZ-0178.md) |
 | VFBIZ-0179 | P0 | review | AI Knowledge Engineering | ai | — | — | [Emit canonical dataset v4 candidate manifests](docs/work/items/VFBIZ-0179.md) |
 | VFBIZ-0180 | P0 | review | Data Governance | root | — | — | [Correct dataset v4 semantic vector authority](docs/work/items/VFBIZ-0180.md) |
-| VFBIZ-0181 | P0 | review | API Foundation | api | — | — | [Persist conversation task context schema](docs/work/items/VFBIZ-0181.md) |
 | VFBIZ-0182 | P0 | review | Data Governance | root | — | — | [Close dataset v4 authority gaps](docs/work/items/VFBIZ-0182.md) |
 | VFBIZ-0183 | P0 | active | AI Knowledge Engineering | ai | — | — | [Enforce dataset v4 semantic authority](docs/work/items/VFBIZ-0183.md) |
 | VFBIZ-0184 | P0 | review | Agent Platform | root | — | — | [Align Node dataset v4 semantic authority](docs/work/items/VFBIZ-0184.md) |
 | VFBIZ-0185 | P0 | active | AI Knowledge Engineering | ai | — | — | [Bind dataset release provenance to registry authority](docs/work/items/VFBIZ-0185.md) |
 | VFBIZ-0186 | P0 | review | AI Platform Foundation | ai | — | — | [Enforce atomic dataset release provenance at PostgreSQL boundary](docs/work/items/VFBIZ-0186.md) |
 | VFBIZ-0187 | P0 | review | AI Knowledge Engineering | ai | — | — | [Align Dataset Registry transactions with release authority](docs/work/items/VFBIZ-0187.md) |
+| VFBIZ-0191 | P0 | review | Customer Engagement | api | VFBIZ-0190, VFBIZ-0168, VFBIZ-0181 | — | [Add durable conversation slot authority](docs/work/items/VFBIZ-0191.md) |
+| VFBIZ-0192 | P0 | review | AI Assurance | ai | VFBIZ-0190 | — | [Build evaluation execution and evidence authority](docs/work/items/VFBIZ-0192.md) |
+| VFBIZ-0193 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0190, VFBIZ-0183, VFBIZ-0184, VFBIZ-0185, VFBIZ-0186, VFBIZ-0187 | — | [Operationalize Dataset release authority](docs/work/items/VFBIZ-0193.md) |
+| VFBIZ-0194 | P0 | proposed | AI Assistant Orchestration | ai | VFBIZ-0136, VFBIZ-0169, VFBIZ-0191, VFBIZ-0192, VFBIZ-0193 | — | [Complete grounded factual assistant baseline](docs/work/items/VFBIZ-0194.md) |
+| VFBIZ-0195 | P0 | proposed | Customer Web Experience | customer-portal | VFBIZ-0194, VFBIZ-0196, VFBIZ-0197 | — | [Open the Customer Assistant staging path](docs/work/items/VFBIZ-0195.md) |
+| VFBIZ-0196 | P0 | active | AI Assurance | ai | VFBIZ-0135, VFBIZ-0162, VFBIZ-0192 | — | [Adjudicate the 1,000-case ViVi Golden staging suite](docs/work/items/VFBIZ-0196.md) |
+| VFBIZ-0197 | P0 | proposed | Agent Platform | root | VFBIZ-0190 | — | [Close production supply-chain staging blockers](docs/work/items/VFBIZ-0197.md) |
+| VFBIZ-0198 | P0 | review | AI Knowledge Engineering | ai | VFBIZ-0136 | — | [Add local-first VinFast document intake and PDF OCR](docs/work/items/VFBIZ-0198.md) |
+| VFBIZ-0199 | P0 | active | AI Knowledge Engineering | ai | VFBIZ-0198 | — | [Codify GCP knowledge ingestion development foundation](docs/work/items/VFBIZ-0199.md) |
+| VFBIZ-0200 | P0 | review | AI Assurance | ai | VFBIZ-0192 | — | [Establish ViVi text voice evaluation authority](docs/work/items/VFBIZ-0200.md) |
+| VFBIZ-0201 | P0 | proposed | AI Model Platform | ai | VFBIZ-0199, VFBIZ-0200, VFBIZ-0110 | — | [Add Vertex model adapters and execute governed RAG bake-off](docs/work/items/VFBIZ-0201.md) |
+| VFBIZ-0202 | P0 | proposed | AI Model Platform | ai | VFBIZ-0196, VFBIZ-0201, VFBIZ-0139 | — | [Build evidence-gated Vertex tuning candidate workflow](docs/work/items/VFBIZ-0202.md) |
+| VFBIZ-0203 | P0 | active | Mobile Experience | mobile | — | — | [Xây nền tảng VFBiz Customer Mobile bằng Expo 57](docs/work/items/VFBIZ-0203.md) |
+| VFBIZ-0207 | P0 | blocked | AI Model Platform | ai | — | See checkpoint | [Build Vertex synthetic-only adapter baseline and bounded smoke](docs/work/items/VFBIZ-0207.md) |
+| VFBIZ-0208 | P0 | blocked | AI Model Platform | ai | — | See checkpoint | [Build Vertex synthetic smoke authority and preflight ledger](docs/work/items/VFBIZ-0208.md) |
+| VFBIZ-0209 | P0 | review | AI Model Platform | ai | VFBIZ-0210 | — | [Execute bounded Vertex development smoke and seal evidence](docs/work/items/VFBIZ-0209.md) |
+| VFBIZ-0210 | P0 | active | Reliability Engineering | infra | — | — | [Reconcile GCP IaC and provision Vertex smoke identity](docs/work/items/VFBIZ-0210.md) |
+| VFBIZ-0211 | P0 | active | AI Model Platform | ai | VFBIZ-0209 | — | [Add privacy-safe AI observability and authenticated staging Chat](docs/work/items/VFBIZ-0211.md) |
+| VFBIZ-0212 | P0 | blocked | AI Model Platform | ai | VFBIZ-0209 | See checkpoint | [Run an isolated synthetic Vertex evaluation and tuning rehearsal](docs/work/items/VFBIZ-0212.md) |
+| VFBIZ-0213 | P0 | blocked | AI Model Platform | ai | VFBIZ-0212 | See checkpoint | [Build the governed ViVi synthetic behavior tuning successor](docs/work/items/VFBIZ-0213.md) |
+| VFBIZ-0214 | P0 | blocked | AI Knowledge Engineering | ai | VFBIZ-0213 | See checkpoint | [Correct synthetic ViVi tuning quality and authority](docs/work/items/VFBIZ-0214.md) |
+| VFBIZ-0215 | P0 | blocked | Customer Engagement | api | — | See checkpoint | [Enforce API-owned live control for authenticated staging Chat](docs/work/items/VFBIZ-0215.md) |
+| VFBIZ-0216 | P0 | active | AI Platform Foundation | ai | VFBIZ-0199 | — | [Bootstrap private AI database credentials without plaintext exposure](docs/work/items/VFBIZ-0216.md) |
+| VFBIZ-0217 | P0 | active | Reliability Engineering | infra | VFBIZ-0199, VFBIZ-0216 | — | [Bind Cloud SQL credential bootstrap to immutable GCP authority](docs/work/items/VFBIZ-0217.md) |
+| VFBIZ-0218 | P0 | active | Agent Platform | root | VFBIZ-0216, VFBIZ-0217 | — | [Enforce live claim authority for controlled GCP credential apply](docs/work/items/VFBIZ-0218.md) |
+| VFBIZ-0219 | P0 | review | Reliability Engineering | infra | VFBIZ-0217, VFBIZ-0218 | — | [Correct Cloud SQL credential polling permission contract](docs/work/items/VFBIZ-0219.md) |
+| VFBIZ-0220 | P0 | active | Agent Platform | root | VFBIZ-0218, VFBIZ-0219 | — | [Establish signed remote authority broker for controlled GCP apply](docs/work/items/VFBIZ-0220.md) |
 | VFBIZ-0036 | P1 | proposed | Product Management | root | VFBIZ-0035 | — | [Verified Vehicle Asset và customer association](docs/work/items/VFBIZ-0036.md) |
 | VFBIZ-0075 | P1 | review | Architecture & Integration | root | — | — | [Bộ báo cáo kiến trúc đích VFBiz](docs/work/items/VFBIZ-0075.md) |
 | VFBIZ-0083 | P1 | proposed | Mobility Platform | customer-portal | VFBIZ-0072, VFBIZ-0082 | — | [Customer EV Journey Planner experience](docs/work/items/VFBIZ-0083.md) |
@@ -91,4 +116,7 @@
 | VFBIZ-0127 | P1 | proposed | API Foundation | api | — | — | [Wire postgres-spec integration tests into a real CI gate](docs/work/items/VFBIZ-0127.md) |
 | VFBIZ-0128 | P1 | active | Agent Platform | root | — | — | [Agent control reconciliation and runtime integrity](docs/work/items/VFBIZ-0128.md) |
 | VFBIZ-0129 | P1 | active | API Foundation | root | — | — | [Remediate Node.js supply-chain advisories](docs/work/items/VFBIZ-0129.md) |
+| VFBIZ-0204 | P1 | active | Agent Platform | root | — | — | [Build additive VFBiz enterprise agent runtime v1](docs/work/items/VFBIZ-0204.md) |
+| VFBIZ-0205 | P1 | review | Identity Experience | identity-theme | — | — | [Harden workspace agent instruction parity and governance gates](docs/work/items/VFBIZ-0205.md) |
+| VFBIZ-0206 | P1 | review | Agent Platform | root | — | — | [Align Codex config validation and mobile governance scenario](docs/work/items/VFBIZ-0206.md) |
 | VFBIZ-0076 | P2 | review | Agent Platform | root | — | — | [README giới thiệu repository VFBiz](docs/work/items/VFBIZ-0076.md) |

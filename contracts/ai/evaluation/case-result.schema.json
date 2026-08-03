@@ -13,6 +13,7 @@
     "latency_ms",
     "usage",
     "sanitized_trace_ref",
+    "metric_outputs",
     "grader_outputs",
     "validity_flags",
     "result_digest"
@@ -26,18 +27,31 @@
     "output_digest": {
       "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
     },
-    "latency_ms": { "type": "integer", "minimum": 0 },
+    "latency_ms": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
     "usage": {
       "type": "object",
       "required": ["input_tokens", "output_tokens", "cost_usd"],
       "properties": {
-        "input_tokens": { "type": "integer", "minimum": 0 },
-        "output_tokens": { "type": "integer", "minimum": 0 },
-        "cost_usd": { "type": "number", "minimum": 0 }
+        "input_tokens": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "output_tokens": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "cost_usd": { "type": "number", "minimum": 0, "maximum": 1000000 }
       },
       "additionalProperties": false
     },
     "sanitized_trace_ref": { "type": ["string", "null"], "maxLength": 500 },
+    "metric_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric_revision", "slice", "value"],
+        "properties": {
+          "metric_revision": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "slice": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "value": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
     "grader_outputs": {
       "type": "array",
       "items": {
@@ -63,7 +77,11 @@
           "harness-mismatch",
           "reward-hacking",
           "format-avoidance",
-          "missing-evidence"
+          "missing-evidence",
+          "runner-unavailable",
+          "provider-timeout",
+          "artifact-store-unavailable",
+          "usage-unknown"
         ]
       }
     },
@@ -81,6 +99,7 @@
       "then": {
         "properties": {
           "output_digest": { "$ref": "#/$defs/sha256" },
+          "metric_outputs": { "type": "array", "minItems": 1 },
           "grader_outputs": { "type": "array", "minItems": 1 },
           "validity_flags": { "type": "array", "maxItems": 0 }
         }
@@ -94,6 +113,7 @@
       "then": {
         "properties": {
           "output_digest": { "type": "null" },
+          "metric_outputs": { "type": "array", "maxItems": 0 },
           "grader_outputs": { "type": "array", "maxItems": 0 }
         }
       }

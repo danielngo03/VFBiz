@@ -61,8 +61,8 @@ runtime của các phần đó thuộc các work item Dataset Product/Release ti
 
 ## Checkpoint
 
-- Exact next action: VFBIZ-0148 consumes the schema to implement Dataset
-  Product/Recipe lineage; VFBIZ-0152 owns release and tombstone runtime.
+- Exact next action: VFBIZ-0193 consumes the schema to complete Dataset
+  Product/Recipe quality authority, release and tombstone runtime.
 
 ## Evidence
 

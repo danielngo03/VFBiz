@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/governance/agent-runtime/v1",
+  "title": "VFBiz enterprise agent runtime contracts v1",
+  "$defs": {
+    "runtimeState": {
+      "enum": [
+        "queued",
+        "running",
+        "waiting_approval",
+        "waiting_dependency",
+        "reviewing",
+        "succeeded",
+        "failed_safely",
+        "cancelled"
+      ]
+    },
+    "runtimeEvent": {
+      "type": "object",
+      "required": ["id", "runId", "sequence", "type", "idempotencyKey", "actor", "contextKey", "baseRevision", "payloadDigest", "payload", "createdAt"],
+      "properties": {
+        "id": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "runId": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "type": {
+          "enum": [
+            "run.enqueued",
+            "run.claimed",
+            "run.transitioned",
+            "run.cancel-requested",
+            "run.reconciled",
+            "context.resolved",
+            "agent.started",
+            "agent.completed",
+            "agent.failed",
+            "checkpoint.saved",
+            "approval.requested",
+            "approval.decided",
+            "artifact.recorded",
+            "usage.recorded"
+          ]
+        },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string", "minLength": 1 },
+        "contextKey": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "baseRevision": { "type": ["string", "null"], "pattern": "^[a-f0-9]{7,64}$" },
+        "payloadDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "payload": { "type": "object" },
+        "createdAt": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "runtimeBudget": {
+      "type": "object",
+      "required": [
+        "maxTurns",
+        "maxAttempts",
+        "maxInputTokens",
+        "maxOutputTokens",
+        "maxEstimatedUsd"
+      ],
+      "properties": {
+        "maxTurns": { "type": "integer", "minimum": 1, "maximum": 30 },
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "maxInputTokens": { "type": "integer", "minimum": 1 },
+        "maxOutputTokens": { "type": "integer", "minimum": 1 },
+        "maxEstimatedUsd": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "runtimeCheckpoint": {
+      "type": "object",
+      "required": ["id", "runId", "sequence", "kind", "encryptedState", "stateDigest", "createdAt"],
+      "properties": {
+        "id": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "runId": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["workflow", "agent-state"] },
+        "encryptedState": { "type": "string", "pattern": "^v1:" },
+        "stateDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "createdAt": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "runtimeRun": {
+      "type": "object",
+      "required": [
+        "id",
+        "workItemKey",
+        "idempotencyKey",
+        "state",
+        "mode",
+        "objective",
+        "workspace",
+        "ownerTeam",
+        "contextKey",
+        "baseRevision",
+        "governanceClaimId",
+        "governanceFencingToken",
+        "claimedBy",
+        "heartbeatAt",
+        "cancellationRequestedAt",
+        "failureCode",
+        "version",
+        "budget",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "workItemKey": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/workItemKey" },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/runtimeState" },
+        "mode": { "enum": ["discovery", "bounded", "controlled"] },
+        "objective": { "type": "string", "minLength": 1 },
+        "workspace": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/repositoryPath" },
+        "ownerTeam": { "type": ["string", "null"] },
+        "contextKey": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "baseRevision": { "type": ["string", "null"], "pattern": "^[a-f0-9]{7,64}$" },
+        "governanceClaimId": { "type": ["string", "null"] },
+        "governanceFencingToken": { "type": ["integer", "null"], "minimum": 1 },
+        "claimedBy": { "type": ["string", "null"] },
+        "heartbeatAt": { "anyOf": [{ "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }, { "type": "null" }] },
+        "cancellationRequestedAt": { "anyOf": [{ "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }, { "type": "null" }] },
+        "failureCode": { "type": ["string", "null"] },
+        "version": { "type": "integer", "minimum": 1 },
+        "budget": { "$ref": "#/$defs/runtimeBudget" },
+        "createdAt": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" },
+        "updatedAt": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }
+      },
+      "additionalProperties": false
+    },
+    "approvalDecision": {
+      "type": "object",
+      "required": ["approvalId", "decision", "decidedBy", "reason"],
+      "properties": {
+        "approvalId": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "decision": { "enum": ["approved", "rejected"] },
+        "decidedBy": { "type": "string", "pattern": "^human:[A-Za-z0-9._:-]+$" },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "runtimeApproval": {
+      "type": "object",
+      "required": [
+        "id",
+        "runId",
+        "toolName",
+        "interruptionId",
+        "reason",
+        "requestedByRole",
+        "requiredAuthority",
+        "payloadDigest",
+        "status",
+        "decidedBy",
+        "decisionReason",
+        "requestedAt",
+        "decidedAt"
+      ],
+      "properties": {
+        "id": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "runId": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/identifier" },
+        "toolName": { "type": "string", "minLength": 1 },
+        "interruptionId": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "requestedByRole": { "enum": ["orchestrator", "explorer", "implementer", "reviewer-verifier", "risk-reviewer", "integrator"] },
+        "requiredAuthority": { "type": "string", "minLength": 1 },
+        "payloadDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "status": { "enum": ["pending", "approved", "rejected"] },
+        "decidedBy": { "type": ["string", "null"] },
+        "decisionReason": { "type": ["string", "null"] },
+        "requestedAt": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" },
+        "decidedAt": { "anyOf": [{ "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/timestamp" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "artifactReference": {
+      "type": "object",
+      "required": ["kind", "path", "sha256", "mediaType"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "decision-packet",
+            "worker-report",
+            "review-finding",
+            "evidence",
+            "sandbox-output"
+          ]
+        },
+        "path": { "$ref": "https://vfbiz.example/contracts/governance/v2#/$defs/repositoryPath" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "mediaType": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "coordinationRequest": {
+      "type": "object",
+      "required": ["targetTeam", "reason", "requiredAuthority"],
+      "properties": {
+        "targetTeam": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "requiredAuthority": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "approvalRequest": {
+      "type": "object",
+      "required": ["toolName", "interruptionId", "reason", "requestedByRole", "requiredAuthority", "payloadDigest"],
+      "properties": {
+        "toolName": { "type": "string", "minLength": 1 },
+        "interruptionId": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "requestedByRole": { "enum": ["orchestrator", "explorer", "implementer", "reviewer-verifier", "risk-reviewer", "integrator"] },
+        "requiredAuthority": { "type": "string", "minLength": 1 },
+        "payloadDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "reviewFinding": {
+      "type": "object",
+      "required": ["fingerprint", "severity", "summary", "evidence"],
+      "properties": {
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "agentResult": {
+      "type": "object",
+      "required": [
+        "status",
+        "role",
+        "summary",
+        "artifacts",
+        "evidence",
+        "coordinationRequest",
+        "approvalRequest",
+        "reviewFindings"
+      ],
+      "properties": {
+        "status": { "enum": ["completed", "needs-approval", "needs-decision", "failed-safely"] },
+        "role": { "enum": ["orchestrator", "explorer", "implementer", "reviewer-verifier", "risk-reviewer", "integrator"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifactReference" } },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "coordinationRequest": { "anyOf": [{ "$ref": "#/$defs/coordinationRequest" }, { "type": "null" }] },
+        "approvalRequest": { "anyOf": [{ "$ref": "#/$defs/approvalRequest" }, { "type": "null" }] },
+        "reviewFindings": { "type": "array", "items": { "$ref": "#/$defs/reviewFinding" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

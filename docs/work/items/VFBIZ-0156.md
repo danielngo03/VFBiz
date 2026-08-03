@@ -62,8 +62,8 @@ release.
   cancellation and guarded forward migration are implemented.
 - Release integration discovers and runs the governed PostgreSQL test through
   VFBIZ-0166.
-- Exact next action: VFBIZ-0157 adds controlled benchmark adapters and public
-  diagnostic portfolio on top of this registry.
+- Exact next action: VFBIZ-0192 adds controlled suite execution, benchmark
+  adapters and evidence authority on top of this registry.
 
 ## Evidence
 

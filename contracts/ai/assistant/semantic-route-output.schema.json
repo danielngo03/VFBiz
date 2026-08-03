@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/semantic-route-output/v1",
+  "title": "VFBiz Semantic Route Output",
+  "description": "Strict, bounded classifier output. It is a routing signal only; code-owned policy retains worker and tool authority.",
+  "x-vfbiz-revision": "semantic-route-output-v1",
+  "type": "object",
+  "required": [
+    "abuseSignals",
+    "bindingEnvelopeSha256",
+    "confidence",
+    "intent",
+    "missingSlots",
+    "multiIntent",
+    "outOfDomain",
+    "requiredSlots"
+  ],
+  "properties": {
+    "abuseSignals": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "abusive_language",
+          "instruction_override",
+          "prompt_exfiltration",
+          "tool_injection"
+        ]
+      }
+    },
+    "bindingEnvelopeSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "intent": {
+      "enum": [
+        "public_knowledge",
+        "vehicle_question",
+        "financing_question",
+        "charging_question",
+        "unknown"
+      ]
+    },
+    "missingSlots": {
+      "$ref": "#/$defs/slots"
+    },
+    "multiIntent": {
+      "type": "boolean"
+    },
+    "outOfDomain": {
+      "type": "boolean"
+    },
+    "requiredSlots": {
+      "$ref": "#/$defs/slots"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "slots": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      }
+    }
+  }
+}
