@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
+from types import MappingProxyType
 from urllib.parse import unquote, urlparse
 
 from app.modules.datasets.domain import RegistryInvariantError
@@ -17,6 +21,98 @@ class StoredObject:
     uri: str
     sha256: str
     byte_size: int
+    # GCS adapters persist immutable object generations when available. Local
+    # and in-memory stores intentionally leave these unset.
+    generation: int | None = None
+    metageneration: int | None = None
+
+
+class IntakeOrigin(StrEnum):
+    MANAGED_UPLOAD = "managed-upload"
+    LOCAL_BOOTSTRAP = "local-bootstrap"
+
+
+@dataclass(frozen=True, slots=True)
+class SourceIntakeReceipt:
+    receipt_id: str
+    batch_id: str
+    origin: IntakeOrigin
+    actor_ref: str
+    relative_path_token: str
+    original_filename: str
+    media_type: str
+    byte_size: int
+    observed_sha256: str
+    storage_uri: str
+    document_family_id: str
+    taxonomy: Mapping[str, str]
+    received_at: datetime
+    environment: str = "development"
+
+    def __post_init__(self) -> None:
+        if not self.receipt_id or not self.batch_id or not self.actor_ref:
+            raise RegistryInvariantError("intake receipt identity is required")
+        if self.media_type not in {
+            "application/pdf",
+            "application/json",
+            "application/x-ndjson",
+            "text/csv",
+            "application/vnd.apache.parquet",
+        }:
+            raise RegistryInvariantError("intake media type is not allowlisted")
+        if self.byte_size <= 0:
+            raise RegistryInvariantError("intake byte size must be positive")
+        if not _is_sha256(self.observed_sha256):
+            raise RegistryInvariantError("intake digest must be lowercase SHA-256")
+        if not self.storage_uri.startswith(("file://", "gs://")):
+            raise RegistryInvariantError("intake storage URI must use managed object storage")
+        if self.received_at.tzinfo is None:
+            raise RegistryInvariantError("intake timestamp must include timezone")
+        if self.environment not in {"development", "staging", "production"}:
+            raise RegistryInvariantError("intake environment is not supported")
+        if self.origin is IntakeOrigin.LOCAL_BOOTSTRAP and self.environment != "development":
+            raise RegistryInvariantError("local bootstrap is development-only")
+        object.__setattr__(
+            self,
+            "taxonomy",
+            MappingProxyType(dict(sorted(self.taxonomy.items()))),
+        )
+
+    @property
+    def content_revision(self) -> str:
+        return f"sha256:{self.observed_sha256}"
+
+    def contract_payload(self) -> dict[str, object]:
+        if self.origin is IntakeOrigin.LOCAL_BOOTSTRAP:
+            allowed_use = "knowledge-index"
+            visibility = "developer-only"
+            provenance_status = "locally-supplied-first-party-candidate"
+        else:
+            allowed_use = "quarantine-only"
+            visibility = "workforce-private"
+            provenance_status = "managed-upload-pending-review"
+        return {
+            "schema_version": "vfbiz-source-intake-receipt/v1",
+            "receipt_id": self.receipt_id,
+            "batch_id": self.batch_id,
+            "origin": self.origin.value,
+            "actor_ref": self.actor_ref,
+            "relative_path_token": self.relative_path_token,
+            "original_filename": self.original_filename,
+            "media_type": self.media_type,
+            "byte_size": self.byte_size,
+            "observed_sha256": self.observed_sha256,
+            "content_revision": self.content_revision,
+            "storage_uri": self.storage_uri,
+            "environment": self.environment,
+            "allowed_use": allowed_use,
+            "visibility": visibility,
+            "release_eligible": False,
+            "provenance_status": provenance_status,
+            "document_family_id": self.document_family_id,
+            "taxonomy": dict(sorted(self.taxonomy.items())),
+            "received_at": self.received_at.isoformat(),
+        }
 
 
 @dataclass(frozen=True, slots=True)

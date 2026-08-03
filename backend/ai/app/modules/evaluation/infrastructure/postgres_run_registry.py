@@ -53,7 +53,30 @@ class PostgresEvaluationRunRegistry:
             )
             return None if record is None else _run(record)
 
+    async def get_plan_document(
+        self,
+        run_id: str,
+    ) -> dict[str, object] | None:
+        async with self._sessions() as session:
+            record = await session.scalar(
+                select(EvaluationRunRecord).where(
+                    EvaluationRunRecord.run_key == run_id
+                )
+            )
+            if record is None or record.plan_document is None:
+                return None
+            document = cast(dict[str, object], record.plan_document)
+            if digest_plan_document(document) != record.plan_digest:
+                raise EvaluationRunConcurrencyError(
+                    "evaluation run plan integrity check failed"
+                )
+            return document
+
     async def save(self, run: EvaluationRun, *, expected_version: int) -> None:
+        if run.state is EvaluationRunState.DECISION_READY:
+            raise EvaluationRunConcurrencyError(
+                "decision-ready requires evidence authority"
+            )
         if run.row_version != expected_version + 1:
             raise EvaluationRunConcurrencyError(
                 "evaluation run transition version is inconsistent"

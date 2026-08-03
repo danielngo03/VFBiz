@@ -1,0 +1,24 @@
+{
+  "calibration_plan_id": "vivi-text-calibration-plan-v1",
+  "revision": "v1",
+  "status": "human-blocked",
+  "semantic_digest": "819c2286d2503098f1f8f42818488a579da0f02c7d916cd0c498b745693805b6",
+  "target_cases": 60,
+  "current_adjudicated_cases": 0,
+  "allowed_use": "grader-calibration-only",
+  "max_live_cost_usd": 2,
+  "required_slices": [
+    "diacritics-and-no-diacritics",
+    "regional-language",
+    "slang",
+    "ambiguity",
+    "refusal-and-handoff",
+    "multi-turn",
+    "high-risk-domain"
+  ],
+  "acceptance": {
+    "weighted_kappa_minimum": 0.7,
+    "hard_gate_false_pass_maximum": 0
+  },
+  "authority": "Human Product/Brand SMEs must author and adjudicate all calibration labels."
+}

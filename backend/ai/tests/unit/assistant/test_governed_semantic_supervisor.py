@@ -11,6 +11,8 @@ from app.modules.assistant.application import (
 from app.modules.assistant.infrastructure.keyword_supervisor import KeywordSupervisor
 
 _BINDING = SemanticClassifierBinding(
+    binding_envelope_sha256="d" * 64,
+    classifier_artifact_ref="classifier://vivi/router/v1",
     artifact_sha256="a" * 64,
     classifier_revision="vivi-router-v1",
     evaluation_evidence_sha256="b" * 64,
@@ -41,10 +43,14 @@ class FixedClassifier:
 
 
 @pytest.mark.asyncio
-async def test_exact_deterministic_route_avoids_semantic_cost() -> None:
+async def test_keyword_match_is_validated_by_release_bound_semantic_route() -> None:
     classifier = FixedClassifier(
         SemanticRoutePrediction(
-            decision=RouteDecision(intent="public_knowledge", confidence=0.99),
+            decision=RouteDecision(
+                intent="vehicle_question",
+                confidence=0.99,
+                routing_source="semantic",
+            ),
             binding=_BINDING,
         )
     )
@@ -61,8 +67,30 @@ async def test_exact_deterministic_route_avoids_semantic_cost() -> None:
     )
 
     assert decision.intent == "vehicle_question"
+    assert decision.routing_source == "semantic"
+    assert classifier.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_keyword_route_caps_confidence_when_semantic_classifier_is_unavailable() -> None:
+    classifier = FixedClassifier(TimeoutError("classifier deadline"))
+    supervisor = GovernedSemanticSupervisor(
+        deterministic=KeywordSupervisor(),
+        classifier=classifier,
+        binding=_BINDING,
+    )
+
+    decision = await supervisor.route(
+        message="VF 8 có thông số gì?",
+        global_entities=(),
+        previous_task=None,
+    )
+
+    assert decision.intent == "vehicle_question"
+    assert decision.confidence == 0.6
     assert decision.routing_source == "deterministic"
-    assert classifier.calls == 0
+    assert decision.fallback_reason == "classifier_unavailable"
+    assert classifier.calls == 1
 
 
 @pytest.mark.asyncio
@@ -188,4 +216,13 @@ def test_classifier_binding_rejects_an_invalid_threshold_policy() -> None:
             _BINDING,
             semantic_acceptance_confidence=0.5,
             semantic_activation_below=0.8,
+        )
+
+
+def test_classifier_binding_activation_threshold_stays_above_fallback_cap() -> None:
+    with pytest.raises(ValueError, match="semantic routing thresholds are invalid"):
+        replace(
+            _BINDING,
+            semantic_acceptance_confidence=0.6,
+            semantic_activation_below=0.6,
         )

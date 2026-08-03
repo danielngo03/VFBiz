@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "policy_id": "fact-free-vi-behavior-sft-v1",
+  "candidate_id": "vivi-behavior-synthetic-v5",
+  "purpose": "behavior-sft-candidate-review-only",
+  "content_policy": {
+    "locale": "vi-VN",
+    "factual_knowledge_allowed": false,
+    "vinfast_facts_allowed": false,
+    "prices_allowed": false,
+    "specifications_allowed": false,
+    "promotions_allowed": false,
+    "warranty_or_policy_claims_allowed": false,
+    "hotline_or_contact_facts_allowed": false,
+    "personal_or_sensitive_data_allowed": false,
+    "secret_material_allowed": false,
+    "tool_or_function_json_allowed": false,
+    "invented_completed_actions_allowed": false,
+    "invented_approvals_allowed": false
+  },
+  "quality_policy": {
+    "exact_normalized_duplicates": 0,
+    "minimum_unique_composition_ratio": 1.0,
+    "maximum_exact_response_share": 0.01,
+    "assistant_prefix_words": 5,
+    "maximum_assistant_prefix_share": 0.02,
+    "cross_split_similarity_threshold": 0.9,
+    "maximum_cross_split_near_duplicates": 0,
+    "maximum_implementation_term_hits": 0
+  },
+  "split_policy": {
+    "family_isolation": true,
+    "component_isolation": true,
+    "scenario_isolation": true,
+    "semantic_fingerprint_isolation": true,
+    "heldout_provider_export_allowed": false
+  },
+  "authority_policy": {
+    "candidate_may_self_issue_authority": false,
+    "trusted_authority_digest_external": true,
+    "observed_input_rehash_required": true,
+    "observed_source_rehash_required": true,
+    "human_adjudication_required_for_training": true
+  },
+  "flags": {
+    "human_adjudicated": false,
+    "training_eligible": false,
+    "upload_allowed": false,
+    "provider_dispatch_allowed": false,
+    "release_eligible": false
+  }
+}

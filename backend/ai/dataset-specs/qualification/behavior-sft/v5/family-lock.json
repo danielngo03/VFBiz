@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "candidate_id": "vivi-behavior-synthetic-v5",
+  "work_item": "VFBIZ-0214",
+  "family_count": 25,
+  "records_per_family": 25,
+  "families": [
+    {
+      "family_id": "next-step-summary",
+      "behavior": "concise_structure",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "handoff-note",
+      "behavior": "concise_structure",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "support-checklist",
+      "behavior": "concise_structure",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "review-order",
+      "behavior": "concise_structure",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "ambiguous-document",
+      "behavior": "clarification",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "ambiguous-request",
+      "behavior": "clarification",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "ambiguous-comparison",
+      "behavior": "clarification",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "approval-boundary",
+      "behavior": "refusal_handoff",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "account-access-boundary",
+      "behavior": "refusal_handoff",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "destructive-action-boundary",
+      "behavior": "refusal_handoff",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "source-validity",
+      "behavior": "citation_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "current-condition",
+      "behavior": "citation_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "changing-value",
+      "behavior": "citation_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "action-receipt",
+      "behavior": "state_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "background-progress",
+      "behavior": "state_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "saved-state",
+      "behavior": "state_transparency",
+      "split": "train",
+      "record_count": 25
+    },
+    {
+      "family_id": "unclear-owner",
+      "behavior": "clarification",
+      "split": "validation",
+      "record_count": 25
+    },
+    {
+      "family_id": "sensitive-handoff",
+      "behavior": "refusal_handoff",
+      "split": "validation",
+      "record_count": 25
+    },
+    {
+      "family_id": "citation-scope",
+      "behavior": "citation_transparency",
+      "split": "validation",
+      "record_count": 25
+    },
+    {
+      "family_id": "status-transition",
+      "behavior": "state_transparency",
+      "split": "validation",
+      "record_count": 25
+    },
+    {
+      "family_id": "test-handoff-brief",
+      "behavior": "concise_structure",
+      "split": "test",
+      "record_count": 25
+    },
+    {
+      "family_id": "test-request-scope",
+      "behavior": "clarification",
+      "split": "test",
+      "record_count": 25
+    },
+    {
+      "family_id": "test-impactful-change",
+      "behavior": "refusal_handoff",
+      "split": "test",
+      "record_count": 25
+    },
+    {
+      "family_id": "test-source-grounding",
+      "behavior": "citation_transparency",
+      "split": "test",
+      "record_count": 25
+    },
+    {
+      "family_id": "test-completion-proof",
+      "behavior": "state_transparency",
+      "split": "test",
+      "record_count": 25
+    }
+  ],
+  "declared_totals": {
+    "records": 625,
+    "split_records": {
+      "train": 400,
+      "validation": 100,
+      "test": 125
+    },
+    "split_families": {
+      "train": 16,
+      "validation": 4,
+      "test": 5
+    },
+    "behavior_records": {
+      "citation_transparency": 125,
+      "clarification": 125,
+      "concise_structure": 125,
+      "refusal_handoff": 125,
+      "state_transparency": 125
+    }
+  }
+}

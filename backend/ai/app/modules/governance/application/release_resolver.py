@@ -2,6 +2,10 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Protocol
 
+from app.modules.evaluation import (
+    AssistantReleaseEvidenceAuthority,
+    AssistantReleaseEvidenceQuery,
+)
 from app.modules.governance.domain.release_manifest import (
     ApprovalEvidence,
     AssistantReleaseCandidate,
@@ -73,6 +77,7 @@ class ReleaseManifestResolver:
         store: ReleaseManifestStore,
         digest_reader: ArtifactDigestReader,
         evidence_verifier: ReleaseEvidenceVerifier,
+        evaluation_evidence_authority: AssistantReleaseEvidenceAuthority,
         required_approval_roles: tuple[str, ...],
         clock: Callable[[], datetime],
     ) -> None:
@@ -83,6 +88,7 @@ class ReleaseManifestResolver:
         self._store = store
         self._digest_reader = digest_reader
         self._evidence_verifier = evidence_verifier
+        self._evaluation_evidence_authority = evaluation_evidence_authority
         self._required_approval_roles = frozenset(required_approval_roles)
         self._clock = clock
 
@@ -142,6 +148,14 @@ class ReleaseManifestResolver:
             or not await self._evidence_verifier.verify_automated_gate(
                 gate,
                 candidate,
+            )
+            or not await self._evaluation_evidence_authority.verify(
+                AssistantReleaseEvidenceQuery(
+                    evidence_ref=gate.evidence_ref,
+                    evidence_sha256=gate.evidence_sha256,
+                    candidate_release_id=candidate.candidate_id,
+                    candidate_manifest_sha256=candidate.content_sha256,
+                )
             )
         ):
             raise ReleaseManifestResolutionError("AUTOMATED_GATE_INVALID")

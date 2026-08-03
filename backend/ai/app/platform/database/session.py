@@ -9,8 +9,21 @@ from sqlalchemy.ext.asyncio import (
 )
 
 
-def create_engine(database_url: str) -> AsyncEngine:
-    return create_async_engine(database_url, pool_pre_ping=True)
+def create_engine(
+    database_url: str,
+    *,
+    search_path: str | None = None,
+) -> AsyncEngine:
+    connect_args = (
+        {}
+        if search_path is None
+        else {"server_settings": {"search_path": search_path}}
+    )
+    return create_async_engine(
+        database_url,
+        pool_pre_ping=True,
+        connect_args=connect_args,
+    )
 
 
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

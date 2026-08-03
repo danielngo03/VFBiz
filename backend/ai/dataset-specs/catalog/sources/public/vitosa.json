@@ -22,7 +22,9 @@
     "locator": "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
     "source_revision": "unfetched-candidate",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["conversation-quality"],
+    "proposed_purposes": [
+      "conversation-quality"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -43,7 +45,13 @@
     },
     "deletion_method": "Không tải content; chỉ giữ metadata quyết định từ chối tới hết retention.",
     "review_date": "2027-07-23",
-    "notes": "Rejected; không dùng thương mại."
+    "notes": "Rejected; không dùng thương mại.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://huggingface.co/datasets/UIT-ViToSA/ViToSA-1.0",
+      "allowed_origin": "https://huggingface.co/"
+    },
+    "allowed_origin": "https://huggingface.co/"
   },
   "provenance": {
     "legacy_entry_superseded": false,

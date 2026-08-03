@@ -8,6 +8,7 @@ def load_models() -> None:
         "app.modules.evaluation.infrastructure.models",
         "app.modules.governance.infrastructure.models",
         "app.modules.knowledge.infrastructure.ingestion_models",
+        "app.modules.knowledge.infrastructure.cloud_ingestion_models",
         "app.modules.knowledge.infrastructure.models",
         "app.platform.audit.models",
         "app.platform.checkpoints.models",

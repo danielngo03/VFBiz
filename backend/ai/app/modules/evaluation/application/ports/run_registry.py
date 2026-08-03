@@ -13,6 +13,11 @@ class EvaluationRunRegistry(Protocol):
 
     async def get(self, run_id: str) -> EvaluationRun | None: ...
 
+    async def get_plan_document(
+        self,
+        run_id: str,
+    ) -> dict[str, object] | None: ...
+
     async def save(self, run: EvaluationRun, *, expected_version: int) -> None: ...
 
 

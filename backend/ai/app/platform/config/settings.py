@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +22,17 @@ class OpenAICapabilitySettings:
     approval_sha256: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class VertexCapabilitySettings:
+    project_id: str | None
+    location: str | None
+    model_allowlist: tuple[str, ...]
+    retention_policy: str
+    approval_reference: str | None
+    approval_sha256: str | None
+    pricing_revision: str | None
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="VFBIZ_AI_",
@@ -37,6 +49,9 @@ class Settings(BaseSettings):
     expose_docs: bool = True
 
     database_url: str | None = None
+    evaluation_runner_database_url: str | None = None
+    evaluation_sealer_database_url: str | None = None
+    evaluation_definition_reader_database_url: str | None = None
     redis_url: RedisDsn | None = None
     gateway_issuer: str = "vfbiz-api"
     gateway_audience: str = "vfbiz-ai"
@@ -48,8 +63,29 @@ class Settings(BaseSettings):
     response_signing_private_key_file: Path | None = None
     response_signing_ttl_seconds: int = Field(default=30, ge=5, le=60)
 
-    generation_provider: Literal["disabled", "openai", "azure_openai", "self_hosted"] = "disabled"
-    embedding_provider: Literal["disabled", "openai", "azure_openai", "self_hosted"] = "disabled"
+    semantic_classifier_provider: Literal["disabled", "http"] = "disabled"
+    semantic_classifier_endpoint: str | None = None
+    semantic_classifier_allowed_origins: tuple[str, ...] = ()
+    semantic_classifier_api_token: SecretStr | None = None
+    semantic_classifier_artifact_ref: str | None = Field(
+        default=None,
+        pattern=r"^classifier://[A-Za-z0-9][A-Za-z0-9._:/-]{0,239}$",
+    )
+    semantic_classifier_artifact_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    semantic_classifier_timeout_seconds: float = Field(default=2, gt=0, le=10)
+    semantic_classifier_max_request_bytes: int = Field(default=32_768, ge=1_024, le=262_144)
+    semantic_classifier_max_response_bytes: int = Field(default=16_384, ge=1_024, le=262_144)
+    semantic_classifier_max_concurrency: int = Field(default=16, ge=1, le=256)
+
+    generation_provider: Literal[
+        "disabled", "openai", "azure_openai", "self_hosted", "vertex"
+    ] = "disabled"
+    embedding_provider: Literal[
+        "disabled", "openai", "azure_openai", "self_hosted", "vertex"
+    ] = "disabled"
     generation_model: str = "disabled"
     embedding_model: str = "disabled"
     embedding_dimension: int = Field(default=8, ge=1, le=65_536)
@@ -68,6 +104,22 @@ class Settings(BaseSettings):
     embedding_circuit_recovery_seconds: float = Field(default=30, ge=1, le=600)
     embedding_input_microusd_per_million_tokens: int = Field(default=0, ge=0)
     embedding_fixed_request_cost_microusd: int = Field(default=0, ge=0)
+    vertex_project_id: str | None = Field(
+        default=None, pattern=r"^[a-z][a-z0-9-]{4,28}[a-z0-9]$"
+    )
+    vertex_location: str | None = Field(default=None, max_length=64)
+    vertex_generation_model_allowlist: tuple[str, ...] = ()
+    vertex_embedding_model_allowlist: tuple[str, ...] = ()
+    vertex_retention_policy: Literal[
+        "standard", "zero_data_retention", "modified_abuse_monitoring"
+    ] = "standard"
+    vertex_data_controls_approval_reference: str | None = Field(
+        default=None, max_length=160
+    )
+    vertex_data_controls_approval_sha256: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{64}$"
+    )
+    vertex_pricing_revision: str | None = Field(default=None, max_length=160)
     self_hosted_embedding_base_url: str = "http://127.0.0.1:8080"
     self_hosted_embedding_api_token: SecretStr | None = None
     self_hosted_embedding_tokenizer_sha256: str | None = Field(
@@ -124,40 +176,83 @@ class Settings(BaseSettings):
     generation_openai_base_url: str | None = None
     generation_openai_project_id: str | None = Field(default=None, max_length=160)
     generation_openai_organization_id: str | None = Field(default=None, max_length=160)
-    generation_openai_retention_policy: Literal[
-        "standard",
-        "zero_data_retention",
-        "modified_abuse_monitoring",
-    ] | None = None
-    generation_openai_approval_reference: str | None = Field(
-        default=None, max_length=160
-    )
-    generation_openai_approval_sha256: str | None = Field(
-        default=None, pattern=r"^[a-f0-9]{64}$"
-    )
+    generation_openai_retention_policy: (
+        Literal[
+            "standard",
+            "zero_data_retention",
+            "modified_abuse_monitoring",
+        ]
+        | None
+    ) = None
+    generation_openai_approval_reference: str | None = Field(default=None, max_length=160)
+    generation_openai_approval_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     embedding_openai_api_key: SecretStr | None = None
     embedding_openai_base_url: str | None = None
     embedding_openai_project_id: str | None = Field(default=None, max_length=160)
     embedding_openai_organization_id: str | None = Field(default=None, max_length=160)
-    embedding_openai_retention_policy: Literal[
-        "standard",
-        "zero_data_retention",
-        "modified_abuse_monitoring",
-    ] | None = None
-    embedding_openai_approval_reference: str | None = Field(
-        default=None, max_length=160
-    )
-    embedding_openai_approval_sha256: str | None = Field(
-        default=None, pattern=r"^[a-f0-9]{64}$"
-    )
+    embedding_openai_retention_policy: (
+        Literal[
+            "standard",
+            "zero_data_retention",
+            "modified_abuse_monitoring",
+        ]
+        | None
+    ) = None
+    embedding_openai_approval_reference: str | None = Field(default=None, max_length=160)
+    embedding_openai_approval_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
-    knowledge_ingestion_profile: Literal["disabled", "synthetic_local"] = "disabled"
+    knowledge_ingestion_profile: Literal["disabled", "synthetic_local", "gcp"] = "disabled"
     knowledge_synthetic_source_root: Path | None = None
     knowledge_artifact_root: Path | None = None
     knowledge_source_map_path: Path | None = None
     knowledge_scanner_revision: str = "deterministic-v1"
     knowledge_policy_revision: str = "policy-v1"
     knowledge_embedding_dimension: int = Field(default=8, ge=1, le=65_536)
+    knowledge_gcp_project_id: str | None = Field(
+        default=None, pattern=r"^[a-z][a-z0-9-]{4,28}[a-z0-9]$"
+    )
+    knowledge_gcp_location: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9-]{1,30}[0-9]$")
+    knowledge_gcp_document_processor_id: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9._-]{0,159}$"
+    )
+    knowledge_gcp_document_processor_revision: str | None = Field(
+        default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"
+    )
+    knowledge_gcp_input_buckets: tuple[str, ...] = ()
+    knowledge_gcp_output_bucket: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9._-]{2,62}$"
+    )
+    knowledge_gcp_staging_bucket: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9._-]{2,62}$"
+    )
+    knowledge_gcp_pubsub_subscription: str | None = Field(
+        default=None, min_length=1, max_length=512
+    )
+    knowledge_gcp_pubsub_dead_letter_topic: str | None = Field(
+        default=None, min_length=1, max_length=255
+    )
+    knowledge_gcp_max_pages_per_batch: int = Field(default=500, ge=1, le=500)
+    knowledge_gcp_daily_page_budget: int = Field(default=500, ge=1, le=50_000)
+    knowledge_gcp_synthetic_smoke_manifest: dict[str, int] = Field(default_factory=dict)
+    knowledge_gcp_reconcile_batch_size: int = Field(default=1, ge=1, le=5)
+    knowledge_gcp_max_source_bytes: int = Field(default=104_857_600, ge=1, le=1_073_741_824)
+    knowledge_gcp_max_output_objects: int = Field(default=20, ge=1, le=20)
+    knowledge_gcp_max_output_object_bytes: int = Field(
+        default=16_777_216, ge=1, le=67_108_864
+    )
+    knowledge_gcp_max_output_total_bytes: int = Field(
+        default=134_217_728, ge=1, le=268_435_456
+    )
+    knowledge_gcp_max_extracted_text_bytes: int = Field(
+        default=33_554_432, ge=1, le=67_108_864
+    )
+    knowledge_gcp_min_page_confidence: float = Field(default=0.85, ge=0.0, le=1.0)
+    knowledge_gcp_min_page_text_characters: int = Field(default=20, ge=1, le=10_000)
+    knowledge_gcp_reconciliation_deadline_seconds: float = Field(
+        default=180,
+        ge=30,
+        le=210,
+    )
 
     def openai_capability(
         self,
@@ -195,24 +290,91 @@ class Settings(BaseSettings):
             ),
             approval_reference=(
                 getattr(self, f"{prefix}_openai_approval_reference")
-                or (
-                    self.openai_data_controls_approval_reference
-                    if allow_legacy
-                    else None
-                )
+                or (self.openai_data_controls_approval_reference if allow_legacy else None)
             ),
             approval_sha256=(
                 getattr(self, f"{prefix}_openai_approval_sha256")
-                or (
-                    self.openai_data_controls_approval_sha256
-                    if allow_legacy
-                    else None
-                )
+                or (self.openai_data_controls_approval_sha256 if allow_legacy else None)
             ),
+        )
+
+    def vertex_capability(
+        self,
+        capability: Literal["generation", "embedding"],
+    ) -> VertexCapabilitySettings:
+        allowlist = (
+            self.vertex_generation_model_allowlist
+            if capability == "generation"
+            else self.vertex_embedding_model_allowlist
+        )
+        return VertexCapabilitySettings(
+            project_id=self.vertex_project_id,
+            location=self.vertex_location,
+            model_allowlist=allowlist,
+            retention_policy=self.vertex_retention_policy,
+            approval_reference=self.vertex_data_controls_approval_reference,
+            approval_sha256=self.vertex_data_controls_approval_sha256,
+            pricing_revision=self.vertex_pricing_revision,
         )
 
     @model_validator(mode="after")
     def validate_runtime_policy(self) -> Self:
+        evaluation_database_urls = (
+            self.evaluation_runner_database_url,
+            self.evaluation_sealer_database_url,
+            self.evaluation_definition_reader_database_url,
+        )
+        configured_evaluation_urls = tuple(
+            value for value in evaluation_database_urls if value is not None
+        )
+        if configured_evaluation_urls and len(configured_evaluation_urls) != 3:
+            raise ValueError(
+                "evaluation database roles require runner, sealer, "
+                "and definition-reader URLs"
+            )
+        if len(configured_evaluation_urls) == 3:
+            usernames = tuple(
+                urlsplit(value).username for value in configured_evaluation_urls
+            )
+            if None in usernames or len(set(usernames)) != 3:
+                raise ValueError(
+                    "evaluation database URLs require three distinct login roles"
+                )
+        if self.semantic_classifier_provider == "http":
+            if (
+                self.semantic_classifier_endpoint is None
+                or self.semantic_classifier_artifact_ref is None
+                or self.semantic_classifier_artifact_sha256 is None
+            ):
+                raise ValueError(
+                    "semantic classifier requires endpoint and pinned artifact identity"
+                )
+            classifier_url = urlsplit(self.semantic_classifier_endpoint)
+            classifier_origin = f"{classifier_url.scheme}://{classifier_url.netloc}"
+            if (
+                classifier_url.scheme not in {"http", "https"}
+                or not classifier_url.hostname
+                or classifier_url.username
+                or classifier_url.password
+                or classifier_url.query
+                or classifier_url.fragment
+            ):
+                raise ValueError(
+                    "semantic classifier endpoint must be an absolute URL "
+                    "without credentials, query or fragment"
+                )
+            classifier_is_loopback = classifier_url.hostname in {
+                "localhost",
+                "127.0.0.1",
+                "::1",
+            }
+            if self.environment not in {"development", "test"} and classifier_url.scheme != "https":
+                raise ValueError("semantic classifier endpoint must use HTTPS outside local/test")
+            if (
+                not classifier_is_loopback
+                and classifier_origin not in self.semantic_classifier_allowed_origins
+            ):
+                raise ValueError("semantic classifier origin is not explicitly allowed")
         if self.environment in {"staging", "production"}:
             if self.database_url is None:
                 raise ValueError("database_url is required outside local/test")
@@ -273,6 +435,55 @@ class Settings(BaseSettings):
         if self.embedding_provider != "disabled":
             if self.embedding_model == "disabled":
                 raise ValueError("embedding_model must be pinned for an enabled embedding provider")
+        if "vertex" in {self.generation_provider, self.embedding_provider}:
+            if self.vertex_project_id is None or self.vertex_location is None:
+                raise ValueError("Vertex requires a pinned project and location")
+            if self.vertex_location != "global" and not re.fullmatch(
+                r"^[a-z][a-z0-9-]{1,30}[0-9]$", self.vertex_location
+            ):
+                raise ValueError("Vertex location must be a region or global")
+            if (
+                self.generation_provider == "vertex"
+                and self.model_residency != self.vertex_location
+            ):
+                raise ValueError(
+                    "Vertex generation model_residency must match vertex_location"
+                )
+            if self.vertex_data_controls_approval_reference is None or not (
+                self.vertex_data_controls_approval_reference.strip()
+            ):
+                raise ValueError("Vertex requires data-control approval evidence")
+            if self.vertex_data_controls_approval_sha256 is None:
+                raise ValueError("Vertex requires data-control approval digest")
+            if self.vertex_pricing_revision is None or not self.vertex_pricing_revision.strip():
+                raise ValueError("Vertex requires a pinned pricing revision")
+            for capability, provider, model, allowlist in (
+                (
+                    "generation",
+                    self.generation_provider,
+                    self.generation_model,
+                    self.vertex_generation_model_allowlist,
+                ),
+                (
+                    "embedding",
+                    self.embedding_provider,
+                    self.embedding_model,
+                    self.vertex_embedding_model_allowlist,
+                ),
+            ):
+                if provider == "vertex" and model not in allowlist:
+                    raise ValueError(
+                        f"{capability}_model must be in vertex_{capability}_model_allowlist"
+                    )
+            if self.generation_provider == "vertex" and (
+                self.input_microusd_per_million_tokens <= 0
+                or self.output_microusd_per_million_tokens <= 0
+            ):
+                raise ValueError("Vertex generation token prices must be configured")
+            if self.embedding_provider == "vertex" and (
+                self.embedding_input_microusd_per_million_tokens <= 0
+            ):
+                raise ValueError("Vertex embedding token price must be configured")
         if self.embedding_provider == "self_hosted":
             endpoint = urlsplit(self.self_hosted_embedding_base_url)
             is_loopback = endpoint.hostname in {"127.0.0.1", "localhost", "::1"}
@@ -404,6 +615,52 @@ class Settings(BaseSettings):
                 )
             ):
                 raise ValueError("synthetic source root, artifact root and source map are required")
+        if self.knowledge_ingestion_profile == "gcp":
+            if self.environment not in {"development", "staging"}:
+                raise ValueError("GCP knowledge ingestion is limited to development/staging")
+            required = (
+                self.knowledge_gcp_project_id,
+                self.knowledge_gcp_location,
+                self.knowledge_gcp_document_processor_id,
+                self.knowledge_gcp_document_processor_revision,
+                self.knowledge_gcp_output_bucket,
+                self.knowledge_gcp_staging_bucket,
+                self.knowledge_gcp_pubsub_subscription,
+                self.knowledge_gcp_pubsub_dead_letter_topic,
+            )
+            if any(value is None or not str(value).strip() for value in required):
+                raise ValueError("GCP knowledge ingestion requires pinned cloud resources")
+            if not self.knowledge_gcp_input_buckets:
+                raise ValueError("GCP knowledge ingestion requires allowlisted input buckets")
+            if len(set(self.knowledge_gcp_input_buckets)) != len(self.knowledge_gcp_input_buckets):
+                raise ValueError("GCP knowledge input buckets must be unique")
+            if any(
+                not re.fullmatch(r"^[a-z0-9][a-z0-9._-]{2,62}$", bucket)
+                for bucket in self.knowledge_gcp_input_buckets
+            ):
+                raise ValueError("GCP knowledge input bucket identifier is invalid")
+            if self.knowledge_gcp_staging_bucket == self.knowledge_gcp_output_bucket:
+                raise ValueError("GCP knowledge staging and output buckets must be distinct")
+            if self.knowledge_gcp_staging_bucket in self.knowledge_gcp_input_buckets:
+                raise ValueError("GCP knowledge staging bucket must not be an input bucket")
+            if self.knowledge_gcp_output_bucket in self.knowledge_gcp_input_buckets:
+                raise ValueError("GCP knowledge output bucket must not be an input bucket")
+            if self.database_url is None:
+                raise ValueError("database_url is required for GCP knowledge ingestion")
+            if not self.knowledge_gcp_synthetic_smoke_manifest or any(
+                not re.fullmatch(r"[a-f0-9]{64}", digest) or page_count < 1 or page_count > 500
+                for digest, page_count in self.knowledge_gcp_synthetic_smoke_manifest.items()
+            ):
+                raise ValueError(
+                    "GCP knowledge ingestion requires a reviewed synthetic smoke manifest"
+                )
+            if (
+                self.knowledge_gcp_max_output_total_bytes
+                < self.knowledge_gcp_max_output_object_bytes
+            ):
+                raise ValueError(
+                    "GCP Document AI total output limit must cover one output object"
+                )
         return self
 
 

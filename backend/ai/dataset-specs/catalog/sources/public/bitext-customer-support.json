@@ -10,14 +10,21 @@
     "access": "public"
   },
   "selectors": {
-    "configs": ["default"],
-    "splits": ["train"]
+    "configs": [
+      "default"
+    ],
+    "splits": [
+      "train"
+    ]
   },
   "bindings": [
     {
       "product_id": "vivi-conversation-sft-v1",
       "allowed_use": "sft",
-      "task_families": ["conversation-quality", "intent-ood"]
+      "task_families": [
+        "conversation-quality",
+        "intent-ood"
+      ]
     }
   ],
   "declared_license": "CDLA-Sharing-1.0",
@@ -41,7 +48,10 @@
     "locator": "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset",
     "source_revision": "unfetched-candidate",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["conversation-quality", "intent-ood"],
+    "proposed_purposes": [
+      "conversation-quality",
+      "intent-ood"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -61,6 +71,12 @@
     },
     "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
     "review_date": "2026-08-23",
-    "notes": "Không download trước khi rights review hoàn tất."
+    "notes": "Không download trước khi rights review hoàn tất.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset",
+      "allowed_origin": "https://huggingface.co/"
+    },
+    "allowed_origin": "https://huggingface.co/"
   }
 }

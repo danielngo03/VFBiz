@@ -1,5 +1,8 @@
 """Knowledge persistence and ingestion adapters."""
 
+from app.modules.knowledge.infrastructure.document_ai_candidate import (
+    LocalDocumentAiCandidateSink,
+)
 from app.modules.knowledge.infrastructure.pii_redaction import (
     PatternBasedTextRedactor,
 )
@@ -24,4 +27,5 @@ __all__ = [
     "PostgresKnowledgeReleaseRepository",
     "PostgresRetrievalSnapshotReader",
     "PostgresSourceRegisterReader",
+    "LocalDocumentAiCandidateSink",
 ]

@@ -43,7 +43,7 @@ async def test_routes_vietnamese_without_diacritics() -> None:
     )
 
     assert decision.intent == "financing_question"
-    assert decision.confidence == 1.0
+    assert decision.confidence == 0.6
 
 
 @pytest.mark.asyncio

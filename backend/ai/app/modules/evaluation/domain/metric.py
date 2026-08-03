@@ -25,3 +25,12 @@ class MetricDefinition:
             or not is_sha256(self.definition_digest)
         ):
             raise ValueError("INVALID_METRIC_DEFINITION")
+
+    @property
+    def canonical_document(self) -> dict[str, object]:
+        return {
+            "definition_digest": self.definition_digest,
+            "direction": self.direction.value,
+            "required_slices": list(self.required_slices),
+            "revision": self.revision,
+        }

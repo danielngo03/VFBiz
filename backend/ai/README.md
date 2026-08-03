@@ -72,5 +72,24 @@ uv run --directory backend/ai python -m compileall -q app migrations
 
 Current foundation includes private gateway authentication, safe response
 headers, explicit capabilities, pgvector/Alembic persistence, a fail-closed
-grounded-answer service and deterministic AI release gate. Real retrieval/model
-adapters remain intentionally disabled until dataset and release evidence exists.
+grounded-answer service and deterministic AI release gate. Released pgvector
+retrieval is runtime-composed. Vertex generation and embedding are now wired
+through the provider-neutral release factory using ADC/workload identity, but
+remain disabled until a matching release manifest, approval evidence and cost
+policy are resolved; standalone smoke evidence is not product-runtime evidence.
+
+## Capability readiness
+
+| Capability | Implemented | Runtime-wired | DB-tested | Cloud-deployed | Authority-accepted | Release-active |
+| --- | --- | --- | --- | --- | --- | --- |
+| Assistant orchestration | yes | yes | yes | no | no | no |
+| Knowledge retrieval | yes | yes | yes | no | no | no |
+| GCP intake and Document AI reconciliation | yes | isolated worker | yes | no | no | no |
+| Vertex generation and embedding | candidate | release-gated factory | adapter tests | no | no | no |
+| Evaluation evidence authority | yes | yes | yes | not applicable | public-diagnostic only | no |
+| Dataset and Golden qualification | 1,000-case candidate | no | deterministic tests | no | no; adjudication 0/1,000 | no |
+| Authenticated staging Chat | candidate | no | partial | no | no | no |
+
+“Implemented” never implies deployment, authority acceptance or release. The
+active work items and sealed evidence remain the source of truth for each later
+column.

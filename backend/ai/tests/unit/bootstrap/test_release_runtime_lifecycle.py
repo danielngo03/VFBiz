@@ -14,6 +14,10 @@ from app.bootstrap.release_runtime import (
 )
 from app.modules.evaluation.application import (
     DeterministicExtractiveGroundingValidator,
+    SealedAssistantReleaseEvidenceAuthority,
+)
+from app.modules.evaluation.infrastructure import (
+    PostgresAssistantReleaseEvidenceReader,
 )
 from app.modules.governance.application import ActiveReleasePointer
 from app.modules.inference.application import (
@@ -84,6 +88,41 @@ def _resolver() -> ReleaseBoundRuntimeResolver:
     return resolver
 
 
+def test_real_composition_wires_sealed_evaluation_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class CapturingAuthority:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        release_module,
+        "PostgresReleaseAuthorityResolver",
+        CapturingAuthority,
+    )
+    sessions = cast(async_sessionmaker[AsyncSession], object())
+
+    ReleaseBoundRuntimeResolver(
+        settings=Settings(),
+        sessions=sessions,
+        pointer_store=PointerStore(),
+    )
+
+    authority = captured["evaluation_evidence_authority"]
+    assert isinstance(authority, SealedAssistantReleaseEvidenceAuthority)
+    assert isinstance(
+        authority._reader,  # noqa: SLF001
+        PostgresAssistantReleaseEvidenceReader,
+    )
+    assert captured["required_approval_roles"] == (
+        "release-owner",
+        "security-owner",
+        "data-owner",
+    )
+
+
 @pytest.mark.asyncio
 async def test_cache_never_evicts_a_leased_inflight_mesh(
     monkeypatch: pytest.MonkeyPatch,
@@ -97,10 +136,7 @@ async def test_cache_never_evicts_a_leased_inflight_mesh(
 
     monkeypatch.setattr(release_module, "build_model_mesh", build)
     resolver = _resolver()
-    manifests = [
-        SimpleNamespace(activation_envelope_sha256=f"{index:064x}")
-        for index in range(9)
-    ]
+    manifests = [SimpleNamespace(activation_envelope_sha256=f"{index:064x}") for index in range(9)]
 
     for manifest in manifests:
         await resolver._mesh_for(  # noqa: SLF001
@@ -195,4 +231,6 @@ async def test_resolver_normalizes_pointer_database_outage() -> None:
             locale="vi",
         )
     await resolver.close()
+
+
 # pyright: reportPrivateUsage=false

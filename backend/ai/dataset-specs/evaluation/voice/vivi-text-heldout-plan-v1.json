@@ -1,0 +1,21 @@
+{
+  "heldout_plan_id": "vivi-text-heldout-plan-v1",
+  "revision": "v1",
+  "status": "human-blocked",
+  "semantic_digest": "bcdbf4d928a221b837ed9ca9c8460d6ca3a8f54eb7dfc625d2944bcf7ed5f2e2",
+  "target_cases": 120,
+  "current_adjudicated_cases": 0,
+  "allowed_use": "evaluation-only",
+  "split_locked": false,
+  "max_live_cost_usd": 5,
+  "family_isolation_required": true,
+  "golden_overlap_maximum": 0,
+  "training_overlap_maximum": 0,
+  "human_review": {
+    "high_risk_fraction": 1,
+    "borderline_fraction": 1,
+    "disagreement_fraction": 1,
+    "low_risk_sampling": "stratified"
+  },
+  "authority": "Human SMEs must lock families and adjudicate cases before candidate evaluation."
+}

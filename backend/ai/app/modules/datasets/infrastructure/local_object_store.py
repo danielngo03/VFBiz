@@ -33,10 +33,8 @@ class LocalContentAddressedObjectStore:
         if max_bytes <= 0:
             raise RegistryInvariantError("object maximum size must be positive")
         suffix = _safe_suffix(media_type)
-        zone_root = (self._root / zone.value).resolve()
-        _assert_contained(self._root, zone_root)
-        zone_root.mkdir(parents=True, exist_ok=True)
-        zone_root.chmod(0o700)
+        zone_root = self._root / zone.value
+        _private_directory(self._root, zone_root)
         digest = hashlib.sha256()
         size = 0
         descriptor, temporary_name = tempfile.mkstemp(prefix=".upload-", dir=zone_root)
@@ -52,10 +50,8 @@ class LocalContentAddressedObjectStore:
                 output.flush()
                 os.fsync(output.fileno())
             sha256 = digest.hexdigest()
-            destination = (zone_root / sha256[:2] / f"{sha256}{suffix}").resolve()
-            _assert_contained(zone_root, destination)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.parent.chmod(0o700)
+            _private_directory(zone_root, zone_root / sha256[:2])
+            destination = zone_root / sha256[:2] / f"{sha256}{suffix}"
             if destination.exists():
                 if (
                     destination.is_symlink()
@@ -81,6 +77,7 @@ class LocalContentAddressedObjectStore:
 
 def _safe_suffix(media_type: str) -> str:
     return {
+        "application/pdf": ".pdf",
         "application/json": ".json",
         "application/x-ndjson": ".jsonl",
         "text/csv": ".csv",
@@ -91,6 +88,21 @@ def _safe_suffix(media_type: str) -> str:
 def _assert_contained(parent: Path, child: Path) -> None:
     if child != parent and parent not in child.parents:
         raise RegistryInvariantError("object path escapes the configured trust zone")
+
+
+def _private_directory(anchor: Path, path: Path) -> None:
+    anchor = anchor.resolve(strict=True)
+    absolute = path.resolve(strict=False)
+    _assert_contained(anchor, absolute)
+    current = anchor
+    for part in absolute.relative_to(anchor).parts:
+        current = current / part
+        if current.is_symlink():
+            raise RegistryInvariantError("object-store path contains a symlink")
+        current.mkdir(mode=0o700, exist_ok=True)
+        if not current.is_dir():
+            raise RegistryInvariantError("object-store path is not a directory")
+        current.chmod(0o700)
 
 
 def _hash_file(path: Path) -> str:

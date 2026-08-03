@@ -3,6 +3,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.modules.evaluation.application import (
+    AssistantReleaseEvidenceAuthority,
+    AssistantReleaseEvidenceQuery,
+)
 from app.modules.governance.application.release_resolver import (
     ArtifactDigestReader,
     ReleaseEvidenceVerifier,
@@ -208,11 +212,31 @@ class AcceptingVerifier(ReleaseEvidenceVerifier):
         return True
 
 
+class AcceptingEvaluationAuthority(AssistantReleaseEvidenceAuthority):
+    async def verify(self, query: AssistantReleaseEvidenceQuery) -> bool:
+        return True
+
+
+class RejectingEvaluationAuthority(AssistantReleaseEvidenceAuthority):
+    async def verify(self, query: AssistantReleaseEvidenceQuery) -> bool:
+        return False
+
+
+class RecordingEvaluationAuthority(AssistantReleaseEvidenceAuthority):
+    def __init__(self) -> None:
+        self.queries: list[AssistantReleaseEvidenceQuery] = []
+
+    async def verify(self, query: AssistantReleaseEvidenceQuery) -> bool:
+        self.queries.append(query)
+        return True
+
+
 def resolver(item: AssistantReleaseManifest) -> ReleaseManifestResolver:
     return ReleaseManifestResolver(
         store=MemoryStore(item),
         digest_reader=MemoryDigestReader(item),
         evidence_verifier=AcceptingVerifier(),
+        evaluation_evidence_authority=AcceptingEvaluationAuthority(),
         required_approval_roles=("security-owner", "release-owner"),
         clock=lambda: NOW,
     )
@@ -282,6 +306,61 @@ async def test_resolver_rejects_replayed_approval_or_gate() -> None:
 
 
 @pytest.mark.asyncio
+async def test_resolver_rejects_digest_authentic_gate_without_semantic_evidence() -> None:
+    item = manifest()
+    release_resolver = ReleaseManifestResolver(
+        store=MemoryStore(item),
+        digest_reader=MemoryDigestReader(item),
+        evidence_verifier=AcceptingVerifier(),
+        evaluation_evidence_authority=RejectingEvaluationAuthority(),
+        required_approval_roles=("security-owner", "release-owner"),
+        clock=lambda: NOW,
+    )
+
+    with pytest.raises(ReleaseManifestResolutionError) as captured:
+        await release_resolver.resolve(
+            activation_id=item.activation_id,
+            expected_candidate_sha256=item.candidate.content_sha256,
+            assistant_profile=item.candidate.assistant_profile,
+            environment=item.candidate.environment,
+        )
+
+    assert captured.value.code == "AUTOMATED_GATE_INVALID"
+
+
+@pytest.mark.asyncio
+async def test_resolver_binds_semantic_query_to_exact_gate_and_candidate() -> None:
+    item = manifest()
+    authority = RecordingEvaluationAuthority()
+    release_resolver = ReleaseManifestResolver(
+        store=MemoryStore(item),
+        digest_reader=MemoryDigestReader(item),
+        evidence_verifier=AcceptingVerifier(),
+        evaluation_evidence_authority=authority,
+        required_approval_roles=("security-owner", "release-owner"),
+        clock=lambda: NOW,
+    )
+
+    assert (
+        await release_resolver.resolve(
+            activation_id=item.activation_id,
+            expected_candidate_sha256=item.candidate.content_sha256,
+            assistant_profile=item.candidate.assistant_profile,
+            environment=item.candidate.environment,
+        )
+        == item
+    )
+    assert authority.queries == [
+        AssistantReleaseEvidenceQuery(
+            evidence_ref=item.automated_gate.evidence_ref,
+            evidence_sha256=item.automated_gate.evidence_sha256,
+            candidate_release_id=item.candidate.candidate_id,
+            candidate_manifest_sha256=item.candidate.content_sha256,
+        )
+    ]
+
+
+@pytest.mark.asyncio
 async def test_resolver_checks_profile_before_artifact_io() -> None:
     item = manifest()
     with pytest.raises(ReleaseManifestResolutionError) as captured:
@@ -304,6 +383,7 @@ async def test_resolver_loads_and_verifies_real_rollback_candidate() -> None:
         store=MemoryStore(item),
         digest_reader=digest_reader,
         evidence_verifier=AcceptingVerifier(),
+        evaluation_evidence_authority=AcceptingEvaluationAuthority(),
         required_approval_roles=("security-owner", "release-owner"),
         clock=lambda: NOW,
     )

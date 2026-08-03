@@ -2,7 +2,11 @@ import re
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from app.modules.assistant.application.ports import RouteDecision, SupervisorPort
+from app.modules.assistant.application.ports import (
+    DETERMINISTIC_FALLBACK_MAX_CONFIDENCE,
+    RouteDecision,
+    SupervisorPort,
+)
 from app.modules.assistant.domain import ActiveTaskState, ConfirmedGlobalEntity
 
 _DIGEST = re.compile(r"^[a-f0-9]{64}$")
@@ -11,6 +15,8 @@ _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$")
 
 @dataclass(frozen=True, slots=True)
 class SemanticClassifierBinding:
+    binding_envelope_sha256: str
+    classifier_artifact_ref: str
     artifact_sha256: str
     classifier_revision: str
     evaluation_evidence_sha256: str
@@ -22,12 +28,15 @@ class SemanticClassifierBinding:
 
     def __post_init__(self) -> None:
         digests = (
+            self.binding_envelope_sha256,
             self.artifact_sha256,
             self.evaluation_evidence_sha256,
             self.threshold_policy_sha256,
         )
         if any(not _DIGEST.fullmatch(digest) for digest in digests):
             raise ValueError("classifier binding digest must be SHA-256")
+        if not self.classifier_artifact_ref.startswith("classifier://"):
+            raise ValueError("classifier artifact must use an opaque classifier reference")
         revisions = (
             self.classifier_revision,
             self.output_schema_revision,
@@ -37,7 +46,9 @@ class SemanticClassifierBinding:
             raise ValueError("classifier binding revision is invalid")
         if not (
             0.0 < self.semantic_acceptance_confidence <= 1.0
-            and 0.0 < self.semantic_activation_below <= 1.0
+            and DETERMINISTIC_FALLBACK_MAX_CONFIDENCE
+            < self.semantic_activation_below
+            <= 1.0
             and self.semantic_acceptance_confidence >= self.semantic_activation_below
         ):
             raise ValueError("semantic routing thresholds are invalid")

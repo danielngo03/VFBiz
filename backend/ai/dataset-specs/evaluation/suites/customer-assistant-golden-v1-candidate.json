@@ -6,6 +6,12 @@
   "current_adjudicated_cases": 0,
   "allowed_use": "evaluation",
   "rubric_revision": "customer-assistant-golden-v1",
+  "voice_profile_revision": "vivi-text-voice-v1",
+  "voice_domain_pack_revision": "vivi-text-domain-pack-v1",
+  "voice_board_policy_revision": "vivi-text-board-policy-v1",
+  "voice_calibration_plan_revision": "vivi-text-calibration-plan-v1",
+  "voice_heldout_plan_revision": "vivi-text-heldout-plan-v1",
+  "voice_suite_semantic_digest": "b223c5394201ae67c3ce0a88d05da1850ae51018b8e85129b030c60854cdeb5e",
   "held_out_locked": false,
   "blockers": [
     "Human SMEs must create and adjudicate seed cases.",

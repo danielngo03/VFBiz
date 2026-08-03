@@ -22,7 +22,10 @@
     "locator": "https://arxiv.org/abs/2312.11361",
     "source_revision": "artifact-locator-pending",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["retrieval-evaluation", "refusal-safety"],
+    "proposed_purposes": [
+      "retrieval-evaluation",
+      "refusal-safety"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -31,7 +34,9 @@
       "derivatives": "unknown",
       "redistribution": "unknown",
       "access_conditions": "Paper is evidence only; exact official dataset artifact and license must be located and approved.",
-      "evidence_urls": ["https://arxiv.org/abs/2312.11361"],
+      "evidence_urls": [
+        "https://arxiv.org/abs/2312.11361"
+      ],
       "legal_review": "pending"
     },
     "retention": {
@@ -40,7 +45,13 @@
     },
     "deletion_method": "Retain candidate metadata only; do not fetch without a licensed artifact.",
     "review_date": "2026-08-28",
-    "notes": "Priority 2 no-evidence benchmark candidate; no download authorized."
+    "notes": "Priority 2 no-evidence benchmark candidate; no download authorized.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://arxiv.org/abs/2312.11361",
+      "allowed_origin": "https://arxiv.org/"
+    },
+    "allowed_origin": "https://arxiv.org/"
   },
   "provenance": {
     "legacy_entry_superseded": false,

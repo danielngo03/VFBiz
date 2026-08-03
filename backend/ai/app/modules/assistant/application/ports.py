@@ -41,6 +41,11 @@ _REGISTERED_ABUSE_SIGNALS = frozenset(
 )
 _SLOT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
+# The deterministic router is deliberately below the semantic activation
+# threshold.  Keep the policy in the application layer so infrastructure
+# fallbacks and release-bound threshold validation cannot drift apart.
+DETERMINISTIC_FALLBACK_MAX_CONFIDENCE = 0.6
+
 
 @dataclass(frozen=True, slots=True)
 class ResumeClaim:

@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 
@@ -46,6 +47,12 @@ def plan() -> EvaluationRunPlan:
             max_duration_seconds=600,
             max_cost_usd=10,
         ),
+        evaluation_claim="Validate the governed assistant candidate.",
+        subject_under_test="assistant-2.0.0",
+        requested_at=datetime(2026, 7, 28, tzinfo=UTC),
+        max_attempts=3,
+        retryable_failure_codes=("provider-timeout",),
+        baseline_policy_digest=SHA_C,
     )
 
 
@@ -66,6 +73,12 @@ class FakeRunRegistry:
     async def get(self, run_id: str) -> EvaluationRun | None:
         return self.runs.get(run_id)
 
+    async def get_plan_document(
+        self,
+        run_id: str,
+    ) -> dict[str, object] | None:
+        return None
+
     async def save(self, run: EvaluationRun, *, expected_version: int) -> None:
         existing = self.runs.get(run.run_id)
         if existing is None or existing.row_version != expected_version:
@@ -85,13 +98,13 @@ def test_run_lifecycle_is_explicit_and_terminal_states_cannot_revive() -> None:
         EvaluationRunState.GRADING
     )
     comparing = grading.transition(EvaluationRunState.COMPARING)
-    completed = comparing.complete(evidence_bundle_digest=SHA_C)
 
-    assert completed.state is EvaluationRunState.DECISION_READY
-    assert completed.completed_case_count == 50
-    assert completed.evidence_bundle_digest == SHA_C
-    with pytest.raises(EvaluationRunTransitionError, match="ILLEGAL_RUN_TRANSITION"):
-        completed.transition(EvaluationRunState.RUNNING)
+    assert not hasattr(comparing, "complete")
+    with pytest.raises(
+        EvaluationRunTransitionError,
+        match="ILLEGAL_RUN_TRANSITION",
+    ):
+        comparing.transition(EvaluationRunState.DECISION_READY)
 
 
 def test_progress_is_monotonic_and_bound_to_running_state() -> None:
@@ -141,6 +154,26 @@ async def test_duplicate_cancel_command_does_not_write_an_unchanged_run() -> Non
 
     assert duplicate == first
     assert duplicate.state is EvaluationRunState.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_operational_lifecycle_exposes_only_domain_checked_stage_transitions() -> None:
+    registry = FakeRunRegistry()
+    registration = EvaluationRunRegistrationService(registry)
+    lifecycle = EvaluationRunLifecycleService(registry)
+    requested = await registration.register(plan())
+
+    queued = await lifecycle.queue(requested.run_id)
+    running = await lifecycle.start(requested.run_id)
+    grading = await lifecycle.mark_grading(requested.run_id)
+    comparing = await lifecycle.mark_comparing(requested.run_id)
+
+    assert queued.state is EvaluationRunState.QUEUED
+    assert running.state is EvaluationRunState.RUNNING
+    assert grading.state is EvaluationRunState.GRADING
+    assert comparing.state is EvaluationRunState.COMPARING
+    with pytest.raises(EvaluationRunTransitionError, match="ILLEGAL_RUN_TRANSITION"):
+        await lifecycle.start(requested.run_id)
 
 
 def test_failed_and_invalid_states_require_a_reason_code() -> None:

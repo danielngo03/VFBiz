@@ -2,9 +2,11 @@ import math
 from collections.abc import Sequence
 
 from app.modules.knowledge.domain.retrieval_evaluation import (
+    RetrievalBakeoffManifest,
     RetrievalBenchmarkObservation,
     RetrievalBenchmarkSummary,
     RetrievalEvaluationCase,
+    RetrievalSuiteAuthority,
 )
 
 REQUIRED_VIETNAMESE_BAKEOFF_TAGS = frozenset(
@@ -42,6 +44,47 @@ def validate_vietnamese_bakeoff_coverage(
     missing = sorted(REQUIRED_VIETNAMESE_BAKEOFF_TAGS - observed_tags)
     if missing:
         raise ValueError(f"missing required coverage: {', '.join(missing)}")
+    observed_outcomes = {case.expected_outcome for case in typed_cases}
+    if "evidence" not in observed_outcomes:
+        raise ValueError("retrieval bake-off requires at least one evidence case")
+    if "refusal" not in observed_outcomes:
+        raise ValueError("retrieval bake-off requires at least one refusal case")
+
+
+def validate_vietnamese_bakeoff_manifest(
+    manifest: RetrievalBakeoffManifest,
+) -> None:
+    """Validate language/risk coverage after the manifest digest is locked."""
+
+    manifest.validate_integrity()
+    validate_vietnamese_bakeoff_coverage(manifest.cases)
+
+
+def validate_vietnamese_bakeoff_authority(
+    manifest: RetrievalBakeoffManifest,
+    authority: object,
+) -> None:
+    """Require an external, exact authority record before a suite can release.
+
+    A valid manifest proves canonical integrity only. It does not prove source
+    rights, held-out approval, or that the evaluator is allowed to release the
+    result. Those claims must come from the separately persisted authority
+    record and must bind every deployment-relevant revision.
+    """
+
+    if not isinstance(authority, RetrievalSuiteAuthority):
+        raise TypeError("retrieval suite authority record is required")
+    validate_vietnamese_bakeoff_manifest(manifest)
+    if (
+        authority.suite_id != manifest.suite_id
+        or authority.suite_digest != manifest.suite_digest
+        or authority.source_release_digest != manifest.source_release_digest
+        or authority.index_generation_digest != manifest.index_generation_digest
+        or authority.evaluator_revision != manifest.evaluator_revision
+        or authority.authority_class != "approved-vietnamese-held-out"
+        or not authority.held_out
+    ):
+        raise ValueError("RETRIEVAL_SUITE_AUTHORITY_BINDING_MISMATCH")
 
 
 def summarize_retrieval_benchmark(
@@ -52,10 +95,10 @@ def summarize_retrieval_benchmark(
     if not observations:
         raise ValueError("retrieval benchmark requires at least one observation")
     evidence = tuple(item for item in observations if item.expected_chunk_ids)
-    recall_at_5 = _mean(tuple(_recall(item, 5) for item in evidence))
-    recall_at_20 = _mean(tuple(_recall(item, 20) for item in evidence))
-    ndcg_at_10 = _mean(tuple(_ndcg(item, 10) for item in evidence))
-    mrr = _mean(tuple(_reciprocal_rank(item) for item in evidence))
+    recall_at_5 = _mean(tuple(_recall(item, 5) for item in evidence), empty=0.0)
+    recall_at_20 = _mean(tuple(_recall(item, 20) for item in evidence), empty=0.0)
+    ndcg_at_10 = _mean(tuple(_ndcg(item, 10) for item in evidence), empty=0.0)
+    mrr = _mean(tuple(_reciprocal_rank(item) for item in evidence), empty=0.0)
     refusal_cases = tuple(item for item in observations if item.expected_outcome == "refusal")
     reranked = tuple(item for item in evidence if item.baseline_retrieved_chunk_ids is not None)
     latencies = sorted(item.latency_ms for item in observations)
@@ -82,7 +125,8 @@ def summarize_retrieval_benchmark(
             tuple(1.0 if item.citation_valid else 0.0 for item in observations)
         ),
         refusal_correctness=_mean(
-            tuple(1.0 if item.actual_outcome == "refusal" else 0.0 for item in refusal_cases)
+            tuple(1.0 if item.actual_outcome == "refusal" else 0.0 for item in refusal_cases),
+            empty=0.0,
         ),
         p50_latency_ms=_percentile(latencies, 0.50),
         p95_latency_ms=_percentile(latencies, 0.95),
@@ -131,7 +175,7 @@ def _ndcg_for(
     return dcg / ideal if ideal else 0.0
 
 
-def _mean(values: tuple[float, ...], *, empty: float = 1.0) -> float:
+def _mean(values: tuple[float, ...], *, empty: float = 0.0) -> float:
     return sum(values) / len(values) if values else empty
 
 

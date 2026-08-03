@@ -10,6 +10,10 @@ from app.bootstrap.release_runtime import (
     ReleaseRuntimeUnavailable,
     ResolvedReleaseRuntime,
 )
+from app.bootstrap.semantic_routing import (
+    SemanticRoutingRuntime,
+    build_semantic_routing_runtime,
+)
 from app.infrastructure.embedding_providers.configuration import (
     build_embedding_runtime,
 )
@@ -22,7 +26,6 @@ from app.modules.assistant.infrastructure.entity_revalidation import (
 from app.modules.assistant.infrastructure.execution_control import (
     PostgresExecutionControlAdapter,
 )
-from app.modules.assistant.infrastructure.keyword_supervisor import KeywordSupervisor
 from app.modules.assistant.infrastructure.knowledge_worker import KnowledgeGroundedWorker
 from app.modules.assistant.infrastructure.released_knowledge import (
     ReleasedEvidenceAuthority,
@@ -55,6 +58,7 @@ class ConversationRuntimeDependencies:
     release_runtime: ReleaseBoundRuntimeResolver
     embedding_runtime: EmbeddingRuntime | None
     retrieval_store: PostgresRetrievalSnapshotReader
+    semantic_routing: SemanticRoutingRuntime
 
     async def close(self) -> None:
         results = await asyncio.gather(
@@ -65,6 +69,7 @@ class ConversationRuntimeDependencies:
                 else _noop()
             ),
             self.checkpointer_runtime.close(),
+            self.semantic_routing.close(),
             return_exceptions=True,
         )
         first_error = next(
@@ -148,6 +153,7 @@ async def build_conversation_runtime_dependencies(
             ),
             embedding_runtime=embedding_runtime,
             retrieval_store=PostgresRetrievalSnapshotReader(sessions),
+            semantic_routing=build_semantic_routing_runtime(settings, sessions),
         )
     except BaseException:
         await asyncio.gather(
@@ -240,8 +246,14 @@ async def build_turn_runtime(
             prompt_content_sha256=release.prompt.content_sha256,
             correlation_id=correlation_id,
         )
+        supervisor = await dependencies.semantic_routing.supervisor_for(
+            activation_id=release.activation_id,
+            activation_envelope_sha256=release.activation_envelope_sha256,
+            assistant_profile=assistant_profile,
+            environment=dependencies.release_runtime.environment,
+        )
         graph = build_conversation_graph(
-            supervisor=KeywordSupervisor(),
+            supervisor=supervisor,
             worker=worker,
             execution_control=execution_control,
             evidence_authority=ReleasedEvidenceAuthority(

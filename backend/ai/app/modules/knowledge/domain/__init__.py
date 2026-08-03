@@ -48,9 +48,11 @@ from app.modules.knowledge.domain.retrieval import (
     SnapshotStatus,
 )
 from app.modules.knowledge.domain.retrieval_evaluation import (
+    RetrievalBakeoffManifest,
     RetrievalBenchmarkObservation,
     RetrievalBenchmarkSummary,
     RetrievalEvaluationCase,
+    RetrievalSuiteAuthority,
 )
 
 __all__ = [
@@ -82,7 +84,9 @@ __all__ = [
     "RerankScore",
     "RetrievalBenchmarkObservation",
     "RetrievalBenchmarkSummary",
+    "RetrievalBakeoffManifest",
     "RetrievalEvaluationCase",
+    "RetrievalSuiteAuthority",
     "RetrievalResult",
     "RetrievalSnapshot",
     "RetrievalSourcePin",

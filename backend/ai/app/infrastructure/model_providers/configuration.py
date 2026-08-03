@@ -4,6 +4,11 @@ from hashlib import sha256
 import httpx
 
 from app.infrastructure.model_providers.openai_responses import OpenAIResponsesProvider
+from app.infrastructure.model_providers.vertex_auth import (
+    AccessTokenProvider,
+    ApplicationDefaultVertexTokenProvider,
+)
+from app.infrastructure.model_providers.vertex_generation import VertexGenerationProvider
 from app.modules.inference.application import (
     ClaimSupportValidator,
     DeploymentPolicyDescriptor,
@@ -25,15 +30,45 @@ def model_deployment_sha256_for_settings(settings: Settings) -> str:
     Credentials are intentionally excluded: rotation must not change model
     semantics, while provider/project/origin/model/policy/cost controls must.
     """
-    identity = settings.openai_capability("generation")
+    if settings.generation_provider == "vertex":
+        identity = settings.vertex_capability("generation")
+        if identity.location is None:
+            provider_origin = ""
+        else:
+            host = (
+                "aiplatform.googleapis.com"
+                if identity.location == "global"
+                else f"{identity.location}-aiplatform.googleapis.com"
+            )
+            provider_origin = f"https://{host}"
+        organization_id = None
+        project_id = identity.project_id
+        retention = identity.retention_policy
+        model_allowlist = sorted(identity.model_allowlist)
+        approval_reference = identity.approval_reference
+        approval_sha256 = identity.approval_sha256
+        pricing_revision = identity.pricing_revision
+    else:
+        identity = settings.openai_capability("generation")
+        provider_origin = identity.base_url.rstrip("/")
+        organization_id = identity.organization_id
+        project_id = identity.project_id
+        retention = identity.retention_policy
+        model_allowlist = sorted(settings.openai_generation_model_allowlist)
+        approval_reference = identity.approval_reference
+        approval_sha256 = identity.approval_sha256
+        pricing_revision = None
     payload = {
         "provider": settings.generation_provider,
         "modelRevision": settings.generation_model,
-        "providerOrigin": identity.base_url.rstrip("/"),
-        "projectId": identity.project_id,
-        "organizationId": identity.organization_id,
-        "retention": identity.retention_policy,
-        "modelAllowlist": sorted(settings.openai_generation_model_allowlist),
+        "providerOrigin": provider_origin,
+        "projectId": project_id,
+        "organizationId": organization_id,
+        "retention": retention,
+        "modelAllowlist": model_allowlist,
+        "approvalReference": approval_reference,
+        "approvalSha256": approval_sha256,
+        "pricingRevision": pricing_revision,
         "maxInputTokens": settings.max_input_tokens,
         "maxOutputTokens": settings.max_output_tokens,
         "maxResponseBytes": settings.max_response_bytes,
@@ -61,6 +96,7 @@ def build_model_mesh(
     policy: DeploymentPolicyDescriptor | None = None,
     prompt: GroundedAnswerPrompt | None = None,
     claim_support_validator: ClaimSupportValidator | None = None,
+    vertex_access_token_provider: AccessTokenProvider | None = None,
 ) -> ModelMesh:
     if settings.generation_provider == "disabled":
         return ModelMesh(
@@ -69,7 +105,7 @@ def build_model_mesh(
                 claim_support_validator or FailClosedClaimSupportValidator()
             ),
         )
-    if settings.generation_provider != "openai":
+    if settings.generation_provider not in {"vertex", "openai"}:
         raise InferenceConfigurationError(
             "generation provider "
             f"{settings.generation_provider!r} has no approved runtime adapter"
@@ -77,6 +113,50 @@ def build_model_mesh(
     if policy is None:
         raise InferenceConfigurationError(
             "an authority-resolved deployment policy is required"
+        )
+    if settings.generation_provider == "vertex":
+        identity = settings.vertex_capability("generation")
+        if (
+            identity.project_id is None
+            or identity.location is None
+            or identity.approval_reference is None
+            or identity.approval_sha256 is None
+            or identity.pricing_revision is None
+        ):
+            raise InferenceConfigurationError(
+                "Vertex deployment identity or approval evidence is unavailable"
+            )
+        token_provider = vertex_access_token_provider or ApplicationDefaultVertexTokenProvider()
+        deployment = VertexGenerationProvider(
+            deployment_id=(
+                f"vertex:{identity.project_id}:{identity.location}:"
+                f"{settings.generation_model}:{settings.model_policy_profile}"
+            ),
+            project_id=identity.project_id,
+            location=identity.location,
+            model_revision=settings.generation_model,
+            model_allowlist=identity.model_allowlist,
+            prompt=prompt or GroundedAnswerPrompt(revision=settings.prompt_revision),
+            policy=policy,
+            access_token_provider=token_provider,
+            request_timeout_seconds=settings.request_timeout_seconds,
+            max_input_tokens=settings.max_input_tokens,
+            max_output_tokens=settings.max_output_tokens,
+            max_response_bytes=settings.max_response_bytes,
+            max_concurrency=settings.max_provider_concurrency,
+            input_microusd_per_million_tokens=(
+                settings.input_microusd_per_million_tokens
+            ),
+            output_microusd_per_million_tokens=(
+                settings.output_microusd_per_million_tokens
+            ),
+            client=client,
+        )
+        return ModelMesh(
+            (DeploymentRoute(deployment=deployment, priority=100),),
+            claim_support_validator=(
+                claim_support_validator or FailClosedClaimSupportValidator()
+            ),
         )
     identity = settings.openai_capability("generation")
     if identity.api_key is None:

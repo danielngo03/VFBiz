@@ -421,15 +421,5 @@ async def test_rejects_source_snapshot_or_acl_mismatch() -> None:
     assert captured.value.code == "SOURCE_SNAPSHOT_MISMATCH"
 
     wrong_acl_source = source(acl=("public_customer:other:vi-VN",))
-    wrong_acl_release = release(wrong_acl_source)
-    wrong_acl_job = candidate_job(wrong_acl_source)
-    service, _, _, _ = build_service(
-        current_release=wrong_acl_release,
-        job=wrong_acl_job,
-    )
-    with pytest.raises(CandidateMaterializationRejected) as captured:
-        await service.materialize(
-            release_id=wrong_acl_release.release_id,
-            ingestion_job_id=wrong_acl_job.job_id,
-        )
-    assert captured.value.code == "SOURCE_ACL_MISMATCH"
+    with pytest.raises(ValueError, match="not eligible"):
+        release(wrong_acl_source)

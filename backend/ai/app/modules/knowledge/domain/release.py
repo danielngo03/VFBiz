@@ -26,7 +26,13 @@ KnowledgeReleaseStatus = Literal[
 ]
 BarrierState = Literal["clear", "syncing", "blocked"]
 ActorKind = Literal["human", "ingestion_service", "system"]
-SourceType = Literal["internal-content", "public-dataset", "synthetic", "customer-derived"]
+SourceType = Literal[
+    "first-party-content",
+    "internal-content",
+    "public-dataset",
+    "synthetic",
+    "customer-derived",
+]
 KnowledgePurpose = Literal[
     "knowledge",
     "retrieval-evaluation",
@@ -209,6 +215,13 @@ class KnowledgeRelease(BaseModel):
         source_ids = [source.source_id for source in self.sources]
         if len(set(source_ids)) != len(source_ids):
             raise ValueError("release sources must be unique")
+        for source in self.sources:
+            try:
+                source.assert_eligible(self.scope, at=self.effective_at)
+            except SourceApprovalRejected as error:
+                raise ValueError(
+                    "release source is not eligible for the exact scope and revision"
+                ) from error
         if self.source_set_hash != source_set_digest(self.sources):
             raise ValueError("source set hash does not match pinned sources")
         expected_manifest_hash = knowledge_manifest_digest(self)

@@ -15,6 +15,11 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.modules.governance.application import SemanticClassifierBindingState
+from app.modules.governance.infrastructure import (
+    JsonSchemaAuthorityValidator,
+    PostgresSemanticClassifierBindingStore,
+)
 from app.platform.config import Settings
 from app.platform.database.session import create_engine, create_session_factory
 
@@ -24,6 +29,12 @@ pytestmark = pytest.mark.skipif(
 )
 
 AI_ROOT = Path(__file__).resolve().parents[3]
+CLASSIFIER_BINDING_SCHEMA = json.loads(
+    (
+        AI_ROOT.parent.parent
+        / "contracts/ai/releases/semantic-classifier-binding.schema.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def digest(value: object) -> str:
@@ -468,6 +479,59 @@ async def insert_binding(
             "expires_at": datetime.fromisoformat(str(document["expires_at"])),
         },
     )
+
+
+@pytest.mark.asyncio
+async def test_runtime_store_reads_and_validates_active_binding() -> None:
+    engine, sessions = db()
+    profile = "customer-assistant"
+    environment = "test"
+    try:
+        await clear_authority(sessions)
+        async with sessions() as session, session.begin():
+            activation_id, envelope = await seed_activation(
+                session,
+                profile=profile,
+                environment=environment,
+                activation_name="activation-router-runtime",
+            )
+            document = binding_document(
+                binding_id="binding-router-runtime",
+                activation_name="activation-router-runtime",
+                activation_envelope=envelope,
+                profile=profile,
+                environment=environment,
+            )
+            await seed_trust(
+                session,
+                document=document,
+                profile=profile,
+                environment=environment,
+            )
+            await insert_binding(
+                session,
+                activation_id=activation_id,
+                document=document,
+            )
+
+        store = PostgresSemanticClassifierBindingStore(
+            sessions,
+            schema_validator=JsonSchemaAuthorityValidator(
+                CLASSIFIER_BINDING_SCHEMA
+            ),
+        )
+        record = await store.get(
+            activation_id=str(activation_id),
+            activation_envelope_sha256=envelope,
+        )
+
+        assert record is not None
+        assert record.state is SemanticClassifierBindingState.ACTIVE
+        assert record.binding.binding_envelope_sha256 == document[
+            "binding_envelope_sha256"
+        ]
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.asyncio
@@ -1011,7 +1075,7 @@ async def test_downgrade_refuses_persisted_classifier_authority() -> None:
             outbox_table = await session.scalar(
                 text("SELECT to_regclass('ai_semantic_classifier_binding_outbox_event')")
             )
-            assert version == "20260729_0019"
+            assert version == "20260802_0025"
             assert binding_count == 1
             assert evidence_count == 2
             assert history_table == "ai_semantic_classifier_binding_history"

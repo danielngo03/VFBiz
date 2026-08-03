@@ -5,10 +5,13 @@ import importlib.util
 import json
 import sys
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+from app.modules.evaluation.domain import GraderCalibration
 
 ROOT = Path(__file__).parents[4]
 MANIFEST_VALIDATOR = (
@@ -58,6 +61,86 @@ def load_contract_registry() -> dict[str, dict[str, Any]]:
 
 
 def evaluation_semantic_errors(contract_id: str, value: dict[str, Any]) -> list[str]:
+    if contract_id.endswith("/source-intake-receipt/v1"):
+        if value.get("content_revision") != f"sha256:{value.get('observed_sha256')}":
+            return ["content revision must equal the observed SHA-256"]
+        return []
+    if contract_id.endswith("/source-register/v5"):
+        origin = value.get("origin")
+        if (
+            isinstance(origin, dict)
+            and origin.get("kind") in {"managed-upload", "local-bootstrap"}
+            and value.get("source_revision") != value.get("content_revision")
+        ):
+            return ["managed source revision must equal its content revision"]
+        return []
+    if contract_id.endswith("/benchmark-definition/v2"):
+        return fixed_usd_errors(
+            cast(dict[str, Any], value["budgets"])["max_cost_usd"]
+        )
+    if contract_id.endswith("/run-request/v2"):
+        return fixed_usd_errors(
+            cast(dict[str, Any], value["budgets"])["maxCostUsd"]
+        )
+    if contract_id.endswith("/case-result/v1"):
+        return fixed_usd_errors(
+            cast(dict[str, Any], value["usage"])["cost_usd"]
+        )
+    if contract_id.endswith("/grader-calibration/v2"):
+        matrix = cast(dict[str, int], value["confusion_matrix"])
+        slices = cast(list[dict[str, Any]], value["slice_metrics"])
+        try:
+            GraderCalibration(
+                grader_revision=cast(str, value["grader_revision"]),
+                grader_definition_digest=cast(
+                    str,
+                    value["grader_definition_digest"],
+                ),
+                implementation_digest=cast(
+                    str,
+                    value["implementation_digest"],
+                ),
+                calibrated_at=parse_datetime(cast(str, value["calibrated_at"])),
+                expires_at=parse_datetime(cast(str, value["expires_at"])),
+                evidence_digest=cast(str, value["evidence_digest"]),
+                human_labelled_suite_digest=cast(
+                    str,
+                    value["human_labelled_suite_digest"],
+                ),
+                sample_size=cast(int, value["sample_size"]),
+                confusion_matrix=(
+                    matrix["true_positive"],
+                    matrix["true_negative"],
+                    matrix["false_positive"],
+                    matrix["false_negative"],
+                ),
+                balanced_accuracy=cast(float, value["balanced_accuracy"]),
+                f1=cast(float, value["f1"]),
+                slice_metrics=tuple(
+                    (
+                        cast(str, item["slice"]),
+                        cast(int, item["sample_size"]),
+                        cast(float, item["balanced_accuracy"]),
+                        cast(float, item["f1"]),
+                        cast(dict[str, int], item["confusion_matrix"])[
+                            "true_positive"
+                        ],
+                        cast(dict[str, int], item["confusion_matrix"])[
+                            "true_negative"
+                        ],
+                        cast(dict[str, int], item["confusion_matrix"])[
+                            "false_positive"
+                        ],
+                        cast(dict[str, int], item["confusion_matrix"])[
+                            "false_negative"
+                        ],
+                    )
+                    for item in slices
+                ),
+            )
+        except ValueError as error:
+            return [str(error)]
+        return []
     if contract_id.endswith("/grader-calibration/v1"):
         matrix = value["confusion_matrix"]
         assert isinstance(matrix, dict)
@@ -95,19 +178,23 @@ def evaluation_semantic_errors(contract_id: str, value: dict[str, Any]) -> list[
             errors.append("calibration slices must be unique")
         return errors
     if contract_id.endswith("/run-result/v1"):
+        money_errors = fixed_usd_errors(
+            cast(dict[str, Any], value["budget_usage"])["cost_usd"]
+        )
         run_counts = cast(dict[str, int], value["case_counts"])
         terminal = sum(run_counts[name] for name in ("valid", "invalid", "failed", "cancelled"))
         if terminal != run_counts["evaluated"]:
-            return ["terminal case counts must equal evaluated"]
+            return [*money_errors, "terminal case counts must equal evaluated"]
         if value["state"] == "decision_ready" and (
             run_counts["evaluated"] != run_counts["expected"]
             or run_counts["invalid"] != 0
             or run_counts["failed"] != 0
             or run_counts["cancelled"] != 0
         ):
-            return ["decision_ready requires complete valid case set"]
+            return [*money_errors, "decision_ready requires complete valid case set"]
         if parse_datetime(value["completed_at"]) < parse_datetime(value["started_at"]):
-            return ["completed_at must not precede started_at"]
+            return [*money_errors, "completed_at must not precede started_at"]
+        return money_errors
     if contract_id.endswith("/evidence-bundle/v1") and value["recommendation"] == "recommend":
         required_graders = value["required_grader_revisions"]
         calibrated_graders = [item["grader_revision"] for item in value["grader_calibrations"]]
@@ -117,6 +204,19 @@ def evaluation_semantic_errors(contract_id: str, value: dict[str, Any]) -> list[
             or len(calibrated_graders) != len(set(calibrated_graders))
         ):
             return ["recommendation requires one calibration per required grader"]
+    return []
+
+
+def fixed_usd_errors(value: object) -> list[str]:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return ["evaluation cost must use bounded micro-USD precision"]
+    decimal_value = Decimal(str(value))
+    if (
+        decimal_value < 0
+        or decimal_value > Decimal("1000000")
+        or decimal_value != decimal_value.quantize(Decimal("0.000001"))
+    ):
+        return ["evaluation cost must use bounded micro-USD precision"]
     return []
 
 

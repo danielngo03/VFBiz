@@ -10,14 +10,23 @@
     "access": "public"
   },
   "selectors": {
-    "configs": ["vi-VN", "en-US"],
-    "splits": ["train", "validation", "test"]
+    "configs": [
+      "vi-VN",
+      "en-US"
+    ],
+    "splits": [
+      "train",
+      "validation",
+      "test"
+    ]
   },
   "bindings": [
     {
       "product_id": "vivi-router-classifier-v1",
       "allowed_use": "classifier-training",
-      "task_families": ["intent-ood"]
+      "task_families": [
+        "intent-ood"
+      ]
     }
   ],
   "declared_license": "CC-BY-4.0",
@@ -41,7 +50,10 @@
     "locator": "https://huggingface.co/datasets/AmazonScience/massive",
     "source_revision": "unfetched-exact-revision-pending",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["intent-ood", "conversation-quality"],
+    "proposed_purposes": [
+      "intent-ood",
+      "conversation-quality"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -61,6 +73,12 @@
     },
     "deletion_method": "Delete candidate/quarantine artifacts and tombstone lineage.",
     "review_date": "2026-08-28",
-    "notes": "Priority 1 benchmark candidate; taxonomy is not copied unchanged. No download authorized."
+    "notes": "Priority 1 benchmark candidate; taxonomy is not copied unchanged. No download authorized.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://huggingface.co/datasets/AmazonScience/massive",
+      "allowed_origin": "https://huggingface.co/"
+    },
+    "allowed_origin": "https://huggingface.co/"
   }
 }

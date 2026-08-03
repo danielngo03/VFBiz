@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import StrEnum
 
+from app.modules.evaluation.domain.evidence import VerifiedEvidenceBundle
 from app.modules.evaluation.domain.validation import is_bounded_text, is_sha256
 
 
@@ -51,7 +52,6 @@ _TRANSITIONS = {
     ),
     EvaluationRunState.COMPARING: frozenset(
         {
-            EvaluationRunState.DECISION_READY,
             EvaluationRunState.FAILED,
             EvaluationRunState.CANCELLED,
             EvaluationRunState.INVALID,
@@ -156,13 +156,15 @@ class EvaluationRun:
             raise EvaluationRunTransitionError("RUN_ALREADY_TERMINAL")
         return self.transition(EvaluationRunState.CANCELLED)
 
-    def complete(self, *, evidence_bundle_digest: str) -> EvaluationRun:
+    def seal(self, evidence: VerifiedEvidenceBundle) -> EvaluationRun:
         if self.state is not EvaluationRunState.COMPARING:
             raise EvaluationRunTransitionError("RUN_NOT_COMPARING")
+        if evidence.run_id != self.run_id or evidence.plan_digest != self.plan_digest:
+            raise EvaluationRunTransitionError("EVIDENCE_RUN_BINDING_MISMATCH")
         return replace(
             self,
             state=EvaluationRunState.DECISION_READY,
-            evidence_bundle_digest=evidence_bundle_digest,
+            evidence_bundle_digest=evidence.bundle_digest,
             row_version=self.row_version + 1,
         )
 

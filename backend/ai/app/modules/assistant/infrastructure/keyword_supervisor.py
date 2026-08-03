@@ -2,7 +2,10 @@ import re
 import unicodedata
 from typing import cast
 
-from app.modules.assistant.application import RouteDecision
+from app.modules.assistant.application import (
+    DETERMINISTIC_FALLBACK_MAX_CONFIDENCE,
+    RouteDecision,
+)
 from app.modules.assistant.domain import ActiveTaskState, ConfirmedGlobalEntity, TaskIntent
 
 # Ordered, first-match-wins keyword sets. This is deliberately a zero-cost,
@@ -59,6 +62,12 @@ _ABUSE_PATTERNS = (
     "system prompt",
     "developer message",
 )
+
+# Keyword matches are a deterministic fallback signal, not an authority for
+# intent.  A release-bound semantic classifier must get a chance to validate
+# or override the match; keeping this below the semantic activation threshold
+# also makes classifier outages fail closed into the same bounded fallback.
+KEYWORD_FALLBACK_CONFIDENCE = DETERMINISTIC_FALLBACK_MAX_CONFIDENCE
 
 
 def _searchable_text(message: str) -> str:
@@ -122,7 +131,11 @@ class KeywordSupervisor:
         if matched_intents:
             return RouteDecision(
                 intent=matched_intents[0],
-                confidence=1.0 if len(matched_intents) == 1 else 0.5,
+                confidence=(
+                    KEYWORD_FALLBACK_CONFIDENCE
+                    if len(matched_intents) == 1
+                    else 0.5
+                ),
                 multi_intent=len(matched_intents) > 1,
                 abuse_signals=abuse_signals,
             )

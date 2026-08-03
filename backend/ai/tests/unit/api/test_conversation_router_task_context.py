@@ -1,7 +1,10 @@
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from app.api.internal_v1.conversation_router import build_clarification_task_delta
+from app.api.internal_v1.conversation_router import (
+    build_clarification_task_proposal,
+    task_receipts_are_current,
+)
 from app.api.internal_v1.conversation_schemas import ConversationTurnRequest
 from app.modules.assistant.domain import ActiveTaskState
 from app.platform.security.execution_assertion import (
@@ -14,14 +17,22 @@ def _request(*, with_task: bool) -> ConversationTurnRequest:
     now = datetime.now(UTC)
     session_id = uuid4()
     turn_id = uuid4()
+    task_id = uuid4()
     task_context = (
         {
             "authorizationContextDigest": "d" * 64,
             "collectedSlots": {
                 "vehicle_model": {
+                    "authority": "vehicle_catalog",
                     "authorityDigest": "e" * 64,
-                    "kind": "opaque_reference",
-                    "reference": "vehicle:vf-8",
+                    "confirmedAt": now.isoformat(),
+                    "expiresAt": (now + timedelta(minutes=20)).isoformat(),
+                    "kind": "receipt",
+                    "opaqueReference": f"vehicle:ref/v1/{'1' * 64}",
+                    "provenanceDigest": "f" * 64,
+                    "slot": "vehicle_model",
+                    "sourceRevision": "vehicle-catalog-v1",
+                    "taskId": str(task_id),
                 }
             },
             "expiresAt": (now + timedelta(minutes=20)).isoformat(),
@@ -39,7 +50,7 @@ def _request(*, with_task: bool) -> ConversationTurnRequest:
             },
             "sourceTurnId": str(uuid4()),
             "state": "awaiting_clarification",
-            "taskId": str(uuid4()),
+            "taskId": str(task_id),
             "taskVersion": 4,
         }
         if with_task
@@ -105,9 +116,9 @@ def _execution_context(request: ConversationTurnRequest) -> ExecutionContext:
     )
 
 
-def test_clarification_delta_resumes_the_authoritative_task_version() -> None:
+def test_clarification_proposal_resumes_the_authoritative_task_version() -> None:
     request = _request(with_task=True)
-    delta = build_clarification_task_delta(
+    proposal = build_clarification_task_proposal(
         request=request,
         context=_execution_context(request),
         result={
@@ -120,14 +131,14 @@ def test_clarification_delta_resumes_the_authoritative_task_version() -> None:
     )
 
     assert request.task_context is not None
-    assert delta.task_id == request.task_context.task_id
-    assert delta.expected_task_version == 4
-    assert delta.authorization_context_digest == request.authorization_context_digest
-    assert delta.collected_slots["vehicle_model"].reference == "vehicle:vf-8"
-    assert delta.source_turn_id == request.turn_id
+    assert proposal.task_id == request.task_context.task_id
+    assert proposal.expected_task_version == 4
+    assert proposal.authorization_context_digest == request.authorization_context_digest
+    assert proposal.slot_candidates == ()
+    assert proposal.source_turn_id == request.turn_id
 
 
-def test_clarification_delta_creates_a_deterministic_new_task_identity() -> None:
+def test_clarification_proposal_creates_a_deterministic_new_task_identity() -> None:
     request = _request(with_task=False)
     context = _execution_context(request)
     active_task = ActiveTaskState(
@@ -136,12 +147,12 @@ def test_clarification_delta_creates_a_deterministic_new_task_identity() -> None
         retry_count=0,
     )
 
-    first = build_clarification_task_delta(
+    first = build_clarification_task_proposal(
         request=request,
         context=context,
         result={"active_task": active_task},
     )
-    second = build_clarification_task_delta(
+    second = build_clarification_task_proposal(
         request=request,
         context=context,
         result={"active_task": active_task},
@@ -153,11 +164,11 @@ def test_clarification_delta_creates_a_deterministic_new_task_identity() -> None
     assert first.provenance_digest == second.provenance_digest
 
 
-def test_clarification_delta_replaces_active_task_on_explicit_topic_switch() -> None:
+def test_clarification_proposal_replaces_active_task_on_explicit_topic_switch() -> None:
     request = _request(with_task=True)
     assert request.task_context is not None
 
-    delta = build_clarification_task_delta(
+    proposal = build_clarification_task_proposal(
         request=request,
         context=_execution_context(request),
         result={
@@ -169,17 +180,17 @@ def test_clarification_delta_replaces_active_task_on_explicit_topic_switch() -> 
         },
     )
 
-    assert delta.task_id != request.task_context.task_id
-    assert delta.expected_task_version == 0
-    assert delta.intent == "charging_question"
-    assert delta.collected_slots == {}
+    assert proposal.task_id != request.task_context.task_id
+    assert proposal.expected_task_version == 0
+    assert proposal.intent == "charging_question"
+    assert proposal.slot_candidates == ()
 
 
 def test_unknown_multi_intent_clarification_preserves_active_task_authority() -> None:
     request = _request(with_task=True)
     assert request.task_context is not None
 
-    delta = build_clarification_task_delta(
+    proposal = build_clarification_task_proposal(
         request=request,
         context=_execution_context(request),
         result={
@@ -191,7 +202,51 @@ def test_unknown_multi_intent_clarification_preserves_active_task_authority() ->
         },
     )
 
-    assert delta.task_id == request.task_context.task_id
-    assert delta.expected_task_version == request.task_context.task_version
-    assert delta.intent == request.task_context.intent
-    assert delta.pending_slots == ("primary_intent",)
+    assert proposal.task_id == request.task_context.task_id
+    assert proposal.expected_task_version == request.task_context.task_version
+    assert proposal.intent == request.task_context.intent
+    assert proposal.pending_slots == ("primary_intent",)
+
+
+def test_clarification_proposal_emits_only_a_transient_bounded_slot_candidate() -> None:
+    request = _request(with_task=True).model_copy(update={"message": "VF 8"})
+    assert request.task_context is not None
+    request = request.model_copy(
+        update={
+            "task_context": request.task_context.model_copy(
+                update={"pending_slots": ("vehicle_model",)}
+            )
+        }
+    )
+
+    proposal = build_clarification_task_proposal(
+        request=request,
+        context=_execution_context(request),
+        result={
+            "active_task": ActiveTaskState(
+                intent="vehicle_question",
+                required_arguments=("vehicle_model",),
+                retry_count=0,
+            )
+        },
+    )
+
+    assert len(proposal.slot_candidates) == 1
+    candidate = proposal.slot_candidates[0]
+    assert candidate.kind == "candidate"
+    assert candidate.proposed_value == "VF 8"
+    serialized = proposal.model_dump(by_alias=True, mode="json")
+    assert "collectedSlots" not in serialized
+    assert "authorityDigest" not in str(serialized)
+
+
+def test_expired_authority_receipt_fails_closed_before_graph_execution() -> None:
+    request = _request(with_task=True)
+    assert request.task_context is not None
+    receipt = request.task_context.collected_slots["vehicle_model"]
+
+    assert task_receipts_are_current(
+        request,
+        receipt.expires_at - timedelta(microseconds=1),
+    )
+    assert not task_receipts_are_current(request, receipt.expires_at)

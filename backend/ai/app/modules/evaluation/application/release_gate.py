@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.modules.evaluation.domain import AuthorityClass, VerifiedEvidenceBundle
 from app.modules.governance.domain import AIReleaseCandidate
 
 
@@ -51,4 +52,30 @@ def evaluate_release(candidate: AIReleaseCandidate) -> ReleaseGateDecision:
         passed=not failures,
         failures=tuple(failures),
         evidence_ids=tuple(item for item in evidence_ids if item),
+    )
+
+
+def evaluate_sealed_evidence_for_release(
+    evidence: VerifiedEvidenceBundle,
+    *,
+    candidate_release_id: str,
+    candidate_manifest_digest: str,
+) -> ReleaseGateDecision:
+    failures: list[str] = []
+    if (
+        evidence.candidate_release_id != candidate_release_id
+        or evidence.candidate_manifest_digest != candidate_manifest_digest
+    ):
+        failures.append("EVIDENCE_CANDIDATE_BINDING_MISMATCH")
+    if evidence.authority_class is not AuthorityClass.VINFAST_ACCEPTANCE:
+        failures.append("NON_ACCEPTANCE_EVIDENCE")
+    if evidence.recommendation == "reject":
+        failures.append("EVALUATION_EVIDENCE_REJECTED")
+    elif evidence.recommendation != "recommend":
+        failures.append("HUMAN_DECISION_REQUIRED")
+    return ReleaseGateDecision(
+        passed=not failures,
+        failures=tuple(failures),
+        evidence_ids=(evidence.bundle_digest,),
+        promoted=False,
     )

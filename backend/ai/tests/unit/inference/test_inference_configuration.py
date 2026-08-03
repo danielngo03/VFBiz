@@ -308,3 +308,101 @@ def test_unimplemented_provider_fails_closed() -> None:
     )
     with pytest.raises(InferenceConfigurationError, match="no approved runtime adapter"):
         build_model_mesh(settings)
+
+
+def _vertex_settings(**overrides: object) -> Settings:
+    values: dict[str, object] = {
+        "_env_file": None,
+        "environment": "test",
+        "generation_provider": "vertex",
+        "generation_model": "gemini-3.5-flash",
+        "vertex_project_id": "vinfast-503003",
+        "vertex_location": "asia-southeast1",
+        "model_residency": "asia-southeast1",
+        "vertex_generation_model_allowlist": ("gemini-3.5-flash",),
+        "vertex_data_controls_approval_reference": "vertex-data-approval-v1",
+        "vertex_data_controls_approval_sha256": "b" * 64,
+        "vertex_pricing_revision": "vertex-pricing-2026-08-01",
+        "input_microusd_per_million_tokens": 1,
+        "output_microusd_per_million_tokens": 1,
+    }
+    values.update(overrides)
+    return Settings(**values)
+
+
+def test_vertex_settings_require_release_bound_identity_and_pricing() -> None:
+    with pytest.raises(ValidationError, match="data-control approval"):
+        _vertex_settings(vertex_data_controls_approval_reference=None)
+    with pytest.raises(ValidationError, match="allowlist"):
+        _vertex_settings(vertex_generation_model_allowlist=())
+    with pytest.raises(ValidationError, match="token prices"):
+        _vertex_settings(input_microusd_per_million_tokens=0)
+    with pytest.raises(ValidationError, match="model_residency"):
+        _vertex_settings(model_residency="global")
+
+
+def test_vertex_generation_factory_is_composed_without_provider_call() -> None:
+    settings = _vertex_settings()
+    client = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(500)),
+    )
+
+    async def token() -> str:
+        return "test-adc-token"
+
+    policy = DeploymentPolicyDescriptor(
+        revision="release-gate-v3",
+        profile=settings.model_policy_profile,
+        safety_tier=settings.model_safety_tier,
+        residency="asia-southeast1",
+        retention=RetentionPolicy.STANDARD,
+        schema_revision=settings.structured_schema_revision,
+        model_release="gemini-3.5-flash",
+        provider_project_id="vinfast-503003",
+        provider_organization_id=None,
+        data_controls_approval_reference="vertex-data-approval-v1",
+        data_controls_approval_sha256="b" * 64,
+        release_manifest_sha256="c" * 64,
+    )
+    mesh = build_model_mesh(
+        settings,
+        client=client,
+        policy=policy,
+        prompt=GroundedAnswerPrompt(revision=settings.prompt_revision),
+        vertex_access_token_provider=token,
+    )
+    assert mesh is not None
+    assert "test-adc-token" not in repr(settings)
+    asyncio.run(client.aclose())
+
+
+def test_vertex_embedding_factory_is_composed_without_provider_call() -> None:
+    settings = _vertex_settings(
+        generation_provider="disabled",
+        generation_model="disabled",
+        embedding_provider="vertex",
+        embedding_model="gemini-embedding-001",
+        embedding_dimension=768,
+        embedding_max_items_per_request=1,
+        vertex_generation_model_allowlist=(),
+        vertex_embedding_model_allowlist=("gemini-embedding-001",),
+        embedding_input_microusd_per_million_tokens=1,
+    )
+    client = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(500)),
+    )
+
+    async def token() -> str:
+        return "test-adc-token"
+
+    from app.infrastructure.embedding_providers.configuration import (
+        build_embedding_provider,
+    )
+
+    provider = build_embedding_provider(
+        settings,
+        client=client,
+        vertex_access_token_provider=token,
+    )
+    assert provider is not None
+    asyncio.run(provider.aclose())

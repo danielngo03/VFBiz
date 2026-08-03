@@ -6,10 +6,16 @@ from app.infrastructure.embedding_providers.policy import (
     TeiDeploymentIdentity,
 )
 from app.infrastructure.embedding_providers.tei import TeiEmbeddingAdapter
+from app.infrastructure.embedding_providers.vertex_embedding import (
+    VertexEmbeddingAdapter,
+    VertexEmbeddingDeploymentDescriptor,
+)
 
 __all__ = [
     "EmbeddingAdapterPolicy",
     "OpenAIEmbeddingAdapter",
     "TeiDeploymentIdentity",
     "TeiEmbeddingAdapter",
+    "VertexEmbeddingAdapter",
+    "VertexEmbeddingDeploymentDescriptor",
 ]

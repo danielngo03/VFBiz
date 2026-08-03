@@ -100,10 +100,14 @@ class ExtractiveModelMesh:
 
 class FixedReleaseRuntime:
     def __init__(self, release: ResolvedReleaseRuntime) -> None:
-        self.release = release
+        self._resolved_release = release
+
+    @property
+    def environment(self) -> str:
+        return "test"
 
     async def resolve(self, **_: object) -> ResolvedReleaseRuntime:
-        return self.release
+        return self._resolved_release
 
     async def assert_current(self, *_: object, **__: object) -> None:
         return None
@@ -277,6 +281,7 @@ async def test_db_backed_turn_returns_only_active_revision_citation() -> None:
         release_runtime=cast("object", FixedReleaseRuntime(release)),  # type: ignore[arg-type]
         embedding_runtime=cast("object", IntegrationEmbedder()),  # type: ignore[arg-type]
         retrieval_store=base.retrieval_store,
+        semantic_routing=base.semantic_routing,
     )
     try:
         async with sessions() as session, session.begin():

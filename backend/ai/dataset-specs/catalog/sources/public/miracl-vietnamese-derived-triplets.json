@@ -22,7 +22,9 @@
     "locator": "https://huggingface.co/datasets/nlpai-lab/miracl-multilingual-triplets",
     "source_revision": "unfetched-candidate",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["retrieval-evaluation"],
+    "proposed_purposes": [
+      "retrieval-evaluation"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -42,7 +44,13 @@
     },
     "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
     "review_date": "2026-08-23",
-    "notes": "Chưa download; cần quality và Legal review."
+    "notes": "Chưa download; cần quality và Legal review.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://huggingface.co/datasets/nlpai-lab/miracl-multilingual-triplets",
+      "allowed_origin": "https://huggingface.co/"
+    },
+    "allowed_origin": "https://huggingface.co/"
   },
   "provenance": {
     "legacy_entry_superseded": false,

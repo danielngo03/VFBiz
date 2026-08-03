@@ -5,7 +5,7 @@ import pytest
 from app.api.internal_v1.conversation_response import (
     AnsweredResponse,
     ClarificationResponse,
-    ConversationTaskDeltaResponse,
+    ConversationTaskProposalResponse,
     ExecutionUsage,
     HandoffResponse,
     RefusedResponse,
@@ -33,9 +33,8 @@ RECEIPT = ReleaseCommitReceipt(
     issuedAt=datetime(2026, 7, 27, tzinfo=UTC),
     expiresAt=datetime(2026, 7, 27, 0, 0, 15, tzinfo=UTC),
 )
-TASK_DELTA = ConversationTaskDeltaResponse(
+TASK_PROPOSAL = ConversationTaskProposalResponse(
     authorizationContextDigest="a" * 64,
-    collectedSlots={},
     expectedTaskVersion=0,
     expiresAt=datetime(2026, 7, 27, 0, 30, tzinfo=UTC),
     intent="vehicle_question",
@@ -49,6 +48,7 @@ TASK_DELTA = ConversationTaskDeltaResponse(
         manifestSha256="c" * 64,
         policyRevision="policy-r1",
     ),
+    slotCandidates=(),
     sourceTurnId=RECEIPT.turn_id,
     taskId="00000000-0000-4000-8000-000000000005",
 )
@@ -165,14 +165,15 @@ def test_clarification_is_a_terminal_typed_response() -> None:
         usage=USAGE,
         release_revision=RELEASE_REVISION,
         release_commit_receipt=RECEIPT,
-        task_delta=TASK_DELTA,
+        task_proposal=TASK_PROPOSAL,
     )
 
     assert isinstance(response, ClarificationResponse)
     dumped = response.model_dump(by_alias=True)
     assert dumped["pendingSlots"] == ("vehicle_variant",)
-    assert dumped["taskDelta"]["expectedTaskVersion"] == 0
-    assert dumped["taskDelta"]["authorizationContextDigest"] == "a" * 64
+    assert dumped["taskProposal"]["expectedTaskVersion"] == 0
+    assert dumped["taskProposal"]["authorizationContextDigest"] == "a" * 64
+    assert "collectedSlots" not in dumped["taskProposal"]
 
 
 @pytest.mark.parametrize(

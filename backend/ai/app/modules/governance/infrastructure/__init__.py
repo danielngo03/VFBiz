@@ -8,6 +8,10 @@ from app.modules.governance.infrastructure.postgres_release_authority import (
     ReleasePersistenceError,
     ReleasePersistenceErrorCode,
 )
+from app.modules.governance.infrastructure.postgres_semantic_classifier_binding import (
+    PostgresSemanticClassifierBindingStore,
+    SemanticClassifierBindingPersistenceError,
+)
 from app.modules.governance.infrastructure.postgres_trusted_release_registry import (
     PostgresTrustedReleaseRegistry,
 )
@@ -18,6 +22,7 @@ from app.modules.governance.infrastructure.release_authority_schema import (
 from app.modules.governance.infrastructure.trusted_release_artifacts import (
     BoundedOpaqueArtifactDigestReader,
     BoundedReleaseEvidenceVerifier,
+    BoundedSemanticClassifierEvidenceVerifier,
     EvidenceAuthenticityRequest,
     EvidenceKind,
     ReleaseArtifactErrorCode,
@@ -29,17 +34,20 @@ from app.modules.governance.infrastructure.trusted_release_artifacts import (
 __all__ = [
     "BoundedOpaqueArtifactDigestReader",
     "BoundedReleaseEvidenceVerifier",
+    "BoundedSemanticClassifierEvidenceVerifier",
     "EvidenceAuthenticityRequest",
     "EvidenceKind",
     "JsonSchemaAuthorityValidator",
     "JsonSchemaReleaseAuthorityValidator",
     "PostgresActiveReleasePointerAdapter",
     "PostgresReleaseAuthorityResolver",
+    "PostgresSemanticClassifierBindingStore",
     "PostgresTrustedReleaseRegistry",
     "ReleaseArtifactErrorCode",
     "ReleaseArtifactInfrastructureError",
     "ReleasePersistenceError",
     "ReleasePersistenceErrorCode",
+    "SemanticClassifierBindingPersistenceError",
     "TrustedArtifactRegistry",
     "TrustedEvidenceRegistry",
 ]

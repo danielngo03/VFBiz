@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vfbiz.example/contracts/ai/qualification/behavior-sft-manifest/v1",
+  "title": "VFBiz synthetic behavior qualification manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "work_item",
+    "purpose",
+    "record_count",
+    "split_counts",
+    "family_count",
+    "family_split_counts",
+    "behavior_counts",
+    "behavior_family_counts",
+    "families",
+    "flags",
+    "input_digests"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "candidate_id": {
+      "const": "vivi-behavior-synthetic-v5"
+    },
+    "work_item": {
+      "const": "VFBIZ-0214"
+    },
+    "purpose": {
+      "const": "behavior-sft-candidate-review-only"
+    },
+    "record_count": {
+      "const": 625
+    },
+    "family_count": {
+      "const": 25
+    },
+    "split_counts": {
+      "$ref": "#/$defs/splitCounts"
+    },
+    "family_split_counts": {
+      "$ref": "#/$defs/familySplitCounts"
+    },
+    "behavior_counts": {
+      "$ref": "#/$defs/behaviorCounts"
+    },
+    "behavior_family_counts": {
+      "$ref": "#/$defs/behaviorFamilyCounts"
+    },
+    "families": {
+      "type": "array",
+      "minItems": 25,
+      "maxItems": 25,
+      "items": {
+        "$ref": "#/$defs/family"
+      }
+    },
+    "flags": {
+      "$ref": "#/$defs/flags"
+    },
+    "input_digests": {
+      "$ref": "#/$defs/inputDigests"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "splitCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "validation", "test"],
+      "properties": {
+        "train": {
+          "const": 400
+        },
+        "validation": {
+          "const": 100
+        },
+        "test": {
+          "const": 125
+        }
+      }
+    },
+    "familySplitCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "validation", "test"],
+      "properties": {
+        "train": {
+          "const": 16
+        },
+        "validation": {
+          "const": 4
+        },
+        "test": {
+          "const": 5
+        }
+      }
+    },
+    "behaviorCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citation_transparency",
+        "clarification",
+        "concise_structure",
+        "refusal_handoff",
+        "state_transparency"
+      ],
+      "properties": {
+        "citation_transparency": {
+          "const": 125
+        },
+        "clarification": {
+          "const": 125
+        },
+        "concise_structure": {
+          "const": 125
+        },
+        "refusal_handoff": {
+          "const": 125
+        },
+        "state_transparency": {
+          "const": 125
+        }
+      }
+    },
+    "behaviorFamilyCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citation_transparency",
+        "clarification",
+        "concise_structure",
+        "refusal_handoff",
+        "state_transparency"
+      ],
+      "properties": {
+        "citation_transparency": {
+          "$ref": "#/$defs/standardBehaviorFamilyCounts"
+        },
+        "clarification": {
+          "$ref": "#/$defs/standardBehaviorFamilyCounts"
+        },
+        "concise_structure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["train", "validation", "test"],
+          "properties": {
+            "train": {
+              "const": 4
+            },
+            "validation": {
+              "const": 0
+            },
+            "test": {
+              "const": 1
+            }
+          }
+        },
+        "refusal_handoff": {
+          "$ref": "#/$defs/standardBehaviorFamilyCounts"
+        },
+        "state_transparency": {
+          "$ref": "#/$defs/standardBehaviorFamilyCounts"
+        }
+      }
+    },
+    "standardBehaviorFamilyCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "validation", "test"],
+      "properties": {
+        "train": {
+          "const": 3
+        },
+        "validation": {
+          "const": 1
+        },
+        "test": {
+          "const": 1
+        }
+      }
+    },
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family_id", "behavior", "split", "record_count"],
+      "properties": {
+        "family_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "behavior": {
+          "enum": [
+            "citation_transparency",
+            "clarification",
+            "concise_structure",
+            "refusal_handoff",
+            "state_transparency"
+          ]
+        },
+        "split": {
+          "enum": ["train", "validation", "test"]
+        },
+        "record_count": {
+          "const": 25
+        }
+      }
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "human_adjudicated",
+        "training_eligible",
+        "upload_allowed",
+        "provider_dispatch_allowed",
+        "release_eligible"
+      ],
+      "properties": {
+        "human_adjudicated": {
+          "const": false
+        },
+        "training_eligible": {
+          "const": false
+        },
+        "upload_allowed": {
+          "const": false
+        },
+        "provider_dispatch_allowed": {
+          "const": false
+        },
+        "release_eligible": {
+          "const": false
+        }
+      }
+    },
+    "inputDigests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_sha256",
+        "literal_source_pack_sha256",
+        "family_lock_sha256",
+        "scenario_lock_sha256",
+        "policy_sha256",
+        "rubric_sha256",
+        "domain_pack_sha256",
+        "taxonomy_sha256"
+      ],
+      "properties": {
+        "schema_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "literal_source_pack_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "family_lock_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "scenario_lock_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "policy_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rubric_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "domain_pack_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "taxonomy_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

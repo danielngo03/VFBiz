@@ -22,7 +22,9 @@
     "locator": "https://huggingface.co/datasets/uitnlp/ViANLI",
     "source_revision": "unfetched-candidate",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["intent-ood"],
+    "proposed_purposes": [
+      "intent-ood"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -43,7 +45,13 @@
     },
     "deletion_method": "Xóa candidate metadata/artifact và tombstone lineage.",
     "review_date": "2026-08-23",
-    "notes": "Không download khi license còn mâu thuẫn."
+    "notes": "Không download khi license còn mâu thuẫn.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://huggingface.co/datasets/uitnlp/ViANLI",
+      "allowed_origin": "https://huggingface.co/"
+    },
+    "allowed_origin": "https://huggingface.co/"
   },
   "provenance": {
     "legacy_entry_superseded": false,

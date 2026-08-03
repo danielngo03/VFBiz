@@ -22,6 +22,10 @@ from app.infrastructure.model_providers.configuration import (
 )
 from app.modules.evaluation.application import (
     DeterministicExtractiveGroundingValidator,
+    SealedAssistantReleaseEvidenceAuthority,
+)
+from app.modules.evaluation.infrastructure import (
+    PostgresAssistantReleaseEvidenceReader,
 )
 from app.modules.governance.application import ActiveReleasePointerStore
 from app.modules.governance.domain.release_manifest import AssistantReleaseManifest
@@ -44,7 +48,10 @@ from app.platform.config import Settings
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 _RELEASE_SCHEMA = _REPOSITORY_ROOT / "contracts/ai/ai-release-manifest.schema.json"
-_REQUIRED_APPROVAL_ROLES = ("release-owner", "security-owner")
+# A runtime release must bind product release authority, security authority and
+# data-controls authority.  Provider-level data-control metadata alone is not a
+# substitute for an independent data-owner decision.
+_REQUIRED_APPROVAL_ROLES = ("release-owner", "security-owner", "data-owner")
 
 
 class ReleaseRuntimeUnavailable(RuntimeError):
@@ -109,6 +116,9 @@ class ReleaseBoundRuntimeResolver:
                 timeout_seconds=2,
                 max_concurrency=16,
             ),
+            evaluation_evidence_authority=SealedAssistantReleaseEvidenceAuthority(
+                PostgresAssistantReleaseEvidenceReader(sessions)
+            ),
             schema_validator=JsonSchemaReleaseAuthorityValidator(schema),
             required_approval_roles=_REQUIRED_APPROVAL_ROLES,
             clock=lambda: datetime.now(UTC),
@@ -118,6 +128,10 @@ class ReleaseBoundRuntimeResolver:
         self._mesh_leases: dict[str, int] = {}
         self._grounding_validator = DeterministicExtractiveGroundingValidator()
         self._lock = asyncio.Lock()
+
+    @property
+    def environment(self) -> str:
+        return self._settings.environment
 
     async def issue_commit_lease(
         self,
@@ -484,11 +498,24 @@ class ReleaseBoundRuntimeResolver:
         manifest: AssistantReleaseManifest,
     ) -> DeploymentPolicyDescriptor:
         settings = self._settings
-        identity = settings.openai_capability("generation")
+        if settings.generation_provider == "vertex":
+            identity = settings.vertex_capability("generation")
+            project_id = identity.project_id
+            organization_id = None
+            retention = identity.retention_policy
+            approval_reference = identity.approval_reference
+            approval_sha256 = identity.approval_sha256
+        else:
+            identity = settings.openai_capability("generation")
+            project_id = identity.project_id
+            organization_id = identity.organization_id
+            retention = identity.retention_policy
+            approval_reference = identity.approval_reference
+            approval_sha256 = identity.approval_sha256
         if (
-            identity.project_id is None
-            or identity.approval_reference is None
-            or identity.approval_sha256 is None
+            project_id is None
+            or approval_reference is None
+            or approval_sha256 is None
         ):
             raise ReleaseRuntimeUnavailable("PROVIDER_APPROVAL_UNAVAILABLE")
         return DeploymentPolicyDescriptor(
@@ -496,17 +523,13 @@ class ReleaseBoundRuntimeResolver:
             profile=settings.model_policy_profile,
             safety_tier=settings.model_safety_tier,
             residency=settings.model_residency,
-            retention=RetentionPolicy(identity.retention_policy),
+            retention=RetentionPolicy(retention),
             schema_revision=settings.structured_schema_revision,
             model_release=settings.generation_model,
-            provider_project_id=identity.project_id,
-            provider_organization_id=identity.organization_id,
-            data_controls_approval_reference=(
-                identity.approval_reference
-            ),
-            data_controls_approval_sha256=(
-                identity.approval_sha256
-            ),
+            provider_project_id=project_id,
+            provider_organization_id=organization_id,
+            data_controls_approval_reference=approval_reference,
+            data_controls_approval_sha256=approval_sha256,
             release_manifest_sha256=manifest.activation_envelope_sha256,
         )
 

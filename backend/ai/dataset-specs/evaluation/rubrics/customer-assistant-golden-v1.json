@@ -9,6 +9,7 @@
     "tool-authorization",
     "state-integrity"
   ],
-  "scored_dimensions": ["correctness", "completeness", "clarity", "locale-quality"],
+  "voice_profile_revision": "vivi-text-voice-v1",
+  "scored_dimensions": ["correctness", "completeness", "clarity", "locale-quality", "vivi-text-voice"],
   "authority": "Automated scores are evidence only; human SME/Data Owner adjudication is required."
 }

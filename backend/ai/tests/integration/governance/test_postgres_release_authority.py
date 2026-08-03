@@ -18,6 +18,10 @@ from app.bootstrap.release_runtime import (
     ReleaseBoundRuntimeResolver,
     ResolvedReleaseRuntime,
 )
+from app.modules.evaluation.application import (
+    AssistantReleaseEvidenceAuthority,
+    AssistantReleaseEvidenceQuery,
+)
 from app.modules.governance.application.release_resolver import (
     ReleaseManifestResolutionError,
 )
@@ -85,6 +89,11 @@ class AcceptingEvidenceRegistry:
     async def verify(self, request: EvidenceAuthenticityRequest) -> bool:
         await asyncio.sleep(0)
         self.requests.append(request)
+        return True
+
+
+class AcceptingEvaluationAuthority(AssistantReleaseEvidenceAuthority):
+    async def verify(self, query: AssistantReleaseEvidenceQuery) -> bool:
         return True
 
 
@@ -643,6 +652,7 @@ def resolver(
             timeout_seconds=1,
             max_concurrency=4,
         ),
+        evaluation_evidence_authority=AcceptingEvaluationAuthority(),
         schema_validator=JsonSchemaReleaseAuthorityValidator(RELEASE_AUTHORITY_SCHEMA),
         required_approval_roles=("release-owner", "security-owner"),
         clock=lambda: NOW,
@@ -880,9 +890,7 @@ async def test_commit_lease_retry_returns_the_same_bound_lease() -> None:
                 {
                     "activation_id": str(authority.activation_ids[0]),
                     "candidate_sha256": document["candidate"]["content_sha256"],
-                    "activation_envelope_sha256": document[
-                        "activation_envelope_sha256"
-                    ],
+                    "activation_envelope_sha256": document["activation_envelope_sha256"],
                     "pointer_revision": 1,
                 },
             )(),
@@ -967,6 +975,7 @@ async def test_real_registry_revocation_during_resolution_fails_closed() -> None
                 timeout_seconds=1,
                 max_concurrency=8,
             ),
+            evaluation_evidence_authority=AcceptingEvaluationAuthority(),
             schema_validator=JsonSchemaReleaseAuthorityValidator(RELEASE_AUTHORITY_SCHEMA),
             required_approval_roles=("release-owner", "security-owner"),
             clock=lambda: NOW,
@@ -1559,6 +1568,7 @@ async def test_resolution_cancellation_propagates_without_background_lookup() ->
                 timeout_seconds=1,
                 max_concurrency=1,
             ),
+            evaluation_evidence_authority=AcceptingEvaluationAuthority(),
             schema_validator=JsonSchemaReleaseAuthorityValidator(RELEASE_AUTHORITY_SCHEMA),
             required_approval_roles=("release-owner", "security-owner"),
             clock=lambda: NOW,

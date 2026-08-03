@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.modules.evaluation import AssistantReleaseEvidenceAuthority
 from app.modules.governance.application.release_resolver import (
     ArtifactDigestReader,
     ReleaseEvidenceVerifier,
@@ -118,6 +119,7 @@ class PostgresReleaseAuthorityResolver:
         sessions: async_sessionmaker[AsyncSession],
         digest_reader: ArtifactDigestReader,
         evidence_verifier: ReleaseEvidenceVerifier,
+        evaluation_evidence_authority: AssistantReleaseEvidenceAuthority,
         schema_validator: ReleaseAuthoritySchemaValidator,
         required_approval_roles: tuple[str, ...],
         clock: Callable[[], datetime],
@@ -137,6 +139,7 @@ class PostgresReleaseAuthorityResolver:
         self._sessions = sessions
         self._digest_reader = digest_reader
         self._evidence_verifier = evidence_verifier
+        self._evaluation_evidence_authority = evaluation_evidence_authority
         self._schema_validator = schema_validator
         self._required_approval_roles = required_approval_roles
         self._clock = clock
@@ -177,6 +180,7 @@ class PostgresReleaseAuthorityResolver:
                         store=_SnapshotStore(snapshot),
                         digest_reader=self._digest_reader,
                         evidence_verifier=self._evidence_verifier,
+                        evaluation_evidence_authority=self._evaluation_evidence_authority,
                         required_approval_roles=self._required_approval_roles,
                         clock=self._clock,
                     )

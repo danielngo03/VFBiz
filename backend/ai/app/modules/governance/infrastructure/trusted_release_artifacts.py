@@ -2,7 +2,10 @@ import asyncio
 import re
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from app.modules.governance.domain import SemanticClassifierReleaseBinding
 
 from app.modules.governance.domain.release_manifest import (
     ApprovalEvidence,
@@ -15,7 +18,7 @@ from app.modules.governance.domain.release_manifest import (
 )
 
 _OPAQUE_REFERENCE = re.compile(
-    r"^(?:approval|artifact|dataset|drill|evaluation|evaluator|graph|history|"
+    r"^(?:approval|artifact|classifier|dataset|drill|evaluation|evaluator|graph|history|"
     r"knowledge|model|policy|prompt|retriever|safe-release|schema|tools|"
     r"validator)://[A-Za-z0-9][A-Za-z0-9._:/-]{0,239}$"
 )
@@ -58,6 +61,8 @@ class EvidenceKind(StrEnum):
     STATIC_SAFE_APPROVAL = "static_safe_approval"
     PROMOTION = "promotion"
     LIVE_CONTROL = "live_control"
+    CLASSIFIER_EVALUATION = "classifier_evaluation"
+    CLASSIFIER_APPROVAL = "classifier_approval"
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,6 +237,75 @@ class BoundedReleaseEvidenceVerifier:
                 target_sha256=evidence.target_activation_core_sha256,
                 assistant_profile=manifest.candidate.assistant_profile,
                 environment=manifest.candidate.environment,
+            )
+        )
+
+    async def _verify(self, request: EvidenceAuthenticityRequest) -> bool:
+        try:
+            async with asyncio.timeout(self._timeout_seconds):
+                async with self._semaphore:
+                    return await self._registry.verify(request)
+        except TimeoutError as error:
+            raise ReleaseArtifactInfrastructureError(
+                ReleaseArtifactErrorCode.EVIDENCE_TIMEOUT,
+                retryable=True,
+            ) from error
+        except asyncio.CancelledError:
+            raise
+        except ReleaseArtifactInfrastructureError:
+            raise
+        except Exception as error:
+            raise ReleaseArtifactInfrastructureError(
+                ReleaseArtifactErrorCode.EVIDENCE_FAILED,
+                retryable=True,
+            ) from error
+
+
+class BoundedSemanticClassifierEvidenceVerifier:
+    """Authenticates classifier evidence without weakening release evidence types."""
+
+    def __init__(
+        self,
+        *,
+        registry: TrustedEvidenceRegistry,
+        timeout_seconds: float,
+        max_concurrency: int,
+    ) -> None:
+        if timeout_seconds <= 0 or max_concurrency <= 0:
+            raise ValueError("classifier evidence verifier limits must be positive")
+        self._registry = registry
+        self._timeout_seconds = timeout_seconds
+        self._semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def verify_evaluation(
+        self,
+        binding: "SemanticClassifierReleaseBinding",
+    ) -> bool:
+        document = binding.to_document()
+        return await self._verify(
+            EvidenceAuthenticityRequest(
+                kind=EvidenceKind.CLASSIFIER_EVALUATION,
+                evidence_ref=binding.evaluation_evidence_ref,
+                evidence_sha256=binding.evaluation_evidence_sha256,
+                target_sha256=str(document["classification_stack_sha256"]),
+                assistant_profile=binding.assistant_profile,
+                environment=binding.environment,
+            )
+        )
+
+    async def verify_approval(
+        self,
+        binding: "SemanticClassifierReleaseBinding",
+    ) -> bool:
+        document = binding.to_document()
+        return await self._verify(
+            EvidenceAuthenticityRequest(
+                kind=EvidenceKind.CLASSIFIER_APPROVAL,
+                evidence_ref=binding.approval_evidence_ref,
+                evidence_sha256=binding.approval_evidence_sha256,
+                target_sha256=str(document["binding_core_sha256"]),
+                assistant_profile=binding.assistant_profile,
+                environment=binding.environment,
             )
         )
 

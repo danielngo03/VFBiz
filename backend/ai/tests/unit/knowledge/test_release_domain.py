@@ -123,6 +123,21 @@ def test_release_requires_exact_source_set_hash() -> None:
         KnowledgeRelease.model_validate(candidate().model_dump() | {"source_set_hash": "f" * 64})
 
 
+def test_release_rejects_non_authoritative_intake_candidate_source() -> None:
+    unapproved = source(rights_approved=False)
+    payload = candidate().model_dump()
+    payload.update(
+        {
+            "sources": (unapproved,),
+            "source_set_hash": source_set_digest((unapproved,)),
+            "manifest_hash": None,
+        }
+    )
+
+    with pytest.raises(ValueError, match="not eligible"):
+        KnowledgeRelease.model_validate(payload)
+
+
 def test_source_digest_pins_full_rights_and_governance_projection() -> None:
     approved = source()
     changed_rights = approved.model_copy(update={"rights_redistribution": "permitted"})

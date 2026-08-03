@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "candidate_id": "vivi-behavior-synthetic-v5",
+  "work_item": "VFBIZ-0214",
+  "expansion": {
+    "families": 25,
+    "registers_per_family": 5,
+    "conversation_states_per_register": 5,
+    "scenarios_per_family": 25,
+    "total_scenarios": 625
+  },
+  "registers": [
+    {
+      "register_id": "neutral",
+      "description": "Tiếng Việt trung tính, đủ dấu và câu hoàn chỉnh."
+    },
+    {
+      "register_id": "informal",
+      "description": "Cách hỏi đời thường nhưng vẫn lịch sự và dễ hiểu."
+    },
+    {
+      "register_id": "terse",
+      "description": "Yêu cầu rất ngắn, cần phục hồi ý định thận trọng."
+    },
+    {
+      "register_id": "typo-no-diacritics",
+      "description": "Có lỗi gõ hoặc không dấu; không tự thêm dữ kiện."
+    },
+    {
+      "register_id": "polite",
+      "description": "Cách hỏi trang trọng, ưu tiên trả lời trực tiếp."
+    }
+  ],
+  "conversation_states": [
+    {
+      "state_id": "initial-request",
+      "description": "Yêu cầu mở đầu chưa có lịch sử hội thoại."
+    },
+    {
+      "state_id": "follow-up",
+      "description": "Người dùng bổ sung một phần bối cảnh."
+    },
+    {
+      "state_id": "correction",
+      "description": "Người dùng sửa một giả định hoặc thông tin trước đó."
+    },
+    {
+      "state_id": "interrupted-request",
+      "description": "Yêu cầu bị ngắt hoặc thiếu phần kết luận."
+    },
+    {
+      "state_id": "handoff",
+      "description": "Cần chuẩn bị chuyển đúng người mà không giả đã chuyển."
+    }
+  ],
+  "scenario_id_rule": "{family_id}--{register_id}--{state_id}",
+  "authoring_rules": {
+    "literal_pairs_required": true,
+    "phrase_slot_cartesian_rendering_allowed": false,
+    "identifiers_in_messages_allowed": false,
+    "cross_split_reuse_allowed": false,
+    "semantic_paraphrase_reuse_across_splits_allowed": false,
+    "source_seed_reuse_across_splits_allowed": false
+  },
+  "status": "locked-before-authoring",
+  "eligibility": {
+    "human_adjudicated": false,
+    "training_eligible": false,
+    "upload_allowed": false,
+    "provider_dispatch_allowed": false,
+    "release_eligible": false
+  }
+}

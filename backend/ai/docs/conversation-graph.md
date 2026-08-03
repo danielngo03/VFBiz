@@ -13,7 +13,7 @@ tags:
   - langgraph
   - state-machine
   - assistant
-revision: 5
+revision: 6
 review_date: 2026-08-23
 supersedes: []
 ---
@@ -179,6 +179,13 @@ khi vào active task. Observation không bao giờ là system instruction.
   terminal và commit atomically với event/outbox.
 - Cancellation/deadline được kiểm trước route và worker; result có fencing token
   cũ bị chuyển thành `cancelled`, không được dùng làm final answer.
+
+Khi Assistant Release có semantic-classifier binding hợp lệ, keyword match chỉ
+là tín hiệu fallback và confidence của nó bị giới hạn ở `0.6`; semantic
+classifier được gọi để xác nhận hoặc sửa intent. Nếu binding thiếu, hết hạn,
+classifier lỗi hoặc trả output không hợp lệ, supervisor giữ route deterministic
+đã cap và gắn reason code fallback. Vì vậy keyword không thể tự trở thành
+authority chỉ nhờ một chuỗi trùng khớp.
 
 ## Kiểm thử
 

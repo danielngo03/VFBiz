@@ -1,0 +1,23 @@
+{
+  "board_policy_id": "vivi-text-board-policy-v1",
+  "revision": "v1",
+  "status": "human-blocked",
+  "semantic_digest": "d16524120b5613b991672d9d57b36554deb1c4746b2b6f1d42e2b667bb19f3a1",
+  "review_roles": [
+    "product-owner",
+    "brand-content-owner",
+    "data-owner"
+  ],
+  "required_human_decisions": [
+    "pronoun and register policy",
+    "emoji, humor and sales-language policy",
+    "brand naming and impersonation boundary",
+    "voice rubric thresholds",
+    "training and derivative-use rights"
+  ],
+  "independence": {
+    "generator_must_differ_from_reviewer": true,
+    "reviewer_must_differ_from_adjudicator": true,
+    "adjudicator_must_differ_from_release_owner": true
+  }
+}

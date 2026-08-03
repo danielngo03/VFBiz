@@ -1,4 +1,5 @@
 from app.modules.assistant.application.ports import (
+    DETERMINISTIC_FALLBACK_MAX_CONFIDENCE,
     EntityRevalidationPort,
     EvidenceAuthorityPort,
     ExecutionControlPort,
@@ -18,6 +19,7 @@ from app.modules.assistant.application.semantic_supervisor import (
 
 __all__ = [
     "EntityRevalidationPort",
+    "DETERMINISTIC_FALLBACK_MAX_CONFIDENCE",
     "EvidenceAuthorityPort",
     "ExecutionControlPort",
     "GovernedSemanticSupervisor",

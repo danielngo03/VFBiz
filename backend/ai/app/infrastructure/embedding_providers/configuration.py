@@ -8,6 +8,14 @@ from app.infrastructure.embedding_providers.policy import (
     TeiDeploymentIdentity,
 )
 from app.infrastructure.embedding_providers.tei import TeiEmbeddingAdapter
+from app.infrastructure.embedding_providers.vertex_embedding import (
+    VertexEmbeddingAdapter,
+    VertexEmbeddingDeploymentDescriptor,
+)
+from app.infrastructure.model_providers.vertex_auth import (
+    AccessTokenProvider,
+    ApplicationDefaultVertexTokenProvider,
+)
 from app.modules.inference.application.embedding_ports import (
     EmbeddingGenerationIdentity,
     EmbeddingProvider,
@@ -36,8 +44,13 @@ def build_embedding_runtime(
     settings: Settings,
     *,
     client: httpx.AsyncClient | None = None,
+    vertex_access_token_provider: AccessTokenProvider | None = None,
 ) -> EmbeddingRuntime | None:
-    provider = build_embedding_provider(settings, client=client)
+    provider = build_embedding_provider(
+        settings,
+        client=client,
+        vertex_access_token_provider=vertex_access_token_provider,
+    )
     if provider is None:
         return None
     policy = _policy_for(settings)
@@ -103,6 +116,7 @@ def build_embedding_provider(
     settings: Settings,
     *,
     client: httpx.AsyncClient | None = None,
+    vertex_access_token_provider: AccessTokenProvider | None = None,
 ) -> EmbeddingProvider | None:
     if settings.embedding_provider == "disabled":
         return None
@@ -168,6 +182,34 @@ def build_embedding_provider(
                 if settings.self_hosted_embedding_api_token is not None
                 else None
             ),
+            owns_client=client is None,
+        )
+
+    if settings.embedding_provider == "vertex":
+        identity = settings.vertex_capability("embedding")
+        if (
+            identity.project_id is None
+            or identity.location is None
+            or identity.approval_sha256 is None
+            or identity.pricing_revision is None
+        ):
+            raise EmbeddingConfigurationError(
+                "Vertex embedding deployment identity or approval evidence is unavailable"
+            )
+        token_provider = vertex_access_token_provider or ApplicationDefaultVertexTokenProvider()
+        return VertexEmbeddingAdapter(
+            policy,
+            deployment=VertexEmbeddingDeploymentDescriptor(
+                project_id=identity.project_id,
+                location=identity.location,
+                model_revision=settings.embedding_model,
+                profile=settings.model_policy_profile,
+                retention_policy=identity.retention_policy,
+                pricing_revision=identity.pricing_revision,
+                data_controls_approval_sha256=identity.approval_sha256,
+            ),
+            access_token_provider=token_provider,
+            client=client,
             owns_client=client is None,
         )
 

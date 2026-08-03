@@ -68,7 +68,7 @@ def to_contract_candidate(case: GoldenCase) -> dict[str, Any]:
         "knowledge_snapshot": snapshot,
         "expected": expected,
         "hard_gates": gates,
-        "rubric_revision": "vivi-voice-v0-candidate",
+        "rubric_revision": "vivi-text-voice-v1",
         "review": {
             "status": "pending",
             "human_label": None,

@@ -118,12 +118,18 @@ class HandoffResponse(BaseModel):
     usage: ExecutionUsage
 
 
-class OpaqueTaskSlotResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+class TaskSlotCandidateResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    kind: Literal["opaque_reference"] = "opaque_reference"
-    reference: str
-    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+    candidate_id: UUID = Field(alias="candidateId")
+    confidence: float = Field(ge=0.0, le=1.0)
+    expected_task_version: int = Field(alias="expectedTaskVersion", ge=0)
+    kind: Literal["candidate"] = "candidate"
+    proposed_value: str = Field(alias="proposedValue", min_length=1, max_length=160)
+    provenance_digest: str = Field(alias="provenanceDigest", pattern=r"^[a-f0-9]{64}$")
+    slot: str = Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")
+    source_turn_id: UUID = Field(alias="sourceTurnId")
+    task_id: UUID = Field(alias="taskId")
 
 
 class TaskReleaseBindingResponse(BaseModel):
@@ -136,26 +142,22 @@ class TaskReleaseBindingResponse(BaseModel):
     policy_revision: str = Field(alias="policyRevision")
 
 
-class ConversationTaskDeltaResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+class ConversationTaskProposalResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     authorization_context_digest: str = Field(
         alias="authorizationContextDigest", pattern=r"^[a-f0-9]{64}$"
-    )
-    collected_slots: dict[str, OpaqueTaskSlotResponse] = Field(
-        alias="collectedSlots", max_length=16
     )
     expected_task_version: int = Field(alias="expectedTaskVersion", ge=0)
     expires_at: datetime = Field(alias="expiresAt")
     intent: str
     intent_revision: str = Field(alias="intentRevision")
-    next_state: Literal["awaiting_clarification"] = Field(
-        default="awaiting_clarification", alias="nextState"
-    )
-    operation: Literal["upsert"] = "upsert"
     pending_slots: tuple[str, ...] = Field(alias="pendingSlots", max_length=16)
     provenance_digest: str = Field(alias="provenanceDigest", pattern=r"^[a-f0-9]{64}$")
     release: TaskReleaseBindingResponse
+    slot_candidates: tuple[TaskSlotCandidateResponse, ...] = Field(
+        alias="slotCandidates", max_length=16
+    )
     source_turn_id: UUID = Field(alias="sourceTurnId")
     task_id: UUID = Field(alias="taskId")
 
@@ -173,7 +175,7 @@ class ClarificationResponse(BaseModel):
     outcome: Literal["clarification_required"] = "clarification_required"
     message: str
     pending_slots: tuple[str, ...] = Field(alias="pendingSlots", max_length=16)
-    task_delta: ConversationTaskDeltaResponse = Field(alias="taskDelta")
+    task_proposal: ConversationTaskProposalResponse = Field(alias="taskProposal")
     release_revision: str = Field(alias="releaseRevision")
     release_commit_receipt: ReleaseCommitReceipt = Field(alias="releaseCommitReceipt")
     revisions: ExecutionRevisions
@@ -236,7 +238,7 @@ def build_execution_response(
     usage: ExecutionUsage,
     release_revision: str,
     release_commit_receipt: ReleaseCommitReceipt,
-    task_delta: ConversationTaskDeltaResponse | None = None,
+    task_proposal: ConversationTaskProposalResponse | None = None,
 ) -> ExecutionResponse:
     revisions = ExecutionRevisions(
         graph=control.graph_version,
@@ -273,12 +275,12 @@ def build_execution_response(
             usage=usage,
         )
     if outcome.kind == "needs_clarification":
-        if task_delta is None:
-            raise ValueError("a clarification outcome must carry a durable task delta")
+        if task_proposal is None:
+            raise ValueError("a clarification outcome must carry a task proposal")
         return ClarificationResponse(
             message="Vui lòng cung cấp thêm thông tin để tôi có thể hỗ trợ chính xác.",
             pendingSlots=outcome.pending_slots,
-            taskDelta=task_delta,
+            taskProposal=task_proposal,
             releaseRevision=release_revision,
             releaseCommitReceipt=release_commit_receipt,
             revisions=revisions,

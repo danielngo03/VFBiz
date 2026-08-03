@@ -41,7 +41,7 @@ def scan_local_downloads(*, download_root: Path, report_root: Path) -> LocalScan
         if not path.is_file() or path.is_symlink():
             continue
         relative = path.relative_to(root)
-        if relative.parts[:2] == (".cache", "huggingface"):
+        if _is_hugging_face_transport_metadata(relative):
             # `hf download --local-dir` writes resumable transport metadata here.
             # It is not source payload and must never enter lineage or record counts.
             continue
@@ -68,7 +68,10 @@ def scan_local_downloads(*, download_root: Path, report_root: Path) -> LocalScan
         )
     manifest = {
         "schema_version": 1,
-        "download_root": str(root),
+        # Evidence must be portable and must not disclose the operator's
+        # machine path. The caller identity and source rights live in the
+        # separate governed receipt, not in this content inspection report.
+        "download_root": "local-downloads",
         "artifacts": entries,
     }
     canonical = json.dumps(
@@ -91,4 +94,12 @@ def scan_local_downloads(*, download_root: Path, report_root: Path) -> LocalScan
         candidate_pass_count=passed,
         blocked_count=len(entries) - passed,
         manifest_sha256=manifest_sha256,
+    )
+
+
+def _is_hugging_face_transport_metadata(relative: Path) -> bool:
+    parts = relative.parts
+    return any(
+        parts[index : index + 2] == (".cache", "huggingface")
+        for index in range(len(parts) - 1)
     )

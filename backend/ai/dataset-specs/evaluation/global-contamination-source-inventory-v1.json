@@ -1,0 +1,41 @@
+{
+  "inventory_id": "global-contamination-source-inventory-v1",
+  "schema_revision": "v1",
+  "status": "data-governance-candidate",
+  "required_products": [
+    "knowledge",
+    "red-team",
+    "training"
+  ],
+  "source_rules": [
+    {
+      "expected_sha256": "8b7878fc53c3455b3084a4172912b4d00c87182957306e7097b056cd686cdaf3",
+      "extractor_id": "golden-conversation-v1",
+      "mode": "exact",
+      "product": "golden",
+      "relative_path": "local-data/ai-datasets/candidate/evaluation/customer-assistant-golden-v1/7189b908c558ef60c8b7c8a418a0d97803d7c60ff52facb228ade2e8d4c2e020/cases.jsonl"
+    },
+    {
+      "extractor_id": "text-record-v1",
+      "mode": "glob",
+      "pattern": "**/*.jsonl",
+      "product": "knowledge",
+      "root": "local-data/ai-datasets/candidate/knowledge"
+    },
+    {
+      "extractor_id": "text-record-v1",
+      "mode": "glob",
+      "pattern": "**/*.jsonl",
+      "product": "red-team",
+      "root": "local-data/ai-datasets/candidate/red-team"
+    },
+    {
+      "extractor_id": "message-record-v1",
+      "mode": "glob",
+      "pattern": "**/canonical/*.jsonl",
+      "product": "training",
+      "root": "local-data/ai-datasets/candidate/tuning"
+    }
+  ],
+  "semantic_digest": "edbec46564dfb6386325d7e450ae55e2b996f006fdee717b2bc3ab26ea1d7757"
+}

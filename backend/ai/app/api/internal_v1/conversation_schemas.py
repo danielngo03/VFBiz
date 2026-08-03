@@ -38,17 +38,45 @@ class ConversationTaskReleaseBinding(BaseModel):
     policy_revision: str = Field(alias="policyRevision", min_length=1, max_length=160)
 
 
-class OpaqueTaskSlotReference(BaseModel):
+class TaskSlotReceiptReference(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    kind: Literal["opaque_reference"]
-    reference: str = Field(
+    kind: Literal["receipt"]
+    authority: Literal[
+        "business_policy",
+        "customer_garage",
+        "customer_profile",
+        "locale_policy",
+        "market_catalog",
+        "vehicle_catalog",
+    ]
+    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+    confirmed_at: datetime = Field(alias="confirmedAt")
+    expires_at: datetime = Field(alias="expiresAt")
+    opaque_reference: str = Field(
+        alias="opaqueReference",
         pattern=(
             r"^(vehicle|market|locale|profile|garage|policy|product|account):"
-            r"[a-z0-9][a-z0-9._/-]{0,143}$"
-        )
+            r"ref/v1/[a-f0-9]{64}$"
+        ),
     )
-    authority_digest: str = Field(alias="authorityDigest", pattern=r"^[a-f0-9]{64}$")
+    provenance_digest: str = Field(alias="provenanceDigest", pattern=r"^[a-f0-9]{64}$")
+    slot: str = Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")
+    source_revision: str = Field(
+        alias="sourceRevision",
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$",
+    )
+    task_id: UUID = Field(alias="taskId")
+
+    @model_validator(mode="after")
+    def validate_window(self) -> "TaskSlotReceiptReference":
+        if (
+            self.confirmed_at.tzinfo is None
+            or self.expires_at.tzinfo is None
+            or self.expires_at <= self.confirmed_at
+        ):
+            raise ValueError("task slot receipt window is invalid")
+        return self
 
 
 class ConversationTaskContextRequest(BaseModel):
@@ -59,7 +87,7 @@ class ConversationTaskContextRequest(BaseModel):
     )
     collected_slots: dict[
         Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.-]{0,63}$")],
-        OpaqueTaskSlotReference,
+        TaskSlotReceiptReference,
     ] = Field(alias="collectedSlots", max_length=16)
     expires_at: datetime = Field(alias="expiresAt")
     intent: Literal[
@@ -91,6 +119,13 @@ class ConversationTaskContextRequest(BaseModel):
             raise ValueError("pendingSlots must not contain duplicates")
         if set(self.pending_slots).intersection(self.collected_slots):
             raise ValueError("pending and collected slots must be disjoint")
+        if any(
+            receipt.task_id != self.task_id or receipt.slot != slot
+            for slot, receipt in self.collected_slots.items()
+        ):
+            raise ValueError("task slot receipt binding does not match its task context")
+        if any(receipt.expires_at > self.expires_at for receipt in self.collected_slots.values()):
+            raise ValueError("task slot receipt cannot outlive its task context")
         return self
 
 

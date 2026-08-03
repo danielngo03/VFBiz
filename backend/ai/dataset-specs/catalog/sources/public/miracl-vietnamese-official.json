@@ -22,7 +22,9 @@
     "locator": "https://github.com/project-miracl/miracl",
     "source_revision": "unfetched-exact-release-pending",
     "upstream_checksum_sha256": null,
-    "proposed_purposes": ["retrieval-evaluation"],
+    "proposed_purposes": [
+      "retrieval-evaluation"
+    ],
     "classification": "public",
     "owner_role": "data-owner",
     "rights": {
@@ -31,7 +33,9 @@
       "derivatives": "unknown",
       "redistribution": "unknown",
       "access_conditions": "Pin official artifact and review corpus-specific rights before fetch.",
-      "evidence_urls": ["https://github.com/project-miracl/miracl"],
+      "evidence_urls": [
+        "https://github.com/project-miracl/miracl"
+      ],
       "legal_review": "pending"
     },
     "retention": {
@@ -40,7 +44,13 @@
     },
     "deletion_method": "Delete candidate/quarantine artifacts and tombstone lineage.",
     "review_date": "2026-08-28",
-    "notes": "Priority 2 retrieval benchmark candidate; never VinFast knowledge."
+    "notes": "Priority 2 retrieval benchmark candidate; never VinFast knowledge.",
+    "origin": {
+      "kind": "external-https",
+      "requested_uri": "https://github.com/project-miracl/miracl",
+      "allowed_origin": "https://github.com/"
+    },
+    "allowed_origin": "https://github.com/"
   },
   "provenance": {
     "legacy_entry_superseded": false,
